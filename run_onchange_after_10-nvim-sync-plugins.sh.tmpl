@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Keep installed plugins and treesitter parsers in step with the declared lists.
+#
+# The hashes below make chezmoi re-run this script whenever the plugin list or
+# the parser list changes, so editing either and running `chezmoi apply` is all
+# it takes to converge any machine.
+#
+# plugins-setup.lua hash: {{ include "dot_config/nvim/lua/bruce/plugins-setup.lua" | sha256sum }}
+# treesitter.lua hash:    {{ include "dot_config/nvim/lua/bruce/plugins/treesitter.lua" | sha256sum }}
+
+set -euo pipefail
+
+command -v nvim >/dev/null 2>&1 || { echo "nvim not installed; skipping plugin sync" >&2; exit 0; }
+
+echo "syncing packer plugins..."
+
+# packer's PackerComplete can fire before every dependent plugin has been
+# cloned, so the first pass is not always enough. Two passes settles it.
+for _ in 1 2; do
+    nvim --headless \
+        -c 'autocmd User PackerComplete quitall' \
+        -c 'PackerSync' >/dev/null 2>&1 || true
+done
+
+# Neovim installs LSP servers and treesitter parsers asynchronously on startup,
+# which a headless run would exit before finishing. Drive both synchronously.
+echo "installing LSP servers..."
+nvim --headless -c 'MasonInstall python-lsp-server' -c 'qa!' >/dev/null 2>&1 || true
+
+echo "installing treesitter parsers..."
+nvim --headless \
+    -c 'lua require("nvim-treesitter").install(require("bruce.plugins.treesitter").ensure_installed):wait(600000)' \
+    -c 'qa!' >/dev/null 2>&1 || true
+
+echo "plugin sync complete"
