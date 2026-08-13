@@ -128,10 +128,18 @@ longer exists in lspsaga.
 
 | Key Combination | Package/Source | Description |
 |----------------|----------------|-------------|
-| `g c c` (normal mode) | Comment.nvim | Toggle line comment |
-| `g c` (visual mode) | Comment.nvim | Toggle comment for selection |
-| `g b c` (normal mode) | Comment.nvim | Toggle block comment |
-| `g b` (visual mode) | Comment.nvim | Toggle block comment for selection |
+| `g c c` (normal mode) | Core Neovim | Toggle line comment |
+| `g c` + motion (normal mode) | Core Neovim | Toggle comment over a motion |
+| `g c` (visual mode) | Core Neovim | Toggle comment for selection |
+
+These come from Neovim's built-in `vim._comment` (0.10+). Comment.nvim was
+removed because it only re-implemented them.
+
+**One thing was lost with it:** `g b` / `g b c` block-commenting (`/* … */`
+style) has no built-in equivalent and is now unmapped. It made no difference in
+Python or Markdown, which have only line comments — but if you start editing C,
+JavaScript or CSS regularly and want it back, that is the reason to reinstate
+Comment.nvim.
 
 ## Python REPL (Iron.nvim)
 

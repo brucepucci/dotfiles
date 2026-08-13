@@ -129,17 +129,27 @@ vim.api.nvim_create_autocmd({'BufEnter', 'QuitPre'}, {
       return
     end
 
-    -- How many focusable windows do we have? (excluding e.g. incline status window)
+    -- How many focusable windows do we have in THIS tab? Counting every window
+    -- in the session (nvim_list_wins) while tree.is_visible() is per-tab meant
+    -- a second tab, or any floating window, pushed the count past 2 and left
+    -- you stranded in a tab holding nothing but the tree.
     local winCount = 0
-    for _,winId in ipairs(vim.api.nvim_list_wins()) do
-      if vim.api.nvim_win_get_config(winId).focusable then
+    for _,winId in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+      local cfg = vim.api.nvim_win_get_config(winId)
+      -- `relative ~= ''` marks a floating window: an Lspsaga popup or a
+      -- diagnostic float is focusable but is not a window you are editing in
+      if cfg.focusable and cfg.relative == '' then
         winCount = winCount + 1
       end
     end
 
-    -- We want to quit and only one window besides tree is left
-    if e.event == 'QuitPre' and winCount == 2 then
-      vim.api.nvim_cmd({cmd = 'qall'}, {})
+    -- We want to quit and only one window besides tree is left.
+    -- Close the tree and let the original :q / :q! carry on against the last
+    -- remaining window. Re-issuing `qall` here would discard the bang, so `:q!`
+    -- became impossible whenever any buffer was modified -- the substituted
+    -- `qall` failed with E37 and aborted the original quit along with it.
+    if e.event == 'QuitPre' and winCount == 2 and vim.bo.filetype ~= 'NvimTree' then
+      tree.close()
     end
 
     -- :bd was probably issued an only tree window is left

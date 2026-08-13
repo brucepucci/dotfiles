@@ -43,7 +43,8 @@ require("lazy").setup({
         require("bruce.core.colorscheme")
       end,
     },
-    { "bluz71/vim-nightfly-guicolors", lazy = true },
+    -- vim-nightfly-guicolors was removed: it had no load trigger and nothing
+    -- referenced it. lualine's nightfly theme is bundled with lualine itself.
 
     -- tmux & split window navigation
     { "christoomey/vim-tmux-navigator", lazy = false },
@@ -51,13 +52,8 @@ require("lazy").setup({
     -- maximizes and restores current window
     { "szw/vim-maximizer", cmd = "MaximizerToggle" },
 
-    {
-      "numToStr/Comment.nvim",
-      event = { "BufReadPost", "BufNewFile" },
-      config = function()
-        require("bruce.plugins.comment")
-      end,
-    },
+    -- Comment.nvim was removed: Neovim ships vim._comment with gc/gcc/gbc
+    -- mappings since 0.10, and the plugin was only overriding them.
 
     -- add, delete, change surroundings (it's awesome)
     { "tpope/vim-surround", event = "VeryLazy" },

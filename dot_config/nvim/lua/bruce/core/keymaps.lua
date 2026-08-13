@@ -47,28 +47,37 @@ keymap.set("n", "<C-h>", "<C-w>h") -- move to window left
 keymap.set("n", "<C-l>", "<C-w>l") -- move to window right
 
 
--- REPL window visibility toggle
+-- REPL window visibility toggle.
+--
+-- This used to scan every window in the session for the first terminal buffer
+-- and close it. That reached into other tabpages (closing a terminal there, and
+-- taking the whole tab with it when it was that tab's only window), threw E444
+-- when the terminal was the last window, and raised a raw error in any buffer
+-- with no REPL definition. iron already implements this: `repl_for` honours
+-- `config.visibility`, which defaults to toggle.
 keymap.set("n", "<leader>`", function()
-  local windows = vim.api.nvim_list_wins()
-  local terminal_win = nil
-  
-  -- Find terminal window
-  for _, win in ipairs(windows) do
-    local buf = vim.api.nvim_win_get_buf(win)
-    if vim.bo[buf].buftype == "terminal" then
-      terminal_win = win
-      break
+  -- Inside the REPL itself, just hide this window.
+  if vim.bo.buftype == "terminal" then
+    if #vim.api.nvim_tabpage_list_wins(0) > 1 then
+      vim.api.nvim_win_hide(0)
+    else
+      vim.notify("REPL is the only window", vim.log.levels.WARN)
     end
+    return
   end
-  
-  if terminal_win then
-    -- Hide terminal window
-    vim.api.nvim_win_close(terminal_win, false)
-  else
-    -- Show/create REPL
-    vim.cmd("IronRepl")
+
+  local ok, iron = pcall(require, "iron.core")
+  if not ok then
+    vim.notify("iron.nvim is not available", vim.log.levels.WARN)
+    return
   end
-end) -- toggle REPL window visibility
+
+  local ft = vim.bo.filetype
+  local started = pcall(iron.repl_for, ft)
+  if not started then
+    vim.notify(("no REPL configured for filetype %q"):format(ft), vim.log.levels.WARN)
+  end
+end, { desc = "Toggle the REPL window" })
 
 -- markdown keymaps
 keymap.set("n", "<leader>mp", ":MarkdownPreview<CR>") -- start markdown preview

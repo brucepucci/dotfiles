@@ -37,7 +37,8 @@ Key plugins installed:
 - Syntax highlighting: treesitter (`main` branch — new API)
 - UI enhancements: lualine, catppuccin theme
 - REPL functionality: Iron.nvim for interactive Python development
-- Code editing: autoclose brackets, Python PEP8 indentation, commenting
+- Code editing: autoclose brackets, Python PEP8 indentation
+- Commenting is Neovim's built-in `vim._comment` (`gc`/`gcc`), not a plugin
 - Markdown workflow: render-markdown.nvim for in-buffer rendering, markdown-preview.nvim for browser preview
 
 ## Key Leader Mappings
