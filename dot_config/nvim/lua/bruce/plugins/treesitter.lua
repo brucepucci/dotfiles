@@ -52,8 +52,16 @@ end
 vim.api.nvim_create_autocmd("FileType", {
   callback = function(ev)
     local lang = vim.treesitter.language.get_lang(ev.match)
-    if not lang or not pcall(vim.treesitter.language.add, lang) then
-      -- no parser for this filetype; leave the legacy syntax highlighting alone
+    if not lang then
+      return
+    end
+
+    -- language.add signals "no parser" by *returning* nil rather than raising,
+    -- so the return value has to be checked; a bare pcall reports success for
+    -- every filetype and would warn on plugin buffers like NvimTree.
+    local called, added = pcall(vim.treesitter.language.add, lang)
+    if not called or not added then
+      -- no parser for this filetype; leave legacy syntax highlighting alone
       return
     end
 
