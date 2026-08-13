@@ -21,12 +21,26 @@ nvim --headless "+Lazy! restore" +qa
 
 # Neovim installs LSP servers and treesitter parsers asynchronously on startup,
 # which a headless run would exit before finishing. Drive both synchronously.
+failed=()
+
 echo "installing LSP servers..."
-nvim --headless -c 'MasonInstall python-lsp-server' -c 'qa!' >/dev/null 2>&1 || true
+nvim --headless -c 'MasonInstall python-lsp-server' -c 'qa!' >/dev/null 2>&1 \
+    || failed+=("LSP servers (run :Mason to install pylsp by hand)")
 
 echo "installing treesitter parsers..."
 nvim --headless \
     -c 'lua require("nvim-treesitter").install(require("bruce.plugins.treesitter").ensure_installed):wait(600000)' \
-    -c 'qa!' >/dev/null 2>&1 || true
+    -c 'qa!' >/dev/null 2>&1 \
+    || failed+=("treesitter parsers (check that tree-sitter is on PATH)")
+
+# These two steps are non-fatal: a missing parser or language server should not
+# stop the rest of an apply. But they must not be silent either — reporting
+# success here would leave a new machine with no diagnostics and no
+# highlighting while claiming everything worked.
+if [ ${#failed[@]} -gt 0 ]; then
+    echo "plugin sync finished WITH FAILURES:" >&2
+    for f in "${failed[@]}"; do echo "  - $f" >&2; done
+    exit 0
+fi
 
 echo "plugin sync complete"
