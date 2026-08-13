@@ -114,7 +114,15 @@ Buffer-local; these exist only once a language server attaches to the buffer.
 |----------------|----------------|-------------|
 | `⌃ + f` | lspsaga.nvim | Scroll down in LSP preview window |
 | `⌃ + b` | lspsaga.nvim | Scroll up in LSP preview window |
-| `Return` | lspsaga.nvim | Open the file shown in the definition preview |
+| `⌃ + o` | lspsaga.nvim | Open the file shown in the definition preview |
+| `⌃ + v` | lspsaga.nvim | Open it in a vertical split |
+
+`lua/bruce/plugins/lsp/lspsaga.lua` sets `definition = { edit = "<CR>" }`
+intending `Return` here, but lspsaga reads `definition.keys.edit`, so the
+setting is ignored and the real key is `⌃ + o`. Moving it to
+`definition = { keys = { edit = "<CR>" } }` would make `Return` work as
+intended. The `ui.colors` block in the same file is also ignored — that key no
+longer exists in lspsaga.
 
 ## Comments
 
