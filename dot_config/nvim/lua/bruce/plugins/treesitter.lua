@@ -22,14 +22,29 @@ end
 
 treesitter.setup()
 
--- Install anything missing in the background on startup.
+-- A language needs installing if its parser is absent, OR if its highlight
+-- queries cannot be resolved. The second case matters: nvim-treesitter
+-- symlinks each query directory back into its own install directory, so moving
+-- or removing that directory leaves the compiled parser in place but the
+-- symlink dangling. Checking only for the parser misses it entirely, and the
+-- result is a buffer with treesitter attached, no highlights, and no legacy
+-- syntax either -- because starting treesitter turns `syntax` off.
 local installed = treesitter.get_installed()
-local missing = vim.tbl_filter(function(lang)
-  return not vim.tbl_contains(installed, lang)
-end, M.ensure_installed)
+
+local function needs_install(lang)
+  if not vim.tbl_contains(installed, lang) then
+    return true
+  end
+  local ok, query = pcall(vim.treesitter.query.get, lang, "highlights")
+  return not ok or query == nil
+end
+
+local missing = vim.tbl_filter(needs_install, M.ensure_installed)
 
 if #missing > 0 then
-  treesitter.install(missing)
+  -- `force` skips the confirmation prompt and reinstalls languages that are
+  -- already present, which is what repairs a broken query symlink.
+  treesitter.install(missing, { force = true })
 end
 
 -- nvim-treesitter's main branch does not turn any features on by itself:
@@ -37,8 +52,17 @@ end
 vim.api.nvim_create_autocmd("FileType", {
   callback = function(ev)
     local lang = vim.treesitter.language.get_lang(ev.match)
-    if lang and pcall(vim.treesitter.language.add, lang) then
-      pcall(vim.treesitter.start, ev.buf, lang)
+    if not lang or not pcall(vim.treesitter.language.add, lang) then
+      -- no parser for this filetype; leave the legacy syntax highlighting alone
+      return
+    end
+
+    local ok, err = pcall(vim.treesitter.start, ev.buf, lang)
+    if not ok then
+      vim.notify(
+        ("treesitter: failed to start for %s: %s"):format(lang, err),
+        vim.log.levels.WARN
+      )
     end
   end,
 })
