@@ -39,35 +39,44 @@ If Homebrew is not installed yet, start with
 so, rather than half-working: `vim.lsp.config`, `vim.hl`, and nvim-treesitter's
 `main` branch all need it.
 
-## Manual setup — not managed by chezmoi
+## Linux / WSL
 
-This repo is scoped to Neovim only. These are host-level and set up by hand.
-
-**git-delta** as the pager. Improves `git diff` in the terminal and inside
-lazygit; Neovim renders its own diffs and does not need it.
+Homebrew is the supported install path on every OS. Debian 12 and Ubuntu 22.04
+cannot supply Neovim 0.12, `lua-language-server`, `marksman`, or
+`tree-sitter-cli >= 0.26.1` from their own repositories, so distro packages are
+not an option.
 
 ```bash
-git config --global core.pager              delta
-git config --global interactive.diffFilter 'delta --color-only'
-git config --global delta.navigate          true
-git config --global delta.side-by-side      true
-git config --global delta.line-numbers      true
-git config --global delta.syntax-theme      'gruvbox-dark'
-git config --global merge.conflictstyle     zdiff3
-git config --global diff.colorMoved         default
+# Homebrew on Linux (needs sudo once, plus build-essential curl file git)
+NONINTERACTIVE=1 /bin/bash -c \
+  "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 ```
 
-**lazygit** — `~/.config/lazygit/config.yml`:
+Then follow the four steps above. The Brewfile is OS-aware: it skips the font
+cask on Linux and adds `wl-clipboard` + `xclip` there instead.
 
-```yaml
-git:
-  paging:
-    colorArg: always
-    pager: delta --dark --paging=never
+**Clipboard.** macOS has `pbcopy` built in; Linux does not. Without one of the
+clipboard tools, `clipboard=unnamedplus` means every yank **silently** fails to
+reach the system clipboard — only `:checkhealth` reports it. The Brewfile
+covers Wayland and X11.
+
+**WSL** needs different tools than either:
+
+```bash
+# clipboard -- neither wl-clipboard nor xclip works under WSL
+curl -sLo /tmp/win32yank.zip https://github.com/equalsraf/win32yank/releases/latest/download/win32yank-x64.zip
+unzip -p /tmp/win32yank.zip win32yank.exe > ~/.local/bin/win32yank.exe
+chmod +x ~/.local/bin/win32yank.exe
+
+# markdown preview needs a way to reach a Windows browser
+sudo apt install wslu       # provides wslview
 ```
 
-> If this section grows past ~10 commands, that is the signal to widen chezmoi's
-> scope beyond Neovim — not a reason to widen it now.
+**Linux aarch64** (WSL-on-ARM, Graviton, Raspberry Pi): upstream
+markdown-preview ships no prebuilt binary for this platform. The build detects
+that and falls back to compiling the Node app, so `<leader>mp` still works —
+but it needs `npm`, which the Brewfile installs.
 
 ## Editing the config
 
