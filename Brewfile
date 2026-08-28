@@ -19,5 +19,6 @@ brew "lua-language-server"  # lua_ls, for editing this config
 brew "marksman"             # markdown
 
 brew "uv"                   # python envs
+brew "ipython"              # the REPL iron.nvim drives (<leader>`)
 brew "tree-sitter-cli"      # nvim-treesitter `main` builds parsers with this
 brew "node"                 # markdown-preview.nvim

@@ -7,13 +7,29 @@
 return {
     "Vigemus/iron.nvim",
     cmd = { "IronRepl", "IronRestart", "IronFocus", "IronHide" },
-    keys = { { "<leader>`", desc = "Toggle REPL window" } },
+    -- No `keys` entry: the <leader>` toggle lives in core/keymaps.lua and
+    -- runs :IronRepl, which the `cmd` trigger above already lazy-loads. A
+    -- lazy `keys` stub here would replace that mapping and then delete
+    -- itself on load, leaving <leader>` unmapped.
     config = function()
         require("iron.core").setup({
             config = {
                 scratch_repl = true,
                 repl_definition = {
-                    python = { command = { "ipython", "--no-autoindent" } },
+                    python = {
+                        -- Fall back to the plain interpreter rather than
+                        -- erroring out when ipython is not installed.
+                        command = function()
+                            if vim.fn.executable("ipython") == 1 then
+                                return { "ipython", "--no-autoindent" }
+                            end
+                            vim.notify(
+                                "ipython not found -- using python3. `brew install ipython`",
+                                vim.log.levels.WARN
+                            )
+                            return { "python3" }
+                        end,
+                    },
                 },
                 repl_open_cmd = "belowright 30split",
                 should_map_plug = false,

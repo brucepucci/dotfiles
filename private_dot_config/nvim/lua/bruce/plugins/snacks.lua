@@ -3,7 +3,7 @@
 
 return {
     "folke/snacks.nvim",
-    priority = 900,
+    priority = 1000, -- snacks hooks vim.ui early; it wants >= 1000
     lazy = false,
     opts = {
         bigfile = { enabled = true },
@@ -38,6 +38,18 @@ return {
         },
 
         explorer = { enabled = true },
+
+        -- Not used, so keep them from loading at all.
+        --
+        -- NOTE: :checkhealth still reports missing magick / ghostscript /
+        -- tectonic / mmdc and "no kitty graphics protocol" under snacks.
+        -- snacks runs every module's health check regardless of `enabled`,
+        -- so those errors are expected noise about image rendering we do
+        -- not do. Same for the two `vim.ui` errors, which only appear
+        -- under --headless because they are wired on UIEnter.
+        image = { enabled = false },
+        dashboard = { enabled = false },
+        scroll = { enabled = false },
     },
 
     keys = {

@@ -35,6 +35,10 @@ require("lazy").setup({
     checker = { enabled = false },
     change_detection = { notify = false },
 
+    -- None of the 17 plugins here are rockspecs, so skip the hererocks
+    -- bootstrap and its :checkhealth complaint.
+    rocks = { enabled = false },
+
     install = { colorscheme = { "gruvbox-material", "habamax" } },
 
     performance = {
