@@ -15,7 +15,16 @@ fi
 # eval "$(mise activate zsh)"
 # eval "$(pyenv init -)"
 
-export EDITOR=${EDITOR:-vim}
+# Guarded rather than a bare `export EDITOR=nvim`: on a machine where Neovim
+# is not installed yet, an unresolvable EDITOR breaks `git commit`, `crontab -e`
+# and anything else that shells out to it.
+if command -v nvim >/dev/null; then
+  export EDITOR=nvim
+  export VISUAL=nvim
+else
+  export EDITOR=vim
+  export VISUAL=vim
+fi
 
 # --- History ----------------------------------------------------------------
 HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
