@@ -1,0 +1,13 @@
+# Repo-level files. These live in the dotfiles repo but must never be
+# installed into $HOME.
+#
+# Patterns match with doublestar against the TARGET path and are anchored at
+# the destination root -- this is NOT gitignore semantics. So `README.md` here
+# means ~/README.md only; it does not affect ~/.config/nvim/docs/keymaps.md.
+#
+# Source entries beginning with "." (.github/, .gitignore) are ignored by
+# chezmoi automatically and need no entry here.
+README.md
+CLAUDE.md
+Brewfile
+LICENSE

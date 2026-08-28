@@ -1,0 +1,92 @@
+# CLAUDE.md
+
+Guidance for Claude Code working in this repo.
+
+## What this is
+
+A chezmoi-managed dotfiles repo, scoped to Neovim only.
+
+- **Source of truth:** `private_dot_config/nvim/` in this repo.
+- **Target:** `~/.config/nvim` — a build artifact. **Never edit it directly.**
+  Edit here, then `chezmoi apply`.
+- `private_` prefix exists because `~/.config` is mode 0700; chezmoi preserves that.
+- `dot_` prefix maps to a leading `.` in the target. Any dotfile nested inside a
+  managed directory **must** use it — chezmoi silently skips source entries
+  starting with a literal `.`.
+
+## Architecture
+
+```
+private_dot_config/nvim/
+├── init.lua              # sets mapleader, then requires core.* and bruce.lazy
+├── lazy-lock.json        # committed; pins exact plugin revisions
+└── lua/bruce/
+    ├── lazy.lua          # bootstrap + { import = "bruce.plugins" }
+    ├── core/             # options, keymaps, autocmds, maximize
+    └── plugins/          # one spec file per concern, auto-imported
+```
+
+Adding a plugin = drop a file in `lua/bruce/plugins/` returning a lazy.nvim
+spec. No `init.lua` edit.
+
+## Rules for this config
+
+**No `pcall(require, ...)` guards.** The previous config wrapped every plugin
+file in `local ok, x = pcall(require, "..."); if not ok then return end`. That
+turned loud, fixable startup errors into silent feature loss — it is why the LSP
+was broken for months with no error shown. Let failures be loud.
+
+`pcall` is fine where failure is genuinely expected and not exceptional (e.g.
+`vim.treesitter.start` on a filetype with no parser).
+
+**Servers come from Homebrew, not Mason.** Mason is deliberately not installed:
+one package manager, versions visible in `Brewfile`, no duplicate copies, no
+PATH shadowing. To add a server: add it to `Brewfile`, then to the
+`vim.lsp.enable({...})` list in `lua/bruce/plugins/lsp.lua`.
+
+**Prefer built-ins.** Neovim 0.12 already provides commenting (`gc`/`gcc`), LSP
+keymaps (`grn` `gra` `grr` `gri` `gO` `K`), and the LSP framework. Do not add
+plugins for these.
+
+**Keymaps are load-bearing.** Everything in `core/keymaps.lua` is long-standing
+muscle memory. Do not "tidy" them. Two intentional quirks:
+- `<C-h>` is the file explorer, not focus-left. Focus-left is built-in `<C-w>h`.
+- Terminal mode has `<C-k>`/`<C-h>`/`<C-l>` but no `<C-j>`, because the REPL is
+  the bottom split.
+
+## After changing plugins
+
+```
+:Lazy sync
+chezmoi re-add ~/.config/nvim/lazy-lock.json
+```
+
+The lockfile must be committed — it is the reproducibility guarantee and makes a
+bad update bisectable via `git log -p -- private_dot_config/nvim/lazy-lock.json`.
+
+## Verifying a change
+
+```bash
+chezmoi diff && chezmoi apply
+nvim --headless "+checkhealth" "+w! /tmp/h.txt" +qa && grep -E 'ERROR|WARNING' /tmp/h.txt
+```
+
+For LSP changes, confirm clients actually attach — this config exists partly
+because they silently did not:
+
+```bash
+nvim --headless some.py '+lua vim.wait(6000, function() return #vim.lsp.get_clients({bufnr=0}) >= 2 end); for _,c in ipairs(vim.lsp.get_clients({bufnr=0})) do print(c.name) end' +qa
+```
+
+## Designated successors
+
+If one of these breaks, this is the intended replacement — noted so the decision
+does not have to be re-derived:
+
+| Current | Successor | Note |
+|---|---|---|
+| `tpope/vim-surround` | `mini.surround` | different keys: `gsa`/`gsd`/`gsr` |
+| `markdown-preview.nvim` | `toppair/peek.nvim` | Deno-based |
+| `blink.cmp` | built-in `vim.o.autocomplete` | 0.12+; loses docs window & snippet ranking |
+| lazy.nvim | `vim.pack` | built-in, has its own lockfile; blocked on lazy-loading support |
+| `dlyongemallo/diffview.nvim` | `sindrets/diffview.nvim` | the fork exists only because upstream went quiet in 2024 |
