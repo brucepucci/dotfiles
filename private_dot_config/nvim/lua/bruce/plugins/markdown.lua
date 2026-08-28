@@ -48,35 +48,15 @@ return {
         end,
         -- These must be set in init, not config: the plugin reads them as it
         -- loads, which happens before config runs.
+        -- Only the two settings that differ from the plugin's own defaults.
+        -- The other 14 restated them, and the empty Lua tables in
+        -- mkdp_preview_options marshalled to Vimscript Lists rather than Dicts
+        -- (json_encode showed "mkit": [] where the plugin expects {}).
+        --
+        -- These must be set in init, not config: the plugin reads them as it
+        -- loads, which happens before config runs.
         init = function()
-            vim.g.mkdp_filetypes = { "markdown" }
-            vim.g.mkdp_browser = ""
-            vim.g.mkdp_auto_start = 0
-            vim.g.mkdp_auto_close = 1
-            vim.g.mkdp_refresh_slow = 0
-            vim.g.mkdp_command_for_global = 0
-            vim.g.mkdp_open_to_the_world = 0
-            vim.g.mkdp_open_ip = ""
-            vim.g.mkdp_echo_preview_url = 0
-            vim.g.mkdp_browserfunc = ""
-            vim.g.mkdp_preview_options = {
-                mkit = {},
-                katex = {},
-                uml = {},
-                maid = {},
-                disable_sync_scroll = 0,
-                sync_scroll_type = "middle",
-                hide_yaml_meta = 1,
-                sequence_diagrams = {},
-                flowchart_diagrams = {},
-                content_editable = false,
-                disable_filename = 0,
-                toc = {},
-            }
-            vim.g.mkdp_markdown_css = ""
-            vim.g.mkdp_highlight_css = ""
-            vim.g.mkdp_port = ""
-            vim.g.mkdp_page_title = "${name}"
+            vim.g.mkdp_page_title = "${name}" -- default is the CJK-bracketed form
             vim.g.mkdp_theme = "light"
         end,
         keys = {

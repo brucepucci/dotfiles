@@ -59,6 +59,32 @@ return {
 
         vim.lsp.enable({ "ruff", "pyright", "lua_ls", "marksman" })
 
+        -- Servers are external binaries. A missing one attaches nothing and
+        -- says nothing -- removing the pcall(require) guards did not cover this
+        -- case, because there is no require to fail. This is the same silent
+        -- failure mode that left the previous config without an LSP for months.
+        local exes = {
+            ruff = "ruff",
+            pyright = "pyright-langserver",
+            lua_ls = "lua-language-server",
+            marksman = "marksman",
+        }
+        local absent = {}
+        for server, exe in pairs(exes) do
+            if vim.fn.executable(exe) == 0 then
+                absent[#absent + 1] = server .. " (" .. exe .. ")"
+            end
+        end
+        if #absent > 0 then
+            table.sort(absent)
+            vim.notify(
+                "LSP servers not on PATH: "
+                    .. table.concat(absent, ", ")
+                    .. '\nRun: brew bundle --file="$(chezmoi source-path)/Brewfile"',
+                vim.log.levels.WARN
+            )
+        end
+
         vim.api.nvim_create_autocmd("LspAttach", {
             group = vim.api.nvim_create_augroup("bruce_lsp_attach", { clear = true }),
             callback = function(args)

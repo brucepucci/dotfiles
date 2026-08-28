@@ -1,38 +1,45 @@
 -- The review layer.
 --
--- gitsigns is inline and per-hunk: walk what an agent changed and accept or
--- reject each piece. diffview is side-by-side and per-changeset: does the
--- whole thing hang together. They are not redundant.
+-- Two tools, two granularities -- they are not redundant:
+--   gitsigns  = inline, per-HUNK accept/reject, in your normal editing buffer.
+--   diffview  = side-by-side, per-CHANGESET survey across every touched file.
+--
+-- Both live under <leader>g. Lowercase acts on this hunk/file, capital widens
+-- the scope. Hunk navigation is <leader>gh/gl to match <leader>th/tl for tabs.
 
 return {
     {
         "lewis6991/gitsigns.nvim",
         event = { "BufReadPre", "BufNewFile" },
         opts = {
-            signcolumn = true,
             on_attach = function(bufnr)
                 local gs = require("gitsigns")
                 local function map(mode, lhs, rhs, desc)
-                    vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = "Hunk: " .. desc })
+                    vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
                 end
 
-                -- ]c/[c are builtin diff-mode and ]d/[d are builtin
-                -- diagnostics, so hunks get ]h/[h.
-                map("n", "]h", function() gs.nav_hunk("next") end, "next")
-                map("n", "[h", function() gs.nav_hunk("prev") end, "prev")
+                -- navigation: h/l = prev/next, same as <leader>th/tl for tabs
+                map("n", "<leader>gh", function() gs.nav_hunk("prev") end, "Prev hunk")
+                map("n", "<leader>gl", function() gs.nav_hunk("next") end, "Next hunk")
 
-                map("n", "<leader>hp", gs.preview_hunk_inline, "preview inline")
-                map("n", "<leader>hP", gs.preview_hunk, "preview float")
-                map({ "n", "x" }, "<leader>hs", ":Gitsigns stage_hunk<CR>", "stage")
-                map({ "n", "x" }, "<leader>hr", ":Gitsigns reset_hunk<CR>", "reset")
-                map("n", "<leader>hS", gs.stage_buffer, "stage buffer")
-                map("n", "<leader>hR", gs.reset_buffer, "reset buffer")
-                map("n", "<leader>hu", gs.undo_stage_hunk, "undo stage")
-                map("n", "<leader>hb", function() gs.blame_line({ full = true }) end, "blame line")
-                map("n", "<leader>hB", gs.toggle_current_line_blame, "toggle blame")
-                map("n", "<leader>hd", gs.diffthis, "diff vs index")
-                map("n", "<leader>hD", function() gs.diffthis("~") end, "diff vs HEAD~")
-                map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", "textobject")
+                -- accept / reject
+                map({ "n", "x" }, "<leader>gs", ":Gitsigns stage_hunk<CR>", "Stage hunk")
+                map({ "n", "x" }, "<leader>gr", ":Gitsigns reset_hunk<CR>", "Reset hunk")
+                map("n", "<leader>gS", gs.stage_buffer, "Stage buffer")
+                map("n", "<leader>gR", gs.reset_buffer, "Reset buffer")
+                -- Deprecated upstream in favour of stage_hunk() on a staged
+                -- sign, but still functional and warning-free. It pops one
+                -- entry off the stage stack, so after <leader>gS it unstages
+                -- only the most recent hunk.
+                map("n", "<leader>gu", gs.undo_stage_hunk, "Undo stage hunk")
+
+                -- inspect
+                map("n", "<leader>gp", gs.preview_hunk_inline, "Preview hunk inline")
+                map("n", "<leader>gP", gs.preview_hunk, "Preview hunk (float)")
+                map("n", "<leader>gb", function() gs.blame_line({ full = true }) end, "Blame line")
+                map("n", "<leader>gB", gs.toggle_current_line_blame, "Toggle inline blame")
+
+                map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", "Hunk textobject")
             end,
         },
     },
@@ -45,12 +52,12 @@ return {
         cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory", "DiffviewToggleFiles" },
         opts = {},
         keys = {
-            { "<leader>vv", "<cmd>DiffviewOpen<cr>", desc = "Review working tree" },
-            { "<leader>vc", "<cmd>DiffviewClose<cr>", desc = "Close diffview" },
-            { "<leader>vs", "<cmd>DiffviewOpen --staged<cr>", desc = "Review staged only" },
-            { "<leader>vh", "<cmd>DiffviewFileHistory %<cr>", desc = "History of this file" },
-            { "<leader>vH", "<cmd>DiffviewFileHistory<cr>", desc = "History of repo" },
-            { "<leader>vm", "<cmd>DiffviewOpen origin/main...HEAD<cr>", desc = "Branch vs main" },
+            { "<leader>gd", "<cmd>DiffviewOpen<cr>", desc = "Diff: review changeset" },
+            { "<leader>gD", "<cmd>DiffviewOpen --staged<cr>", desc = "Diff: review staged" },
+            { "<leader>gm", "<cmd>DiffviewOpen origin/main...HEAD<cr>", desc = "Diff: branch vs main" },
+            { "<leader>gf", "<cmd>DiffviewFileHistory %<cr>", desc = "Diff: this file's history" },
+            { "<leader>gF", "<cmd>DiffviewFileHistory<cr>", desc = "Diff: repo history" },
+            { "<leader>gq", "<cmd>DiffviewClose<cr>", desc = "Diff: close" },
         },
     },
 }

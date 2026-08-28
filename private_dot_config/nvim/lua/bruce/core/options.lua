@@ -8,7 +8,6 @@ opt.number = true
 opt.tabstop = 4
 opt.shiftwidth = 4
 opt.expandtab = true
-opt.autoindent = true
 
 -- line wrapping
 opt.wrap = false
@@ -41,5 +40,6 @@ opt.iskeyword:append("-")
 -- only acts when Neovim already has reason to re-stat the file.
 opt.autoread = true
 
--- Drives CursorHold (external-write detection) and gitsigns' blame delay.
+-- Drives CursorHold, which is how external writes get noticed.
+-- (gitsigns' inline blame has its own delay setting and ignores this.)
 opt.updatetime = 300

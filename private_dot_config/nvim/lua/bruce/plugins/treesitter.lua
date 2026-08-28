@@ -7,7 +7,12 @@
 -- lua/bruce/core/autocmds.lua.
 --
 -- Neovim bundles parsers for c, lua, markdown, markdown_inline, query, vim and
--- vimdoc only. Python in particular has to be installed here.
+-- vimdoc. Python in particular is NOT bundled and has to be installed here.
+--
+-- Six of the bundled languages are re-listed below on purpose: nvim-treesitter
+-- installs matching queries alongside each parser, and a parser/query version
+-- mismatch is a real source of highlighting breakage. Installing both together
+-- keeps them paired.
 
 local ensure = {
     "bash",
@@ -42,7 +47,16 @@ return {
         end, ensure)
 
         if #missing > 0 then
-            require("nvim-treesitter").install(missing)
+            local task = require("nvim-treesitter").install(missing)
+            -- install() is async. Under `nvim --headless ... +qa` the event loop
+            -- is torn down before it finishes, so the documented one-shot
+            -- bootstrap installed exactly ONE parser and reported success.
+            -- Block only when there is no UI; interactively this must not stall.
+            if #vim.api.nvim_list_uis() == 0 and task and task.wait then
+                pcall(function()
+                    task:wait(600000)
+                end)
+            end
         end
     end,
 }

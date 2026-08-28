@@ -14,16 +14,8 @@ return {
 
         picker = {
             enabled = true,
-            win = {
-                input = {
-                    keys = {
-                        -- Match the muscle memory from the old telescope config.
-                        ["<C-j>"] = { "list_down", mode = { "i", "n" } },
-                        ["<C-k>"] = { "list_up", mode = { "i", "n" } },
-                        ["<C-q>"] = { "qflist", mode = { "i", "n" } },
-                    },
-                },
-            },
+            -- <C-j>/<C-k>/<C-q> need no overrides: snacks already binds them
+            -- to list_down/list_up/qflist, matching the old telescope config.
             sources = {
                 buffers = {
                     win = {
@@ -59,13 +51,17 @@ return {
         { "<leader>fc", function() Snacks.picker.grep_word() end, desc = "Grep word under cursor", mode = { "n", "x" } },
         { "<leader>fb", function() Snacks.picker.buffers() end, desc = "Buffers" },
         { "<leader>fh", function() Snacks.picker.help() end, desc = "Help tags" },
+        -- A live search of every mapping in the session, jumping to its
+        -- definition. This is the one keymap reference that cannot go stale.
+        { "<leader>fk", function() Snacks.picker.keymaps() end, desc = "Keymaps" },
+        { "<leader>fr", function() Snacks.picker.resume() end, desc = "Resume last picker" },
 
-        -- explorer: two ways in, both pre-existing muscle memory
+        -- Explorer is <leader>. only. <C-h> went back to window-left so the
+        -- <C-h/j/k/l> set is consistent -- and because Snacks.explorer() toggles,
+        -- reaching left toward an open tree used to close it.
         { "<leader>.", function() Snacks.explorer() end, desc = "File explorer" },
-        { "<C-h>", function() Snacks.explorer() end, desc = "File explorer" },
 
         -- lazygit
         { "<leader>gg", function() Snacks.lazygit() end, desc = "Lazygit" },
-        { "<leader>gl", function() Snacks.lazygit.log() end, desc = "Lazygit log" },
     },
 }

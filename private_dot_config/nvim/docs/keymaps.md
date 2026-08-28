@@ -1,102 +1,151 @@
 # Keymaps
 
-Leader is `Space`. Press it and wait — which-key lists what is available.
+Leader is `Space`. Grouped by what you're trying to do, not by which plugin
+provides it.
 
-Anything not listed here is stock Neovim.
+**which-key is the live source of truth** — press `<Space>` and wait, and it
+shows what's available. This file exists for the things which-key can't tell
+you: the workflows, the keys that live inside other tools' windows, and the
+built-ins that belong to no plugin.
 
-## Editing
+`<leader>fk` fuzzy-searches every mapping in the session and jumps to where it
+was defined. That one can never go stale.
 
-| Key | Mode | Action |
-|---|---|---|
-| `jk` | insert | Exit to normal mode |
-| `<leader>nh` | n | Clear search highlight |
-| `x` | n | Delete char **without** yanking |
-| `<leader>+` / `<leader>-` | n | Increment / decrement number |
-| `gcc` / `gc{motion}` | n / x | Toggle comment (**built in** since 0.10 — no plugin) |
-| `ysiw"` / `cs"'` / `ds"` | n | Surround add / change / delete (vim-surround) |
-| `viwP` | n | Replace word with yanked text, **register preserved** |
+## The scheme
 
-> `viwP` is the replacement for the old `gr` (vim-ReplaceWithRegister), which was
-> removed because it collided with Neovim's built-in `gr*` LSP prefix. Capital
-> `P` in visual mode pastes without clobbering the register.
+`<leader>` + one letter for the **domain**, one for the **verb**. Capital
+widens the scope. `<C-hjkl>` is always movement, never an action.
+
+| Prefix | Domain |
+|---|---|
+| `<leader>f` | find (pickers) |
+| `<leader>g` | git — all of it |
+| `<leader>s` | split / window |
+| `<leader>t` | tab |
+| `<leader>b` | buffer |
+| `<leader>r` | REPL |
+| `<leader>m` | markdown |
+
+---
+
+## Reviewing code an agent wrote
+
+This is what the config is built for. Two tools at two granularities:
+**diffview** surveys the whole changeset, **gitsigns** accepts or rejects
+individual hunks. Staging is your accept/reject ledger — whatever ends up
+staged is what you keep.
+
+**1 — survey what changed**
+
+| Key | Action |
+|---|---|
+| `<leader>gd` | Open the changeset (working tree vs index) |
+| `<Tab>` / `<S-Tab>` | Next / previous file, inside diffview |
+| `-` | Stage or unstage an entire file, from the file panel |
+| `<leader>gm` | Review the whole branch, the way a PR shows it |
+| `<leader>gq` | Close |
+
+**2 — decide, hunk by hunk** (in the normal buffer, after closing diffview)
+
+| Key | Action |
+|---|---|
+| `<leader>gl` | Next hunk |
+| `<leader>gh` | Previous hunk |
+| `<leader>gp` | Preview the hunk inline |
+| `<leader>gs` | **Stage** it — accept |
+| `<leader>gr` | **Reset** it — reject, discard from disk |
+| `<leader>gu` | Undo the last stage |
+| `ih` | Hunk as a text object — `dih`, `vih` |
+
+`<leader>gs` and `<leader>gr` also work on a visual selection, for part of a hunk.
+
+**3 — commit**
+
+| Key | Action |
+|---|---|
+| `<leader>gg` | lazygit |
+
+> Hunk keys are buffer-local to real files. They do nothing in diffview's file
+> panel — that's why the loop closes diffview before staging.
+
+**Other git**
+
+| Key | Action |
+|---|---|
+| `<leader>gD` | Review only what's staged |
+| `<leader>gS` / `<leader>gR` | Stage / reset the whole buffer |
+| `<leader>gb` | Blame this line |
+| `<leader>gB` | Toggle inline blame |
+| `<leader>gP` | Preview hunk in a floating window |
+| `<leader>gf` / `<leader>gF` | History of this file / of the repo |
+
+Files an agent rewrites reload on their own — no `:e` needed. If you had
+unsaved changes to the same file, you get a prompt instead of losing them.
+
+---
+
+## Finding things
+
+| Key | Action |
+|---|---|
+| `<leader>ff` | Files |
+| `<leader>fs` | Grep (live) |
+| `<leader>fc` | Grep the word under the cursor (works on a visual selection too) |
+| `<leader>fb` | Open buffers |
+| `<leader>fh` | Help tags |
+| `<leader>fk` | **Every keymap**, searchable, jumps to its definition |
+| `<leader>fr` | Reopen the last picker where you left it |
+| `<leader>.` | File explorer |
+| `<leader>?` | This file |
+
+Inside a picker: `<C-j>` / `<C-k>` move, `<C-q>` sends everything to the
+quickfix list, `<Tab>` multi-selects, `?` shows the rest. In the buffers
+picker, `<C-d>` deletes a buffer.
+
+In the explorer: `l` opens, `h` closes, `a` adds, `d` deletes, `r` renames,
+`y`/`p` copy and paste.
+
+---
 
 ## Windows, splits, tabs
 
 | Key | Action |
 |---|---|
+| `<C-h>` / `<C-j>` / `<C-k>` / `<C-l>` | Focus window left / below / above / right |
 | `<leader>st` / `<leader>sT` | Split vertical / horizontal |
-| `<leader>se` | Equalize splits |
+| `<leader>se` | Equalize |
 | `<leader>sw` | Close split |
-| `<leader>sm` | Maximize window (toggle — press again to restore) |
-| `<C-j>` / `<C-k>` / `<C-l>` | Focus window below / above / right |
-| `<C-w>h` | Focus window **left** — built-in |
+| `<leader>sm` | Maximize this window (press again to restore) |
 | `<leader>tt` / `<leader>tw` | New tab / close tab |
 | `<leader>tl` / `<leader>th` | Next / previous tab |
 | `<leader>bd` | Delete buffer |
 
-> **`<C-h>` is the file explorer, not "focus left."** The previous config mapped
-> it both ways and the explorer won, so that is what is in muscle memory. Use the
-> built-in `<C-w>h` to focus the window on the left.
->
-> Terminal mode has `<C-k>`, `<C-h>` and `<C-l>` but deliberately **no `<C-j>`** —
-> the REPL sits at the bottom, so there is nothing below it to move into.
+In terminal mode, `<C-k>` / `<C-h>` / `<C-l>` escape back to your code. There's
+no `<C-j>` — the REPL is the bottom split, so there's nothing below it.
 
-## Finding things (snacks.picker)
+---
+
+## Editing
 
 | Key | Action |
 |---|---|
-| `<leader>ff` | Find files |
-| `<leader>fs` | Live grep |
-| `<leader>fc` | Grep word under cursor |
-| `<leader>fb` | Buffers |
-| `<leader>fh` | Help tags |
-| `<leader>.` or `<C-h>` | Toggle file explorer |
+| `jk` | Leave insert mode |
+| `<leader>nh` | Clear search highlight |
+| `x` | Delete a character **without** clobbering your register |
+| `viwP` | Replace a word with what you yanked, register preserved |
+| `gcc` / `gc{motion}` | Toggle comment — **built in**, no plugin |
+| `ysiw"` / `cs"'` / `ds"` | Surround: add / change / delete |
+| `<leader>+` / `<leader>-` | Increment / decrement the number under the cursor |
 
-Inside a picker: `<C-j>` / `<C-k>` move the selection, `<C-q>` sends results to
-the quickfix list, and `<C-d>` deletes a buffer in the buffers picker.
+> `viwP` replaced the old `gr` mapping, which collided with Neovim's built-in
+> `gr` LSP prefix. Capital `P` in visual mode pastes without taking the
+> replaced text into the register.
 
-## Reviewing changes
-
-The core loop when an agent has rewritten files:
-`<leader>vv` → `]h` → `<leader>hp` → `<leader>hs` or `<leader>hr` → `<leader>gg`.
-
-### Hunks — inline, accept/reject one at a time (gitsigns)
-
-| Key | Action |
-|---|---|
-| `]h` / `[h` | Next / previous hunk |
-| `<leader>hp` / `<leader>hP` | Preview hunk inline / in a float |
-| `<leader>hs` / `<leader>hr` | **Stage** / **reset** hunk (works on a visual range too) |
-| `<leader>hu` | Undo stage hunk |
-| `<leader>hS` / `<leader>hR` | Stage / reset the whole buffer |
-| `<leader>hb` / `<leader>hB` | Blame line / toggle inline blame |
-| `<leader>hd` / `<leader>hD` | Diff against index / against `HEAD~` |
-| `ih` | Hunk text object (e.g. `dih`, `vih`) |
-
-Whatever you leave staged **is** your reviewed changeset.
-
-### Changesets — side by side, does the whole thing hang together (diffview)
-
-| Key | Action |
-|---|---|
-| `<leader>vv` | Review working tree (the agent's whole changeset) |
-| `<leader>vs` | Review only what is staged |
-| `<leader>vc` | Close diffview |
-| `<leader>vh` / `<leader>vH` | History of this file / of the repo |
-| `<leader>vm` | Branch vs `origin/main`, the way a PR shows it |
-
-Inside diffview, `g?` lists its own keys.
-
-### Git TUI
-
-| Key | Action |
-|---|---|
-| `<leader>gg` | Lazygit |
-| `<leader>gl` | Lazygit log |
+---
 
 ## LSP
 
-These are **Neovim built-ins** (0.11+), active whenever a language server attaches.
+All built into Neovim 0.11+ — they work whenever a language server is attached.
 
 | Key | Action |
 |---|---|
@@ -107,54 +156,86 @@ These are **Neovim built-ins** (0.11+), active whenever a language server attach
 | `gri` | Go to implementation |
 | `grt` | Go to type definition |
 | `gO` | Document symbols |
+| `<C-]>` | Go to definition |
 | `]d` / `[d` | Next / previous diagnostic |
-| `<C-S>` | Signature help (insert mode) |
+| `<C-S>` | Signature help (insert and snippet mode) |
 
 Added on top:
 
 | Key | Action |
 |---|---|
-| `<leader>d` | Show line diagnostics in a float |
-| `<leader>/` | Hover docs (alias for `K`) |
+| `<leader>d` | Line diagnostics in a float |
+| `<leader>/` | Hover — same as `K` |
 
-Servers: **ruff** (lint + format) and **pyright** (types) for Python, **lua_ls**,
-**marksman** for markdown. Ruff's hover is switched off so only Pyright answers
-`K` — otherwise two popups compete.
+**Servers:** ruff (lint + format) and Pyright (types) for Python, lua_ls for
+Lua, marksman for markdown. Ruff's hover is switched off so only Pyright
+answers `K`. If a server isn't installed you get a warning naming it — silence
+means they're all running.
 
-## Completion (blink.cmp)
+**Formatting** has no keybinding on purpose (auto-format would rewrite what an
+agent just produced and pollute the diff you're reviewing). Use `gqip` for a
+paragraph, `gggqG` for the file, or `:lua vim.lsp.buf.format()`.
+
+---
+
+## Completion
 
 | Key | Action |
 |---|---|
 | `<C-j>` / `<C-k>` | Next / previous item |
-| `<C-b>` / `<C-f>` | Scroll docs up / down |
+| `<C-b>` / `<C-f>` | Scroll the docs popup |
 | `<C-Space>` | Trigger completion |
 | `<C-e>` | Dismiss |
 | `<CR>` | Confirm |
+| `<Tab>` / `<S-Tab>` | Jump between snippet placeholders |
 
-Nothing is preselected, so `<CR>` never inserts something you did not choose.
+Nothing is preselected, so `<CR>` never inserts something you didn't pick.
 
-## Python REPL (iron.nvim)
+---
+
+## Python REPL
+
+Keys are live as soon as you open a Python file.
 
 | Key | Action |
 |---|---|
-| ``<leader>` `` | Toggle the REPL window |
-| `<C-CR>` | Send line (normal) or selection (visual) |
-| `<leader>rc{motion}` | Send motion |
-| `<leader>r<CR>` | Send a bare carriage return |
-| `<leader>r<Space>` | Interrupt |
-| `<leader>rq` | Exit REPL |
-| `<leader>cl` | Clear REPL |
-| `<leader>rm` | Set mark |
-| `<leader>rmc` / `<leader>rmv` / `<leader>rmd` | Mark motion / visual / remove |
+| `` <leader>` `` | Show / hide the REPL |
+| `<C-CR>` | Send the current line, or the visual selection |
+| `<leader>rc{motion}` | Send a motion — `<leader>rcG` sends to end of file |
+| `<leader>ri` | Interrupt |
+| `<leader>rl` | Clear |
+| `<leader>rq` | Quit the REPL |
+| `<leader>r<CR>` | Send a bare newline |
+| `<leader>rmc` / `<leader>rmv` | Mark a region by motion / visually |
+| `<leader>rs` | Send the marked region |
+| `<leader>rmd` | Remove the mark |
 
-> `<leader>rm` is a prefix of `<leader>rmc`/`rmv`/`rmd`, so it pauses for
-> `timeoutlen` before firing. That is expected, not a bug — which-key shows the
-> options during the pause.
+Only Python is configured — `` <leader>` `` in another filetype reports that
+there's no REPL for it.
+
+---
 
 ## Markdown
 
 | Key | Action |
 |---|---|
-| `<leader>mp` / `<leader>ms` / `<leader>mm` | Preview start / stop / toggle |
+| `<leader>mp` / `<leader>ms` / `<leader>mm` | Browser preview: start / stop / toggle |
 
-Rendering in the buffer is automatic for `.md` files.
+In-buffer rendering is automatic for `.md`.
+
+---
+
+## Gotchas
+
+- `<C-l>` focuses the window to the right, which costs you Vim's built-in
+  `<C-l>` (clear highlight + redraw). That's what `<leader>nh` is for.
+- Inside the file explorer, `<leader>/` greps instead of showing hover.
+- Inside diffview, `<leader>b` toggles its file panel, so `<leader>bd` pauses
+  briefly waiting to see which you meant.
+- `<leader>rmc` / `<leader>rmv` / `<leader>rmd` share a prefix, so they pause
+  for a moment. which-key shows the options during the pause.
+
+## When this file is wrong
+
+Trust which-key and `<leader>fk` over this document — they read the live
+config. If you find a difference, this file is the thing that's out of date.

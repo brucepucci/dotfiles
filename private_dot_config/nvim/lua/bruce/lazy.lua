@@ -39,17 +39,21 @@ require("lazy").setup({
     -- bootstrap and its :checkhealth complaint.
     rocks = { enabled = false },
 
-    install = { colorscheme = { "gruvbox-material", "habamax" } },
+    -- lazy appends its own "habamax" fallback, so listing it is redundant.
+    install = { colorscheme = { "gruvbox-material" } },
 
     performance = {
         rtp = {
             disabled_plugins = {
                 "gzip",
                 "tarPlugin",
-                "tohtml",
                 "tutor",
                 "zipPlugin",
                 "netrwPlugin",
+                "matchit",
+                "matchparen",
+                "rplugin",
+                "spellfile",
             },
         },
     },

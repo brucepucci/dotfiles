@@ -8,17 +8,36 @@ reviewing code an AI agent wrote.
 ## New machine
 
 ```bash
-brew install chezmoi
+# 1. Credentials FIRST. This repo is private, so chezmoi's clone needs them.
+brew install chezmoi gh
+gh auth login          # choose HTTPS
+gh auth setup-git      # installs the git credential helper
+
+# 2. Config
 chezmoi init --apply brucepucci
+
+# 3. Dependencies (language servers, ripgrep, lazygit, ipython, ...)
 brew bundle --file="$(chezmoi source-path)/Brewfile"
+
+# 4. Plugins, pinned to the exact revisions in lazy-lock.json
 nvim --headless "+Lazy! restore" +qa
 ```
 
-`Lazy! restore` installs the exact plugin revisions in `lazy-lock.json` rather
-than whatever HEAD happens to be that day.
+> **Step 1 is not optional.** `chezmoi init` clones over HTTPS and this repo is
+> private, so without a credential helper it fails with
+> `Authentication failed`. There is no SSH key registered on this account, so
+> `--ssh` is not a fallback either.
+
+> **Step 3 before opening Neovim.** Servers come from Homebrew, not Mason. If
+> you launch `nvim` first you get a warning naming the missing servers — it is
+> not silent, but it is avoidable.
 
 If Homebrew is not installed yet, start with
-`sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply brucepucci`.
+`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
+
+**Requires Neovim 0.12+.** The config refuses to load below that and tells you
+so, rather than half-working: `vim.lsp.config`, `vim.hl`, and nvim-treesitter's
+`main` branch all need it.
 
 ## Manual setup — not managed by chezmoi
 
@@ -116,7 +135,11 @@ The pre-migration history lives in the archived
 [brucepucci/nvim](https://github.com/brucepucci/nvim) repo at tag
 `pre-chezmoi-2026-08-27`.
 
-## Keymaps
+## Docs
 
-See [keymaps.md](private_dot_config/nvim/docs/keymaps.md), or just press
-`<Space>` in Neovim and read what which-key offers.
+- [keymaps.md](private_dot_config/nvim/docs/keymaps.md) — cheatsheet, grouped by task
+- [tools.md](private_dot_config/nvim/docs/tools.md) — what each tool is and why it is installed
+
+Both are installed to `~/.config/nvim/docs/`. In Neovim, `<leader>?` opens the
+cheatsheet and `<leader>fk` fuzzy-searches every live mapping. Press `<Space>`
+and pause for which-key.

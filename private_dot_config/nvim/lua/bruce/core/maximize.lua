@@ -3,22 +3,47 @@
 
 local M = {}
 
-local saved -- nil while not maximized
+-- Count only real, non-floating windows in this tabpage. Floats (hover,
+-- diagnostics, which-key, pickers) would otherwise satisfy the "more than one
+-- window" test and let us save geometry for a layout that is not split.
+local function real_wins()
+    local wins = {}
+    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if vim.api.nvim_win_get_config(w).relative == "" then
+            wins[#wins + 1] = w
+        end
+    end
+    return wins
+end
 
 function M.toggle()
+    local wins = real_wins()
+
+    -- State is per tabpage. winrestcmd() is only meaningful for the tabpage it
+    -- was captured in; a module-level variable would apply tab 1's geometry to
+    -- tab 2 and strand tab 1 permanently maximized.
+    local saved = vim.t.bruce_maximize
+
     if saved then
-        vim.cmd(saved)
-        saved = nil
+        -- A window opened or closed while maximized, so the saved command no
+        -- longer describes this layout. vim.cmd() would apply it silently and
+        -- corrupt the sizes rather than erroring, so equalize instead.
+        if #wins == saved.count then
+            vim.cmd(saved.cmd)
+        else
+            vim.cmd("wincmd =")
+        end
+        vim.t.bruce_maximize = nil
         return
     end
 
-    -- Nothing to maximize in a single-window layout; bail rather than storing
-    -- a restore command that would be a no-op on the next press.
-    if #vim.api.nvim_tabpage_list_wins(0) < 2 then
+    -- Nothing to maximize in a single-window layout; bail rather than storing a
+    -- restore command that would be a no-op on the next press.
+    if #wins < 2 then
         return
     end
 
-    saved = vim.fn.winrestcmd()
+    vim.t.bruce_maximize = { cmd = vim.fn.winrestcmd(), count = #wins }
     vim.cmd("wincmd _") -- max height
     vim.cmd("wincmd |") -- max width
 end
