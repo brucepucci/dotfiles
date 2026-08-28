@@ -1,6 +1,6 @@
 # dotfiles
 
-Neovim config, managed with [chezmoi](https://chezmoi.io).
+Terminal setup, managed with [chezmoi](https://chezmoi.io).
 
 Neovim 0.12 · lazy.nvim · native LSP (ruff + pyright) · snacks.nvim · built for
 reviewing code an AI agent wrote.
@@ -38,6 +38,30 @@ If Homebrew is not installed yet, start with
 **Requires Neovim 0.12+.** The config refuses to load below that and tells you
 so, rather than half-working: `vim.lsp.config`, `vim.hl`, and nvim-treesitter's
 `main` branch all need it.
+
+## What is managed
+
+| Path | What |
+|---|---|
+| `~/.config/nvim/` | The editor |
+| `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts |
+| `~/.config/lazygit/config.yml` | delta as lazygit's pager |
+| `~/.config/ghostty/config` | Theme, and the `ZDOTDIR` pointing at the shell below |
+| `~/.config/zsh-ghostty/` | zsh config for Ghostty sessions — `.zshrc` and `ps1.zsh` |
+
+**Ghostty sessions use their own shell config.** The Ghostty config sets
+`ZDOTDIR=~/.config/zsh-ghostty`, so `~/.zshrc` and the oh-my-zsh setup in
+`$HOME` are **not** read there. That directory is the one managed here; the
+`$HOME` ones are deliberately left alone.
+
+The Ghostty config lives at the XDG path, not
+`~/Library/Application Support/com.mitchellh.ghostty/config.ghostty`. Ghostty
+reads both on macOS and only the XDG one on Linux — and it **merges** them when
+both exist, so there is only ever one.
+
+Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
+generated), `~/.ssh/`, `~/.config/gh/hosts.yml` (auth token), and `~/.oh-my-zsh`
+(92MB of third-party code).
 
 ## Linux / WSL
 

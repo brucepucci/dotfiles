@@ -1,0 +1,12 @@
+# Ghostty configuration.
+#
+# Lives at the XDG path rather than
+# ~/Library/Application Support/com.mitchellh.ghostty/config.ghostty because
+# Ghostty reads both on macOS and only this one on Linux. Note it MERGES the
+# two when both exist, so keep only this one.
+
+theme = Gruvbox Material Dark
+
+# Ghostty sessions use their own zsh config, separate from the oh-my-zsh setup
+# in $HOME. See ~/.config/zsh-ghostty/.zshrc
+env = ZDOTDIR={{ .chezmoi.homeDir }}/.config/zsh-ghostty

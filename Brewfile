@@ -35,12 +35,14 @@ brew "ipython"              # the REPL iron.nvim drives (<leader>`)
 # --- build / runtime ------------------------------------------------------
 brew "tree-sitter-cli"      # nvim-treesitter `main` compiles parsers (needs >= 0.26.1)
 brew "node"                 # fallback only; markdown-preview ships its own binary
+brew "fastfetch"            # banner in the Ghostty zshrc (guarded, optional)
 
 # --- macOS only -----------------------------------------------------------
 # The config renders Nerd Font glyphs (diagnostics, markdown icons, file
 # icons). Ghostty ships one as its default face, so this is invisible here --
 # but any other terminal shows placeholder boxes.
 cask "font-jetbrains-mono-nerd-font" if OS.mac?
+cask "ghostty" if OS.mac?
 
 # --- Linux only -----------------------------------------------------------
 # macOS has pbcopy built in. On Linux, options.lua's clipboard=unnamedplus has

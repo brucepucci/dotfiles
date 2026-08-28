@@ -11,3 +11,10 @@ README.md
 CLAUDE.md
 Brewfile
 LICENSE
+
+# Generated or private files inside directories we DO manage. chezmoi only
+# tracks what is explicitly added, but these are listed so an accidental
+# `chezmoi add ~/.config/zsh-ghostty` cannot sweep them in.
+.config/zsh-ghostty/.zsh_history
+.config/zsh-ghostty/.zcompdump*
+.config/zsh-ghostty/*.bak
