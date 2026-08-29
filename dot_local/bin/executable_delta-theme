@@ -1,0 +1,22 @@
+#!/bin/sh
+# delta-theme -- delta with syntax colors matching the macOS appearance.
+#
+# The light-mode counterpart of Ghostty's `theme = light:...,dark:...` and
+# Neovim's OS-following 'background' (lua/bruce/core/appearance.lua): dark
+# syntax colors on a light terminal (and vice versa) are unreadable. Used as
+# git's pager and lazygit's diff renderer; every flag is passed through.
+#
+# Detection: `defaults read -g AppleInterfaceStyle` prints "Dark" and exits 0
+# in dark mode; in light mode the key does not exist and it exits nonzero.
+# Without `defaults` (Linux, non-macOS host) stay dark -- today's look.
+
+mode=dark
+if command -v defaults >/dev/null 2>&1; then
+    defaults read -g AppleInterfaceStyle >/dev/null 2>&1 || mode=light
+fi
+
+if [ "$mode" = dark ]; then
+    exec delta --dark --syntax-theme gruvbox-dark "$@"
+else
+    exec delta --light --syntax-theme gruvbox-light "$@"
+fi

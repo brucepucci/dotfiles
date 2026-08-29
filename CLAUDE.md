@@ -21,17 +21,21 @@ pi coding agent (Z.ai/GLM models).
 
 ```
 dot_zshrc                  # interactive shell: options, history, aliases, prompt
-dot_zprofile               # login-shell PATH (Homebrew)
+dot_zprofile               # login-shell PATH (Homebrew, ~/.local/bin)
+dot_local/bin/executable_delta-theme   # ~/.local/bin: delta, colored for the
+                            # current OS appearance; git + lazygit call it
 private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
 private_dot_config/nvim/
-├── init.lua              # sets mapleader, then requires core.* and bruce.lazy
+├── init.lua              # sets mapleader, syncs OS appearance, then requires
+│                         # core.* and bruce.lazy
 ├── lazy-lock.json        # committed; pins exact plugin revisions
 └── lua/bruce/
     ├── lazy.lua          # bootstrap + { import = "bruce.plugins" }
-    ├── core/             # options, keymaps, autocmds, maximize
+    ├── core/             # options, keymaps, autocmds, appearance, maximize
     └── plugins/          # one spec file per concern, auto-imported
 private_dot_config/zsh/ps1.zsh   # the prompt (git state, duration, exit code)
-private_dot_config/ghostty/config # terminal appearance only — no shell settings
+private_dot_config/ghostty/config # terminal appearance only — no shell settings;
+                            # theme follows the OS: light:…,dark:…
 ```
 
 Adding a plugin = drop a file in `lua/bruce/plugins/` returning a lazy.nvim

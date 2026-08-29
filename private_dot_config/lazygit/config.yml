@@ -3,7 +3,7 @@
 git:
   diffRenderers:
     - colorArg: always
-      command: delta --dark --paging=never
+      command: delta-theme --paging=never
 gui:
   showListFooter: false
   nerdFontsVersion: "3"

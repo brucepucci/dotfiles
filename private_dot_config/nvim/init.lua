@@ -29,6 +29,9 @@ vim.g.loaded_perl_provider = 0
 vim.g.loaded_node_provider = 0
 
 require("bruce.core.options")
+-- Before lazy.nvim: plugins (colorscheme) must render for the palette the OS
+-- is currently in, not re-render a frame later.
+require("bruce.core.appearance").sync()
 require("bruce.core.keymaps")
 require("bruce.core.autocmds")
 require("bruce.lazy")

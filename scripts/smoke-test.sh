@@ -18,6 +18,9 @@
 #      (clean / staged / both) -- each marker carries its own leading space
 #   8. exactly one blank line lands between command output and the next
 #      prompt -- and none before the first prompt or on empty prompts
+#   9. light-mode wiring is in place: ghostty's light/dark theme pair, nvim's
+#      OS-appearance sync, and the delta-theme wrapper (exercised with fake
+#      `defaults`/`delta` shims, so no GUI toggling is required)
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -71,6 +74,47 @@ if grep -E '^[[:space:]]*(command|env)[[:space:]]*=' "$NEWHOME/.config/ghostty/c
   die "ghostty config sets a shell command/env line"
 fi
 ok "no command=/env= lines"
+
+step "light-mode: the whole stack follows the OS appearance"
+# Ghostty is the anchor: one theme line, both variants.
+[[ "$(grep '^theme = ' "$NEWHOME/.config/ghostty/config")" \
+   == "theme = light:Gruvbox Light Hard,dark:Gruvbox Material Dark" ]] \
+  || die "ghostty theme line does not carry the light/dark pair"
+# Neovim: 'background' comes from the OS at startup, re-checked on focus.
+[[ -f "$NEWHOME/.config/nvim/lua/bruce/core/appearance.lua" ]] \
+  || die "nvim core/appearance.lua missing"
+grep -q 'bruce.core.appearance' "$NEWHOME/.config/nvim/init.lua" \
+  || die "init.lua does not sync the OS appearance"
+grep -q 'FocusGained' "$NEWHOME/.config/nvim/lua/bruce/core/autocmds.lua" \
+  || die "no FocusGained re-sync of the appearance"
+# delta: git and lazygit render through the appearance-aware wrapper.
+[[ -x "$NEWHOME/.local/bin/delta-theme" ]] \
+  || die "~/.local/bin/delta-theme missing or not executable"
+grep -q $'^\tpager = delta-theme$' "$NEWHOME/.gitconfig" \
+  || die "git core.pager is not delta-theme"
+grep -q 'command: delta-theme --paging=never' "$NEWHOME/.config/lazygit/config.yml" \
+  || die "lazygit does not render through delta-theme"
+out="$(fresh_zsh '[[ $path[(r)$HOME/.local/bin] ]] && echo lbin=yes')"
+[[ "$out" == *lbin=yes* ]] || die "login PATH does not include ~/.local/bin"
+# The wrapper itself, hermetically: fake `defaults` + fake `delta`, both
+# shadowed per state so the real OS appearance cannot leak into the result.
+wrap="$WORK/wrap"
+for st in dark light; do
+  mkdir -p "$wrap/$st"
+  printf '#!/bin/sh\nprintf "ARGV:%%s\\n" "$@"\n' > "$wrap/$st/delta"
+  if [[ $st == dark ]]; then printf '#!/bin/sh\necho Dark\n' > "$wrap/$st/defaults"
+  else printf '#!/bin/sh\nexit 1\n' > "$wrap/$st/defaults"; fi
+  chmod +x "$wrap/$st/defaults" "$wrap/$st/delta"
+done
+out="$(env PATH="$wrap/dark:/usr/bin:/bin" \
+      "$NEWHOME/.local/bin/delta-theme" extra </dev/null | tr '\n' ' ')"
+[[ "$out" == "ARGV:--dark ARGV:--syntax-theme ARGV:gruvbox-dark ARGV:extra " ]] \
+  || die "delta-theme dark state wrong: $out"
+out="$(env PATH="$wrap/light:/usr/bin:/bin" \
+      "$NEWHOME/.local/bin/delta-theme" extra </dev/null | tr '\n' ' ')"
+[[ "$out" == "ARGV:--light ARGV:--syntax-theme ARGV:gruvbox-light ARGV:extra " ]] \
+  || die "delta-theme light state wrong: $out"
+ok "ghostty pair, nvim sync, delta wrapper, PATH all in place"
 
 step "fresh login shell (new terminal window)"
 out="$(fresh_zsh '
