@@ -14,7 +14,11 @@
 #   5. history written in one shell is visible in a brand-new shell
 #   6. ghostty's config contains no shell settings, and secrets are not
 #      applied
-#   7. light-mode wiring is in place: ghostty's light/dark theme pair, nvim's
+#   7. the prompt's git-state markers keep their spacing in every state
+#      (clean / staged / both) -- each marker carries its own leading space
+#   8. exactly one blank line lands between command output and the next
+#      prompt -- and none before the first prompt or on empty prompts
+#   9. light-mode wiring is in place: ghostty's light/dark theme pair, nvim's
 #      OS-appearance sync, and the delta-theme wrapper (exercised with fake
 #      `defaults`/`delta` shims, so no GUI toggling is required)
 #
@@ -166,6 +170,27 @@ out="$(env -i HOME="$NEWHOME" TERM=xterm-256color \
 [[ "$out" == *"seg=yes"* ]] || die "SSH prompt lacks user@host segment"
 ok "user@host segment present over SSH"
 
+step "prompt git-state glyphs keep their spacing"
+# The staged/unstaged markers carry their own leading space (issue #5): they
+# must never render touching each other or the branch name, and a clean tree
+# must carry neither glyph nor a stray gap. Branch name is irrelevant to the
+# assertions, so CI's git default (master) is fine.
+grepo="$WORK/grepo"
+git init -q "$grepo"
+git -C "$grepo" -c user.email=smoke@t -c user.name=smoke commit -q --allow-empty -m x
+run_vcs() { (cd "$grepo" && zsh -c '
+  source "'$NEWHOME'"/.config/zsh/ps1.zsh
+  vcs_info; print -r -- "$vcs_info_msg_0_"'); }
+msg="$(run_vcs)"
+[[ "$msg" == *" ○"* || "$msg" == *" ●"* ]] && die "clean tree shows markers: $msg"
+echo x >"$grepo/f" && git -C "$grepo" add f
+msg="$(run_vcs)"
+[[ "$msg" == *" ●"* && "$msg" != *"○"* ]] || die "staged-only state wrong: $msg"
+echo y >>"$grepo/f"
+msg="$(run_vcs)"
+[[ "$msg" == *" ○"* && "$msg" == *" ●"* ]] || die "markers lost their gap: $msg"
+ok "glyphs separated; clean tree clean"
+
 step "history shared across separate shells"
 TOKEN="smoke-$(date +%s)-$RANDOM"
 fresh_zsh "print -S '$TOKEN'" >/dev/null 2>&1 || true
@@ -179,6 +204,25 @@ out="$(printf 'fc -l | grep -q %s && echo found=yes\nexit\n' "$TOKEN" \
           /bin/zsh -l -i 2>/dev/null || true)"
 [[ "$out" == *found=yes* ]] || die "history not shared between shells"
 ok "written in one shell, visible in the next"
+
+step "one blank line before each prompt after output"
+# Locks in the fix for #4. Drive a real interactive shell over stdin with an
+# isolated ZDOTDIR whose .zshrc only sources the applied ps1.zsh: two commands
+# must each be followed by exactly one blank line (2 total), Enter-only
+# prompts add none, and the session must not open with one (fastfetch's job).
+zdot="$WORK/zdot"; mkdir -p "$zdot"
+printf '%s\n' "source $NEWHOME/.config/zsh/ps1.zsh" > "$zdot/.zshrc"
+# Output goes to a file, not $(...): command substitution would strip the
+# trailing blank line that follows the last command -- the very thing being
+# counted.
+printf 'echo one\n\n\necho two\nexit\n' \
+  | env -i HOME="$NEWHOME" ZDOTDIR="$zdot" TERM=xterm-256color \
+      PATH="/usr/bin:/bin" /bin/zsh -i > "$WORK/prompt-out" 2>/dev/null || true
+out="$(cat "$WORK/prompt-out")"
+[[ "$(sed -n 1p "$WORK/prompt-out")" == one ]] || die "session opens with a blank line: $out"
+blanks="$(grep -c '^$' "$WORK/prompt-out")"
+(( blanks == 2 )) || die "want exactly 2 blank lines (one per command), got $blanks: $out"
+ok "2 commands -> 2 blank lines; empty prompts and session start add none"
 
 if [[ "$WITH_NVIM" == 1 ]]; then
   step "neovim bootstrap from scratch (--nvim)"

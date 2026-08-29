@@ -41,8 +41,13 @@ zstyle ':vcs_info:git:*' check-for-changes true
 # `git ls-files --others` scanning the whole worktree on EVERY prompt -- by
 # far the most expensive thing this prompt did. `git status` when you want
 # the full picture; set check-for-changes to false for a branch-only prompt.
-zstyle ':vcs_info:git:*' unstagedstr "%F{$GB_YELLOW}○%f"
-zstyle ':vcs_info:git:*' stagedstr   "%F{$GB_PURPLE}●%f"
+#
+# Each marker carries a leading space. It separates the two glyphs when both
+# are present and separates the first from the branch name (the nerd-font
+# branch icon is wide and crowds what follows), while vanishing with the
+# marker itself -- a clean tree gets no stray gap.
+zstyle ':vcs_info:git:*' unstagedstr "%F{$GB_YELLOW} ○%f"
+zstyle ':vcs_info:git:*' stagedstr   "%F{$GB_PURPLE} ●%f"
 zstyle ':vcs_info:git:*' formats       " %F{$GB_AQUA}${GB_GIT_ICON}%b%f%u%c"
 zstyle ':vcs_info:git:*' actionformats " %F{$GB_AQUA}${GB_GIT_ICON}%b%f %F{$GB_ORANGE}(%a)%f%u%c"
 
@@ -51,7 +56,12 @@ zstyle ':vcs_info:git:*' actionformats " %F{$GB_AQUA}${GB_GIT_ICON}%b%f %F{$GB_O
 # ---------------------------------------------------------------------------
 GB_SLOW_THRESHOLD=2   # seconds
 
-_gb_preexec() { _gb_start=$EPOCHREALTIME }
+_gb_preexec() {
+  _gb_start=$EPOCHREALTIME
+  # Also arms the pre-prompt blank line in _gb_precmd: only a prompt that
+  # follows real command output gets one.
+  _gb_had_command=1
+}
 
 _gb_precmd() {
   local -F elapsed
@@ -60,6 +70,14 @@ _gb_precmd() {
     elapsed=$(( EPOCHREALTIME - _gb_start ))
     unset _gb_start
     (( elapsed > GB_SLOW_THRESHOLD )) && _gb_elapsed=$(printf '%.1fs' $elapsed)
+  fi
+  # One blank line between the previous command's output and this prompt --
+  # but only when a command actually ran: not before the shell's first
+  # prompt (fastfetch already opens the session), and not on Enter or
+  # Ctrl-C over an empty prompt, which would stack blank lines.
+  if (( ${+_gb_had_command} )); then
+    print
+    unset _gb_had_command
   fi
   vcs_info
 }
