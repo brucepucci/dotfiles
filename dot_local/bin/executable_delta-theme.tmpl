@@ -16,7 +16,7 @@ if command -v defaults >/dev/null 2>&1; then
 fi
 
 if [ "$mode" = dark ]; then
-    exec delta --dark --syntax-theme gruvbox-dark "$@"
+    exec delta --dark --syntax-theme {{ .palette.scheme.delta_dark }} "$@"
 else
-    exec delta --light --syntax-theme gruvbox-light "$@"
+    exec delta --light --syntax-theme {{ .palette.scheme.delta_light }} "$@"
 fi

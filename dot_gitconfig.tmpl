@@ -11,7 +11,9 @@
 	navigate = true
 	side-by-side = true
 	line-numbers = true
-	syntax-theme = gruvbox-dark
+	syntax-theme = {{ .palette.scheme.delta_dark }}
+	{{- /* bare `delta` keeps the dark syntax theme; the name comes from
+	   .chezmoidata/palette.toml, like every other color in this repo */}}
 	# Appearance (light/dark + syntax theme) is decided per invocation by the
 	# delta-theme wrapper in ~/.local/bin; the line above only covers a bare
 	# `delta` typed by hand, which stays dark -- the default look.

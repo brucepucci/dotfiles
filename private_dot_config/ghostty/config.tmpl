@@ -17,4 +17,9 @@
 # colors 0-15, Neovim sets 'background' from the OS
 # (lua/bruce/core/appearance.lua), and delta-theme (~/.local/bin, wired into
 # git and lazygit) picks the matching delta syntax theme.
-theme = light:Gruvbox Light Hard,dark:Gruvbox Material Dark
+{{- /*
+  The two names above come from .chezmoidata/palette.toml ([palette.scheme])
+  -- the single source of truth for colors. A scheme change is an edit there
+  plus `chezmoi apply`, never here.
+*/}}
+theme = light:{{ .palette.scheme.light_theme }},dark:{{ .palette.scheme.dark_theme }}
