@@ -28,7 +28,9 @@ return {
                 map("n", "<leader>gS", gs.stage_buffer, "Stage buffer")
                 map("n", "<leader>gR", gs.reset_buffer, "Reset buffer")
                 -- Deprecated upstream in favour of stage_hunk() on a staged
-                -- sign, but still functional and warning-free. It pops one
+                -- sign, but still functional. (Since lazydev taught lua_ls the
+                -- real gitsigns types, it flags this Deprecated in-editor at
+                -- L34 -- that's this line, known and accepted.) It pops one
                 -- entry off the stage stack, so after <leader>gS it unstages
                 -- only the most recent hunk.
                 map("n", "<leader>gu", gs.undo_stage_hunk, "Undo stage hunk")
