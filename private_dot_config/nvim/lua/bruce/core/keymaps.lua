@@ -88,6 +88,21 @@ end, { desc = "Hover docs" })
 
 -- Docs living with the config. <leader>? is the discoverable entry point;
 -- which-key advertises it the moment you press <leader>.
+-- Docs living with the config. One key, then pick -- rather than <leader>?
+-- plus <leader>??, where the first would be a strict prefix of the second and
+-- would stall for 'timeoutlen' on every press.
 keymap.set("n", "<leader>?", function()
-    vim.cmd("vsplit " .. vim.fn.stdpath("config") .. "/docs/keymaps.md")
-end, { desc = "Cheatsheet" })
+    local dir = vim.fn.stdpath("config") .. "/docs"
+    local files = vim.fn.glob(dir .. "/*.md", false, true)
+    table.sort(files)
+    vim.ui.select(files, {
+        prompt = "Docs",
+        format_item = function(f)
+            return vim.fn.fnamemodify(f, ":t:r"):gsub("-", " ")
+        end,
+    }, function(choice)
+        if choice then
+            vim.cmd("vsplit " .. vim.fn.fnameescape(choice))
+        end
+    end)
+end, { desc = "Docs" })

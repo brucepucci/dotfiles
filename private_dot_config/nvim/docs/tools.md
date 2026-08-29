@@ -2,8 +2,9 @@
 
 What's installed, why it's here, and how to use it. Grouped by job.
 
-Key bindings are in [keymaps.md](keymaps.md); this file is the "what is this
-thing and why do I have it" reference.
+Key bindings are in [keymaps.md](keymaps.md), and
+[getting-started.md](getting-started.md) walks the review workflow end to end.
+This file is the "what is this thing and why do I have it" reference.
 
 The shape of the setup: **17 Neovim plugins** (down from 34), **language
 servers and CLI tools from Homebrew** rather than a second package manager

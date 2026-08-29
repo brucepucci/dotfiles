@@ -1,5 +1,8 @@
 # Keymaps
 
+New here? Start with [getting-started.md](getting-started.md) — it walks the
+agent-review workflow end to end. This file is the reference.
+
 Leader is `Space`. Grouped by what you're trying to do, not by which plugin
 provides it.
 
@@ -239,3 +242,5 @@ In-buffer rendering is automatic for `.md`.
 
 Trust which-key and `<leader>fk` over this document — they read the live
 config. If you find a difference, this file is the thing that's out of date.
+
+See also: [getting-started.md](getting-started.md) · [tools.md](tools.md)
