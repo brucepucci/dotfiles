@@ -1,0 +1,68 @@
+# Alien Blood
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#0f1610"
+foreground = "#637d75"
+cursor-color = "#73fa91"
+cursor-text = "#0f1610"
+selection-background = "#1d4125"
+selection-foreground = "#73fa91"
+palette_0 = "#0f1610"
+palette_1 = "#0f1610"
+palette_2 = "#0f1610"
+palette_3 = "#0f1610"
+palette_4 = "#0f1610"
+palette_5 = "#0f1610"
+palette_6 = "#0f1610"
+palette_7 = "#0f1610"
+palette_8 = "#0f1610"
+palette_9 = "#0f1610"
+palette_10 = "#0f1610"
+palette_11 = "#0f1610"
+palette_12 = "#0f1610"
+palette_13 = "#0f1610"
+palette_14 = "#0f1610"
+palette_15 = "#0f1610"
+
+[roles]
+bg = "#0f1610"
+bg_deep = "#0b100c"
+surface = "#19221c"
+fg = "#637d75"
+fg_soft = "#4a5e57"
+fg_bright = "#0f1610"
+grey = "#3d4f48"
+grey_dim = "#2c3a33"
+grey_neutral = "#465952"
+grey_soft = "#35443d"
+red = "#0f1610"
+orange = "#0f1610"
+yellow = "#0f1610"
+green = "#0f1610"
+aqua = "#0f1610"
+blue = "#0f1610"
+purple = "#0f1610"
+tint_green = "#0f1610"
+tint_red = "#0f1610"
+statusline = "#161e18"
+statusline_accent = "#1e2922"
+statusline_fg = "#637d75"
+on_accent = "#637d75"
+mode_red = "#0f1610"
+mode_green = "#0f1610"
+mode_yellow = "#0f1610"
+mode_blue = "#0f1610"
+mode_purple = "#0f1610"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

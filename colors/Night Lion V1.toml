@@ -1,0 +1,68 @@
+# Night Lion V1
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#000000"
+foreground = "#bbbbbb"
+cursor-color = "#bbbbbb"
+cursor-text = "#ffffff"
+selection-background = "#b5d5ff"
+selection-foreground = "#000000"
+palette_0 = "#000000"
+palette_1 = "#000000"
+palette_2 = "#000000"
+palette_3 = "#000000"
+palette_4 = "#000000"
+palette_5 = "#000000"
+palette_6 = "#000000"
+palette_7 = "#000000"
+palette_8 = "#000000"
+palette_9 = "#000000"
+palette_10 = "#000000"
+palette_11 = "#000000"
+palette_12 = "#000000"
+palette_13 = "#000000"
+palette_14 = "#000000"
+palette_15 = "#000000"
+
+[roles]
+bg = "#000000"
+bg_deep = "#000000"
+surface = "#161616"
+fg = "#bbbbbb"
+fg_soft = "#838383"
+fg_bright = "#000000"
+grey = "#676767"
+grey_dim = "#414141"
+grey_neutral = "#7a7a7a"
+grey_soft = "#545454"
+red = "#000000"
+orange = "#000000"
+yellow = "#000000"
+green = "#000000"
+aqua = "#000000"
+blue = "#000000"
+purple = "#000000"
+tint_green = "#000000"
+tint_red = "#000000"
+statusline = "#0f0f0f"
+statusline_accent = "#222222"
+statusline_fg = "#bbbbbb"
+on_accent = "#bbbbbb"
+mode_red = "#000000"
+mode_green = "#000000"
+mode_yellow = "#000000"
+mode_blue = "#000000"
+mode_purple = "#000000"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

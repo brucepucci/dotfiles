@@ -1,0 +1,68 @@
+# Nocturnal Winter
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#0d0d17"
+foreground = "#e6e5e5"
+cursor-color = "#e6e5e5"
+cursor-text = "#a6a6a6"
+selection-background = "#adbdd0"
+selection-foreground = "#000000"
+palette_0 = "#0d0d17"
+palette_1 = "#0d0d17"
+palette_2 = "#0d0d17"
+palette_3 = "#0d0d17"
+palette_4 = "#0d0d17"
+palette_5 = "#0d0d17"
+palette_6 = "#0d0d17"
+palette_7 = "#0d0d17"
+palette_8 = "#0d0d17"
+palette_9 = "#0d0d17"
+palette_10 = "#0d0d17"
+palette_11 = "#0d0d17"
+palette_12 = "#0d0d17"
+palette_13 = "#0d0d17"
+palette_14 = "#0d0d17"
+palette_15 = "#0d0d17"
+
+[roles]
+bg = "#0d0d17"
+bg_deep = "#0a0a11"
+surface = "#272730"
+fg = "#e6e5e5"
+fg_soft = "#a5a4a7"
+fg_bright = "#0d0d17"
+grey = "#848488"
+grey_dim = "#59595f"
+grey_neutral = "#9a999d"
+grey_soft = "#6f6e74"
+red = "#0d0d17"
+orange = "#0d0d17"
+yellow = "#0d0d17"
+green = "#0d0d17"
+aqua = "#0d0d17"
+blue = "#0d0d17"
+purple = "#0d0d17"
+tint_green = "#0d0d17"
+tint_red = "#0d0d17"
+statusline = "#1e1e27"
+statusline_accent = "#34343c"
+statusline_fg = "#e6e5e5"
+on_accent = "#e6e5e5"
+mode_red = "#0d0d17"
+mode_green = "#0d0d17"
+mode_yellow = "#0d0d17"
+mode_blue = "#0d0d17"
+mode_purple = "#0d0d17"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

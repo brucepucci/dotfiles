@@ -1,0 +1,68 @@
+# Sunset Drive
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#0f0f1a"
+foreground = "#ededfe"
+cursor-color = "#ededfe"
+cursor-text = "#0f0f1a"
+selection-background = "#202036"
+selection-foreground = "#ededff"
+palette_0 = "#0f0f1a"
+palette_1 = "#0f0f1a"
+palette_2 = "#0f0f1a"
+palette_3 = "#0f0f1a"
+palette_4 = "#0f0f1a"
+palette_5 = "#0f0f1a"
+palette_6 = "#0f0f1a"
+palette_7 = "#0f0f1a"
+palette_8 = "#0f0f1a"
+palette_9 = "#0f0f1a"
+palette_10 = "#0f0f1a"
+palette_11 = "#0f0f1a"
+palette_12 = "#0f0f1a"
+palette_13 = "#0f0f1a"
+palette_14 = "#0f0f1a"
+palette_15 = "#0f0f1a"
+
+[roles]
+bg = "#0f0f1a"
+bg_deep = "#0b0b14"
+surface = "#2a2a35"
+fg = "#ededfe"
+fg_soft = "#aaaaba"
+fg_bright = "#0f0f1a"
+grey = "#898997"
+grey_dim = "#5d5d6a"
+grey_neutral = "#9f9fae"
+grey_soft = "#737381"
+red = "#0f0f1a"
+orange = "#0f0f1a"
+yellow = "#0f0f1a"
+green = "#0f0f1a"
+aqua = "#0f0f1a"
+blue = "#0f0f1a"
+purple = "#0f0f1a"
+tint_green = "#0f0f1a"
+tint_red = "#0f0f1a"
+statusline = "#21212c"
+statusline_accent = "#373743"
+statusline_fg = "#ededfe"
+on_accent = "#ededfe"
+mode_red = "#0f0f1a"
+mode_green = "#0f0f1a"
+mode_yellow = "#0f0f1a"
+mode_blue = "#0f0f1a"
+mode_purple = "#0f0f1a"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

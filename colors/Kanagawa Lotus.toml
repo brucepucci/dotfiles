@@ -1,0 +1,68 @@
+# Kanagawa Lotus
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#f2ecbc"
+foreground = "#545464"
+cursor-color = "#43436c"
+cursor-text = "#f2ecbc"
+selection-background = "#545464"
+selection-foreground = "#f2ecbc"
+palette_0 = "#f2ecbc"
+palette_1 = "#f2ecbc"
+palette_2 = "#f2ecbc"
+palette_3 = "#f2ecbc"
+palette_4 = "#f2ecbc"
+palette_5 = "#f2ecbc"
+palette_6 = "#f2ecbc"
+palette_7 = "#f2ecbc"
+palette_8 = "#f2ecbc"
+palette_9 = "#f2ecbc"
+palette_10 = "#f2ecbc"
+palette_11 = "#f2ecbc"
+palette_12 = "#f2ecbc"
+palette_13 = "#f2ecbc"
+palette_14 = "#f2ecbc"
+palette_15 = "#f2ecbc"
+
+[roles]
+bg = "#f2ecbc"
+bg_deep = "#f5f1cd"
+surface = "#dfdab1"
+fg = "#545464"
+fg_soft = "#83827e"
+fg_bright = "#373741"
+grey = "#9b988c"
+grey_dim = "#bbb79d"
+grey_neutral = "#8b8983"
+grey_soft = "#aba894"
+red = "#f2ecbc"
+orange = "#f2ecbc"
+yellow = "#f2ecbc"
+green = "#f2ecbc"
+aqua = "#f2ecbc"
+blue = "#f2ecbc"
+purple = "#f2ecbc"
+tint_green = "#f2ecbc"
+tint_red = "#f2ecbc"
+statusline = "#e5e0b5"
+statusline_accent = "#d6d1ac"
+statusline_fg = "#545464"
+on_accent = "#545464"
+mode_red = "#f2ecbc"
+mode_green = "#f2ecbc"
+mode_yellow = "#f2ecbc"
+mode_blue = "#f2ecbc"
+mode_purple = "#f2ecbc"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

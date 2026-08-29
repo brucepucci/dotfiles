@@ -1,0 +1,68 @@
+# IBM 5153 CGA
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#141414"
+foreground = "#cecece"
+cursor-color = "#cecece"
+cursor-text = "#141414"
+selection-background = "#cecece"
+selection-foreground = "#141414"
+palette_0 = "#141414"
+palette_1 = "#141414"
+palette_2 = "#141414"
+palette_3 = "#141414"
+palette_4 = "#141414"
+palette_5 = "#141414"
+palette_6 = "#141414"
+palette_7 = "#141414"
+palette_8 = "#141414"
+palette_9 = "#141414"
+palette_10 = "#141414"
+palette_11 = "#141414"
+palette_12 = "#141414"
+palette_13 = "#141414"
+palette_14 = "#141414"
+palette_15 = "#141414"
+
+[roles]
+bg = "#141414"
+bg_deep = "#0f0f0f"
+surface = "#2a2a2a"
+fg = "#cecece"
+fg_soft = "#969696"
+fg_bright = "#141414"
+grey = "#7a7a7a"
+grey_dim = "#555555"
+grey_neutral = "#8d8d8d"
+grey_soft = "#686868"
+red = "#141414"
+orange = "#141414"
+yellow = "#141414"
+green = "#141414"
+aqua = "#141414"
+blue = "#141414"
+purple = "#141414"
+tint_green = "#141414"
+tint_red = "#141414"
+statusline = "#232323"
+statusline_accent = "#353535"
+statusline_fg = "#cecece"
+on_accent = "#cecece"
+mode_red = "#141414"
+mode_green = "#141414"
+mode_yellow = "#141414"
+mode_blue = "#141414"
+mode_purple = "#141414"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

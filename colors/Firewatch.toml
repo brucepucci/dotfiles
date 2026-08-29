@@ -1,0 +1,68 @@
+# Firewatch
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#1e2027"
+foreground = "#9ba2b2"
+cursor-color = "#f6f7ec"
+cursor-text = "#b7b8a8"
+selection-background = "#2f363e"
+selection-foreground = "#7d8fa4"
+palette_0 = "#1e2027"
+palette_1 = "#1e2027"
+palette_2 = "#1e2027"
+palette_3 = "#1e2027"
+palette_4 = "#1e2027"
+palette_5 = "#1e2027"
+palette_6 = "#1e2027"
+palette_7 = "#1e2027"
+palette_8 = "#1e2027"
+palette_9 = "#1e2027"
+palette_10 = "#1e2027"
+palette_11 = "#1e2027"
+palette_12 = "#1e2027"
+palette_13 = "#1e2027"
+palette_14 = "#1e2027"
+palette_15 = "#1e2027"
+
+[roles]
+bg = "#1e2027"
+bg_deep = "#16181d"
+surface = "#2d3038"
+fg = "#9ba2b2"
+fg_soft = "#767b88"
+fg_bright = "#1e2027"
+grey = "#636873"
+grey_dim = "#4a4e58"
+grey_neutral = "#6f7481"
+grey_soft = "#565a66"
+red = "#1e2027"
+orange = "#1e2027"
+yellow = "#1e2027"
+green = "#1e2027"
+aqua = "#1e2027"
+blue = "#1e2027"
+purple = "#1e2027"
+tint_green = "#1e2027"
+tint_red = "#1e2027"
+statusline = "#282a32"
+statusline_accent = "#343740"
+statusline_fg = "#9ba2b2"
+on_accent = "#9ba2b2"
+mode_red = "#1e2027"
+mode_green = "#1e2027"
+mode_yellow = "#1e2027"
+mode_blue = "#1e2027"
+mode_purple = "#1e2027"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

@@ -1,0 +1,68 @@
+# Havn Skumring
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#111522"
+foreground = "#d6dbeb"
+cursor-color = "#277a6f"
+cursor-text = "#e0e4f3"
+selection-background = "#2b514b"
+selection-foreground = "#dce0ef"
+palette_0 = "#111522"
+palette_1 = "#111522"
+palette_2 = "#111522"
+palette_3 = "#111522"
+palette_4 = "#111522"
+palette_5 = "#111522"
+palette_6 = "#111522"
+palette_7 = "#111522"
+palette_8 = "#111522"
+palette_9 = "#111522"
+palette_10 = "#111522"
+palette_11 = "#111522"
+palette_12 = "#111522"
+palette_13 = "#111522"
+palette_14 = "#111522"
+palette_15 = "#111522"
+
+[roles]
+bg = "#111522"
+bg_deep = "#0d101a"
+surface = "#292d3a"
+fg = "#d6dbeb"
+fg_soft = "#9ba0af"
+fg_bright = "#111522"
+grey = "#7d8291"
+grey_dim = "#565a68"
+grey_neutral = "#9196a5"
+grey_soft = "#6a6e7c"
+red = "#111522"
+orange = "#111522"
+yellow = "#111522"
+green = "#111522"
+aqua = "#111522"
+blue = "#111522"
+purple = "#111522"
+tint_green = "#111522"
+tint_red = "#111522"
+statusline = "#212532"
+statusline_accent = "#343946"
+statusline_fg = "#d6dbeb"
+on_accent = "#d6dbeb"
+mode_red = "#111522"
+mode_green = "#111522"
+mode_yellow = "#111522"
+mode_blue = "#111522"
+mode_purple = "#111522"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

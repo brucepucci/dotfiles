@@ -1,0 +1,68 @@
+# iTerm2 Pastel Dark Background
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#000000"
+foreground = "#c7c7c7"
+cursor-color = "#ffb473"
+cursor-text = "#8c8c8c"
+selection-background = "#454d96"
+selection-foreground = "#f4f4f4"
+palette_0 = "#000000"
+palette_1 = "#000000"
+palette_2 = "#000000"
+palette_3 = "#000000"
+palette_4 = "#000000"
+palette_5 = "#000000"
+palette_6 = "#000000"
+palette_7 = "#000000"
+palette_8 = "#000000"
+palette_9 = "#000000"
+palette_10 = "#000000"
+palette_11 = "#000000"
+palette_12 = "#000000"
+palette_13 = "#000000"
+palette_14 = "#000000"
+palette_15 = "#000000"
+
+[roles]
+bg = "#000000"
+bg_deep = "#000000"
+surface = "#181818"
+fg = "#c7c7c7"
+fg_soft = "#8b8b8b"
+fg_bright = "#000000"
+grey = "#6d6d6d"
+grey_dim = "#464646"
+grey_neutral = "#818181"
+grey_soft = "#5a5a5a"
+red = "#000000"
+orange = "#000000"
+yellow = "#000000"
+green = "#000000"
+aqua = "#000000"
+blue = "#000000"
+purple = "#000000"
+tint_green = "#000000"
+tint_red = "#000000"
+statusline = "#101010"
+statusline_accent = "#242424"
+statusline_fg = "#c7c7c7"
+on_accent = "#c7c7c7"
+mode_red = "#000000"
+mode_green = "#000000"
+mode_yellow = "#000000"
+mode_blue = "#000000"
+mode_purple = "#000000"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

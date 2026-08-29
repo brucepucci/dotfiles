@@ -1,0 +1,68 @@
+# Flexoki Light
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#fffcf0"
+foreground = "#100f0f"
+cursor-color = "#100f0f"
+cursor-text = "#fffcf0"
+selection-background = "#cecdc3"
+selection-foreground = "#100f0f"
+palette_0 = "#fffcf0"
+palette_1 = "#fffcf0"
+palette_2 = "#fffcf0"
+palette_3 = "#fffcf0"
+palette_4 = "#fffcf0"
+palette_5 = "#fffcf0"
+palette_6 = "#fffcf0"
+palette_7 = "#fffcf0"
+palette_8 = "#fffcf0"
+palette_9 = "#fffcf0"
+palette_10 = "#fffcf0"
+palette_11 = "#fffcf0"
+palette_12 = "#fffcf0"
+palette_13 = "#fffcf0"
+palette_14 = "#fffcf0"
+palette_15 = "#fffcf0"
+
+[roles]
+bg = "#fffcf0"
+bg_deep = "#fffdf4"
+surface = "#e2e0d5"
+fg = "#100f0f"
+fg_soft = "#585652"
+fg_bright = "#0a0a0a"
+grey = "#7c7a74"
+grey_dim = "#aba9a1"
+grey_neutral = "#64625e"
+grey_soft = "#93918b"
+red = "#fffcf0"
+orange = "#fffcf0"
+yellow = "#fffcf0"
+green = "#fffcf0"
+aqua = "#fffcf0"
+blue = "#fffcf0"
+purple = "#fffcf0"
+tint_green = "#fffcf0"
+tint_red = "#fffcf0"
+statusline = "#ece9de"
+statusline_accent = "#d4d1c8"
+statusline_fg = "#100f0f"
+on_accent = "#100f0f"
+mode_red = "#fffcf0"
+mode_green = "#fffcf0"
+mode_yellow = "#fffcf0"
+mode_blue = "#fffcf0"
+mode_purple = "#fffcf0"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

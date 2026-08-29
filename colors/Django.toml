@@ -1,0 +1,68 @@
+# Django
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#0b2f20"
+foreground = "#f8f8f8"
+cursor-color = "#336442"
+cursor-text = "#f8f8f8"
+selection-background = "#245032"
+selection-foreground = "#f8f8f8"
+palette_0 = "#0b2f20"
+palette_1 = "#0b2f20"
+palette_2 = "#0b2f20"
+palette_3 = "#0b2f20"
+palette_4 = "#0b2f20"
+palette_5 = "#0b2f20"
+palette_6 = "#0b2f20"
+palette_7 = "#0b2f20"
+palette_8 = "#0b2f20"
+palette_9 = "#0b2f20"
+palette_10 = "#0b2f20"
+palette_11 = "#0b2f20"
+palette_12 = "#0b2f20"
+palette_13 = "#0b2f20"
+palette_14 = "#0b2f20"
+palette_15 = "#0b2f20"
+
+[roles]
+bg = "#0b2f20"
+bg_deep = "#082318"
+surface = "#27473a"
+fg = "#f8f8f8"
+fg_soft = "#b1bcb7"
+fg_bright = "#0b2f20"
+grey = "#8d9e97"
+grey_dim = "#5e756c"
+grey_neutral = "#a5b2ac"
+grey_soft = "#768981"
+red = "#0b2f20"
+orange = "#0b2f20"
+yellow = "#0b2f20"
+green = "#0b2f20"
+aqua = "#0b2f20"
+blue = "#0b2f20"
+purple = "#0b2f20"
+tint_green = "#0b2f20"
+tint_red = "#0b2f20"
+statusline = "#1e3f31"
+statusline_accent = "#365347"
+statusline_fg = "#f8f8f8"
+on_accent = "#f8f8f8"
+mode_red = "#0b2f20"
+mode_green = "#0b2f20"
+mode_yellow = "#0b2f20"
+mode_blue = "#0b2f20"
+mode_purple = "#0b2f20"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

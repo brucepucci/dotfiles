@@ -1,0 +1,68 @@
+# iTerm2 Solarized Light
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#fdf6e3"
+foreground = "#657b83"
+cursor-color = "#657b83"
+cursor-text = "#eee8d5"
+selection-background = "#eee8d5"
+selection-foreground = "#586e75"
+palette_0 = "#fdf6e3"
+palette_1 = "#fdf6e3"
+palette_2 = "#fdf6e3"
+palette_3 = "#fdf6e3"
+palette_4 = "#fdf6e3"
+palette_5 = "#fdf6e3"
+palette_6 = "#fdf6e3"
+palette_7 = "#fdf6e3"
+palette_8 = "#fdf6e3"
+palette_9 = "#fdf6e3"
+palette_10 = "#fdf6e3"
+palette_11 = "#fdf6e3"
+palette_12 = "#fdf6e3"
+palette_13 = "#fdf6e3"
+palette_14 = "#fdf6e3"
+palette_15 = "#fdf6e3"
+
+[roles]
+bg = "#fdf6e3"
+bg_deep = "#fef8ea"
+surface = "#ebe7d7"
+fg = "#657b83"
+fg_soft = "#93a0a0"
+fg_bright = "#425055"
+grey = "#a9b2ae"
+grey_dim = "#c8cbc1"
+grey_neutral = "#9aa6a5"
+grey_soft = "#b9bfb8"
+red = "#fdf6e3"
+orange = "#fdf6e3"
+yellow = "#fdf6e3"
+green = "#fdf6e3"
+aqua = "#fdf6e3"
+blue = "#fdf6e3"
+purple = "#fdf6e3"
+tint_green = "#fdf6e3"
+tint_red = "#fdf6e3"
+statusline = "#f1ecdb"
+statusline_accent = "#e2e0d2"
+statusline_fg = "#657b83"
+on_accent = "#657b83"
+mode_red = "#fdf6e3"
+mode_green = "#fdf6e3"
+mode_yellow = "#fdf6e3"
+mode_blue = "#fdf6e3"
+mode_purple = "#fdf6e3"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

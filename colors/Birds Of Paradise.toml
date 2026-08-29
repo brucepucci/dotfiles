@@ -1,0 +1,68 @@
+# Birds Of Paradise
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#2a1f1d"
+foreground = "#e0dbb7"
+cursor-color = "#644a33"
+cursor-text = "#8a7059"
+selection-background = "#563c27"
+selection-foreground = "#e0dbbb"
+palette_0 = "#2a1f1d"
+palette_1 = "#2a1f1d"
+palette_2 = "#2a1f1d"
+palette_3 = "#2a1f1d"
+palette_4 = "#2a1f1d"
+palette_5 = "#2a1f1d"
+palette_6 = "#2a1f1d"
+palette_7 = "#2a1f1d"
+palette_8 = "#2a1f1d"
+palette_9 = "#2a1f1d"
+palette_10 = "#2a1f1d"
+palette_11 = "#2a1f1d"
+palette_12 = "#2a1f1d"
+palette_13 = "#2a1f1d"
+palette_14 = "#2a1f1d"
+palette_15 = "#2a1f1d"
+
+[roles]
+bg = "#2a1f1d"
+bg_deep = "#201716"
+surface = "#40362f"
+fg = "#e0dbb7"
+fg_soft = "#a9a389"
+fg_bright = "#2a1f1d"
+grey = "#8e8672"
+grey_dim = "#6a6153"
+grey_neutral = "#a09981"
+grey_soft = "#7c7462"
+red = "#2a1f1d"
+orange = "#2a1f1d"
+yellow = "#2a1f1d"
+green = "#2a1f1d"
+aqua = "#2a1f1d"
+blue = "#2a1f1d"
+purple = "#2a1f1d"
+tint_green = "#2a1f1d"
+tint_red = "#2a1f1d"
+statusline = "#392e29"
+statusline_accent = "#4b4139"
+statusline_fg = "#e0dbb7"
+on_accent = "#e0dbb7"
+mode_red = "#2a1f1d"
+mode_green = "#2a1f1d"
+mode_yellow = "#2a1f1d"
+mode_blue = "#2a1f1d"
+mode_purple = "#2a1f1d"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

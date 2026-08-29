@@ -1,0 +1,68 @@
+# Spiderman
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#1b1d1e"
+foreground = "#e3e3e3"
+cursor-color = "#2c3fff"
+cursor-text = "#000000"
+selection-background = "#070e50"
+selection-foreground = "#f0272d"
+palette_0 = "#1b1d1e"
+palette_1 = "#1b1d1e"
+palette_2 = "#1b1d1e"
+palette_3 = "#1b1d1e"
+palette_4 = "#1b1d1e"
+palette_5 = "#1b1d1e"
+palette_6 = "#1b1d1e"
+palette_7 = "#1b1d1e"
+palette_8 = "#1b1d1e"
+palette_9 = "#1b1d1e"
+palette_10 = "#1b1d1e"
+palette_11 = "#1b1d1e"
+palette_12 = "#1b1d1e"
+palette_13 = "#1b1d1e"
+palette_14 = "#1b1d1e"
+palette_15 = "#1b1d1e"
+
+[roles]
+bg = "#1b1d1e"
+bg_deep = "#141616"
+surface = "#333536"
+fg = "#e3e3e3"
+fg_soft = "#a7a8a8"
+fg_bright = "#1b1d1e"
+grey = "#898a8a"
+grey_dim = "#616263"
+grey_neutral = "#9d9e9e"
+grey_soft = "#757677"
+red = "#1b1d1e"
+orange = "#1b1d1e"
+yellow = "#1b1d1e"
+green = "#1b1d1e"
+aqua = "#1b1d1e"
+blue = "#1b1d1e"
+purple = "#1b1d1e"
+tint_green = "#1b1d1e"
+tint_red = "#1b1d1e"
+statusline = "#2b2d2e"
+statusline_accent = "#3f4141"
+statusline_fg = "#e3e3e3"
+on_accent = "#e3e3e3"
+mode_red = "#1b1d1e"
+mode_green = "#1b1d1e"
+mode_yellow = "#1b1d1e"
+mode_blue = "#1b1d1e"
+mode_purple = "#1b1d1e"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

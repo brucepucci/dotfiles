@@ -1,0 +1,68 @@
+# Apple System Colors Light
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#feffff"
+foreground = "#000000"
+cursor-color = "#98989d"
+cursor-text = "#ffffff"
+selection-background = "#abd8ff"
+selection-foreground = "#000000"
+palette_0 = "#feffff"
+palette_1 = "#feffff"
+palette_2 = "#feffff"
+palette_3 = "#feffff"
+palette_4 = "#feffff"
+palette_5 = "#feffff"
+palette_6 = "#feffff"
+palette_7 = "#feffff"
+palette_8 = "#feffff"
+palette_9 = "#feffff"
+palette_10 = "#feffff"
+palette_11 = "#feffff"
+palette_12 = "#feffff"
+palette_13 = "#feffff"
+palette_14 = "#feffff"
+palette_15 = "#feffff"
+
+[roles]
+bg = "#feffff"
+bg_deep = "#feffff"
+surface = "#e0e0e0"
+fg = "#000000"
+fg_soft = "#4c4c4c"
+fg_bright = "#000000"
+grey = "#727373"
+grey_dim = "#a5a6a6"
+grey_neutral = "#595959"
+grey_soft = "#8c8c8c"
+red = "#feffff"
+orange = "#feffff"
+yellow = "#feffff"
+green = "#feffff"
+aqua = "#feffff"
+blue = "#feffff"
+purple = "#feffff"
+tint_green = "#feffff"
+tint_red = "#feffff"
+statusline = "#eaebeb"
+statusline_accent = "#d0d1d1"
+statusline_fg = "#000000"
+on_accent = "#000000"
+mode_red = "#feffff"
+mode_green = "#feffff"
+mode_yellow = "#feffff"
+mode_blue = "#feffff"
+mode_purple = "#feffff"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

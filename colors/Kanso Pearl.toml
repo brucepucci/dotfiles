@@ -1,0 +1,68 @@
+# Kanso Pearl
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#f2f1ef"
+foreground = "#22262d"
+cursor-color = "#22262d"
+cursor-text = "#f2f1ef"
+selection-background = "#e2e1df"
+selection-foreground = "#22262d"
+palette_0 = "#f2f1ef"
+palette_1 = "#f2f1ef"
+palette_2 = "#f2f1ef"
+palette_3 = "#f2f1ef"
+palette_4 = "#f2f1ef"
+palette_5 = "#f2f1ef"
+palette_6 = "#f2f1ef"
+palette_7 = "#f2f1ef"
+palette_8 = "#f2f1ef"
+palette_9 = "#f2f1ef"
+palette_10 = "#f2f1ef"
+palette_11 = "#f2f1ef"
+palette_12 = "#f2f1ef"
+palette_13 = "#f2f1ef"
+palette_14 = "#f2f1ef"
+palette_15 = "#f2f1ef"
+
+[roles]
+bg = "#f2f1ef"
+bg_deep = "#f5f4f3"
+surface = "#d9d9d8"
+fg = "#22262d"
+fg_soft = "#606367"
+fg_bright = "#16191d"
+grey = "#808184"
+grey_dim = "#a9aaab"
+grey_neutral = "#6b6d71"
+grey_soft = "#949698"
+red = "#f2f1ef"
+orange = "#f2f1ef"
+yellow = "#f2f1ef"
+green = "#f2f1ef"
+aqua = "#f2f1ef"
+blue = "#f2f1ef"
+purple = "#f2f1ef"
+tint_green = "#f2f1ef"
+tint_red = "#f2f1ef"
+statusline = "#e1e1df"
+statusline_accent = "#cdcccc"
+statusline_fg = "#22262d"
+on_accent = "#22262d"
+mode_red = "#f2f1ef"
+mode_green = "#f2f1ef"
+mode_yellow = "#f2f1ef"
+mode_blue = "#f2f1ef"
+mode_purple = "#f2f1ef"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

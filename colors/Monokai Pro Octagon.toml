@@ -1,0 +1,68 @@
+# Monokai Pro Octagon
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#282a3a"
+foreground = "#eaf2f1"
+cursor-color = "#b2b9bd"
+cursor-text = "#f2f9fd"
+selection-background = "#535763"
+selection-foreground = "#eaf2f1"
+palette_0 = "#282a3a"
+palette_1 = "#282a3a"
+palette_2 = "#282a3a"
+palette_3 = "#282a3a"
+palette_4 = "#282a3a"
+palette_5 = "#282a3a"
+palette_6 = "#282a3a"
+palette_7 = "#282a3a"
+palette_8 = "#282a3a"
+palette_9 = "#282a3a"
+palette_10 = "#282a3a"
+palette_11 = "#282a3a"
+palette_12 = "#282a3a"
+palette_13 = "#282a3a"
+palette_14 = "#282a3a"
+palette_15 = "#282a3a"
+
+[roles]
+bg = "#282a3a"
+bg_deep = "#1e202c"
+surface = "#3f4250"
+fg = "#eaf2f1"
+fg_soft = "#b0b6ba"
+fg_bright = "#282a3a"
+grey = "#93989f"
+grey_dim = "#6c707a"
+grey_neutral = "#a6acb1"
+grey_soft = "#7f848c"
+red = "#282a3a"
+orange = "#282a3a"
+yellow = "#282a3a"
+green = "#282a3a"
+aqua = "#282a3a"
+blue = "#282a3a"
+purple = "#282a3a"
+tint_green = "#282a3a"
+tint_red = "#282a3a"
+statusline = "#383a49"
+statusline_accent = "#4b4e5b"
+statusline_fg = "#eaf2f1"
+on_accent = "#eaf2f1"
+mode_red = "#282a3a"
+mode_green = "#282a3a"
+mode_yellow = "#282a3a"
+mode_blue = "#282a3a"
+mode_purple = "#282a3a"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

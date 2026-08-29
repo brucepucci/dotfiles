@@ -1,0 +1,68 @@
+# Tinacious Design Light
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#f8f8ff"
+foreground = "#1d1d26"
+cursor-color = "#b1b1d6"
+cursor-text = "#ffffff"
+selection-background = "#ff3399"
+selection-foreground = "#ffffff"
+palette_0 = "#f8f8ff"
+palette_1 = "#f8f8ff"
+palette_2 = "#f8f8ff"
+palette_3 = "#f8f8ff"
+palette_4 = "#f8f8ff"
+palette_5 = "#f8f8ff"
+palette_6 = "#f8f8ff"
+palette_7 = "#f8f8ff"
+palette_8 = "#f8f8ff"
+palette_9 = "#f8f8ff"
+palette_10 = "#f8f8ff"
+palette_11 = "#f8f8ff"
+palette_12 = "#f8f8ff"
+palette_13 = "#f8f8ff"
+palette_14 = "#f8f8ff"
+palette_15 = "#f8f8ff"
+
+[roles]
+bg = "#f8f8ff"
+bg_deep = "#fafaff"
+surface = "#dedee5"
+fg = "#1d1d26"
+fg_soft = "#5f5f67"
+fg_bright = "#131319"
+grey = "#808088"
+grey_dim = "#ababb3"
+grey_neutral = "#6a6a72"
+grey_soft = "#95959d"
+red = "#f8f8ff"
+orange = "#f8f8ff"
+yellow = "#f8f8ff"
+green = "#f8f8ff"
+aqua = "#f8f8ff"
+blue = "#f8f8ff"
+purple = "#f8f8ff"
+tint_green = "#f8f8ff"
+tint_red = "#f8f8ff"
+statusline = "#e6e6ee"
+statusline_accent = "#d1d1d8"
+statusline_fg = "#1d1d26"
+on_accent = "#1d1d26"
+mode_red = "#f8f8ff"
+mode_green = "#f8f8ff"
+mode_yellow = "#f8f8ff"
+mode_blue = "#f8f8ff"
+mode_purple = "#f8f8ff"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

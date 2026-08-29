@@ -1,0 +1,68 @@
+# Kanagawa Wave
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#1f1f28"
+foreground = "#dcd7ba"
+cursor-color = "#dcd7ba"
+cursor-text = "#1f1f28"
+selection-background = "#dcd7ba"
+selection-foreground = "#1f1f28"
+palette_0 = "#1f1f28"
+palette_1 = "#1f1f28"
+palette_2 = "#1f1f28"
+palette_3 = "#1f1f28"
+palette_4 = "#1f1f28"
+palette_5 = "#1f1f28"
+palette_6 = "#1f1f28"
+palette_7 = "#1f1f28"
+palette_8 = "#1f1f28"
+palette_9 = "#1f1f28"
+palette_10 = "#1f1f28"
+palette_11 = "#1f1f28"
+palette_12 = "#1f1f28"
+palette_13 = "#1f1f28"
+palette_14 = "#1f1f28"
+palette_15 = "#1f1f28"
+
+[roles]
+bg = "#1f1f28"
+bg_deep = "#17171e"
+surface = "#36353a"
+fg = "#dcd7ba"
+fg_soft = "#a3a08e"
+fg_bright = "#1f1f28"
+grey = "#878478"
+grey_dim = "#615f5b"
+grey_neutral = "#9a9787"
+grey_soft = "#74726a"
+red = "#1f1f28"
+orange = "#1f1f28"
+yellow = "#1f1f28"
+green = "#1f1f28"
+aqua = "#1f1f28"
+blue = "#1f1f28"
+purple = "#1f1f28"
+tint_green = "#1f1f28"
+tint_red = "#1f1f28"
+statusline = "#2e2e34"
+statusline_accent = "#414042"
+statusline_fg = "#dcd7ba"
+on_accent = "#dcd7ba"
+mode_red = "#1f1f28"
+mode_green = "#1f1f28"
+mode_yellow = "#1f1f28"
+mode_blue = "#1f1f28"
+mode_purple = "#1f1f28"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

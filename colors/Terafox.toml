@@ -1,0 +1,68 @@
+# Terafox
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#152528"
+foreground = "#e6eaea"
+cursor-color = "#e6eaea"
+cursor-text = "#152528"
+selection-background = "#293e40"
+selection-foreground = "#e6eaea"
+palette_0 = "#152528"
+palette_1 = "#152528"
+palette_2 = "#152528"
+palette_3 = "#152528"
+palette_4 = "#152528"
+palette_5 = "#152528"
+palette_6 = "#152528"
+palette_7 = "#152528"
+palette_8 = "#152528"
+palette_9 = "#152528"
+palette_10 = "#152528"
+palette_11 = "#152528"
+palette_12 = "#152528"
+palette_13 = "#152528"
+palette_14 = "#152528"
+palette_15 = "#152528"
+
+[roles]
+bg = "#152528"
+bg_deep = "#101c1e"
+surface = "#2e3d3f"
+fg = "#e6eaea"
+fg_soft = "#a7afb0"
+fg_bright = "#152528"
+grey = "#889193"
+grey_dim = "#5e6a6c"
+grey_neutral = "#9da5a6"
+grey_soft = "#737e7f"
+red = "#152528"
+orange = "#152528"
+yellow = "#152528"
+green = "#152528"
+aqua = "#152528"
+blue = "#152528"
+purple = "#152528"
+tint_green = "#152528"
+tint_red = "#152528"
+statusline = "#263538"
+statusline_accent = "#3b484b"
+statusline_fg = "#e6eaea"
+on_accent = "#e6eaea"
+mode_red = "#152528"
+mode_green = "#152528"
+mode_yellow = "#152528"
+mode_blue = "#152528"
+mode_purple = "#152528"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

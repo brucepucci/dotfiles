@@ -1,0 +1,68 @@
+# Breeze
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#31363b"
+foreground = "#eff0f1"
+cursor-color = "#eff0f1"
+cursor-text = "#31363b"
+selection-background = "#eff0f1"
+selection-foreground = "#31363b"
+palette_0 = "#31363b"
+palette_1 = "#31363b"
+palette_2 = "#31363b"
+palette_3 = "#31363b"
+palette_4 = "#31363b"
+palette_5 = "#31363b"
+palette_6 = "#31363b"
+palette_7 = "#31363b"
+palette_8 = "#31363b"
+palette_9 = "#31363b"
+palette_10 = "#31363b"
+palette_11 = "#31363b"
+palette_12 = "#31363b"
+palette_13 = "#31363b"
+palette_14 = "#31363b"
+palette_15 = "#31363b"
+
+[roles]
+bg = "#31363b"
+bg_deep = "#25282c"
+surface = "#484c51"
+fg = "#eff0f1"
+fg_soft = "#b6b8ba"
+fg_bright = "#31363b"
+grey = "#9a9c9f"
+grey_dim = "#74777b"
+grey_neutral = "#acafb1"
+grey_soft = "#868a8d"
+red = "#31363b"
+orange = "#31363b"
+yellow = "#31363b"
+green = "#31363b"
+aqua = "#31363b"
+blue = "#31363b"
+purple = "#31363b"
+tint_green = "#31363b"
+tint_red = "#31363b"
+statusline = "#40454a"
+statusline_accent = "#53575c"
+statusline_fg = "#eff0f1"
+on_accent = "#eff0f1"
+mode_red = "#31363b"
+mode_green = "#31363b"
+mode_yellow = "#31363b"
+mode_blue = "#31363b"
+mode_purple = "#31363b"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

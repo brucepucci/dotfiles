@@ -1,0 +1,68 @@
+# Seoulbones Light
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#e2e2e2"
+foreground = "#555555"
+cursor-color = "#555555"
+cursor-text = "#e2e2e2"
+selection-background = "#cccccc"
+selection-foreground = "#555555"
+palette_0 = "#e2e2e2"
+palette_1 = "#e2e2e2"
+palette_2 = "#e2e2e2"
+palette_3 = "#e2e2e2"
+palette_4 = "#e2e2e2"
+palette_5 = "#e2e2e2"
+palette_6 = "#e2e2e2"
+palette_7 = "#e2e2e2"
+palette_8 = "#e2e2e2"
+palette_9 = "#e2e2e2"
+palette_10 = "#e2e2e2"
+palette_11 = "#e2e2e2"
+palette_12 = "#e2e2e2"
+palette_13 = "#e2e2e2"
+palette_14 = "#e2e2e2"
+palette_15 = "#e2e2e2"
+
+[roles]
+bg = "#e2e2e2"
+bg_deep = "#e9e9e9"
+surface = "#d1d1d1"
+fg = "#555555"
+fg_soft = "#7f7f7f"
+fg_bright = "#373737"
+grey = "#949494"
+grey_dim = "#b1b1b1"
+grey_neutral = "#868686"
+grey_soft = "#a3a3a3"
+red = "#e2e2e2"
+orange = "#e2e2e2"
+yellow = "#e2e2e2"
+green = "#e2e2e2"
+aqua = "#e2e2e2"
+blue = "#e2e2e2"
+purple = "#e2e2e2"
+tint_green = "#e2e2e2"
+tint_red = "#e2e2e2"
+statusline = "#d7d7d7"
+statusline_accent = "#c9c9c9"
+statusline_fg = "#555555"
+on_accent = "#555555"
+mode_red = "#e2e2e2"
+mode_green = "#e2e2e2"
+mode_yellow = "#e2e2e2"
+mode_blue = "#e2e2e2"
+mode_purple = "#e2e2e2"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

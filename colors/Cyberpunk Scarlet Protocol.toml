@@ -1,0 +1,68 @@
+# Cyberpunk Scarlet Protocol
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#101116"
+foreground = "#e41951"
+cursor-color = "#76ff9f"
+cursor-text = "#a6a6a6"
+selection-background = "#c1deff"
+selection-foreground = "#000000"
+palette_0 = "#101116"
+palette_1 = "#101116"
+palette_2 = "#101116"
+palette_3 = "#101116"
+palette_4 = "#101116"
+palette_5 = "#101116"
+palette_6 = "#101116"
+palette_7 = "#101116"
+palette_8 = "#101116"
+palette_9 = "#101116"
+palette_10 = "#101116"
+palette_11 = "#101116"
+palette_12 = "#101116"
+palette_13 = "#101116"
+palette_14 = "#101116"
+palette_15 = "#101116"
+
+[roles]
+bg = "#101116"
+bg_deep = "#0c0d10"
+surface = "#29121d"
+fg = "#e41951"
+fg_soft = "#a4173f"
+fg_bright = "#101116"
+grey = "#851536"
+grey_dim = "#5a142b"
+grey_neutral = "#9a163c"
+grey_soft = "#6f1531"
+red = "#101116"
+orange = "#101116"
+yellow = "#101116"
+green = "#101116"
+aqua = "#101116"
+blue = "#101116"
+purple = "#101116"
+tint_green = "#101116"
+tint_red = "#101116"
+statusline = "#21121b"
+statusline_accent = "#361221"
+statusline_fg = "#e41951"
+on_accent = "#e41951"
+mode_red = "#101116"
+mode_green = "#101116"
+mode_yellow = "#101116"
+mode_blue = "#101116"
+mode_purple = "#101116"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

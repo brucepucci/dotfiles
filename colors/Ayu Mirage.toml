@@ -1,0 +1,68 @@
+# Ayu Mirage
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#1f2430"
+foreground = "#cccac2"
+cursor-color = "#ffcc66"
+cursor-text = "#1f2430"
+selection-background = "#409fff"
+selection-foreground = "#1f2430"
+palette_0 = "#1f2430"
+palette_1 = "#1f2430"
+palette_2 = "#1f2430"
+palette_3 = "#1f2430"
+palette_4 = "#1f2430"
+palette_5 = "#1f2430"
+palette_6 = "#1f2430"
+palette_7 = "#1f2430"
+palette_8 = "#1f2430"
+palette_9 = "#1f2430"
+palette_10 = "#1f2430"
+palette_11 = "#1f2430"
+palette_12 = "#1f2430"
+palette_13 = "#1f2430"
+palette_14 = "#1f2430"
+palette_15 = "#1f2430"
+
+[roles]
+bg = "#1f2430"
+bg_deep = "#171b24"
+surface = "#343842"
+fg = "#cccac2"
+fg_soft = "#989896"
+fg_bright = "#1f2430"
+grey = "#7e7f80"
+grey_dim = "#5c5e63"
+grey_neutral = "#8f908f"
+grey_soft = "#6d6f72"
+red = "#1f2430"
+orange = "#1f2430"
+yellow = "#1f2430"
+green = "#1f2430"
+aqua = "#1f2430"
+blue = "#1f2430"
+purple = "#1f2430"
+tint_green = "#1f2430"
+tint_red = "#1f2430"
+statusline = "#2d313c"
+statusline_accent = "#3e424a"
+statusline_fg = "#cccac2"
+on_accent = "#cccac2"
+mode_red = "#1f2430"
+mode_green = "#1f2430"
+mode_yellow = "#1f2430"
+mode_blue = "#1f2430"
+mode_purple = "#1f2430"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

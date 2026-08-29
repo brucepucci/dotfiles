@@ -1,0 +1,68 @@
+# Sleepy Hollow
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#121214"
+foreground = "#af9a91"
+cursor-color = "#af9a91"
+cursor-text = "#391a02"
+selection-background = "#575256"
+selection-foreground = "#d2c7a9"
+palette_0 = "#121214"
+palette_1 = "#121214"
+palette_2 = "#121214"
+palette_3 = "#121214"
+palette_4 = "#121214"
+palette_5 = "#121214"
+palette_6 = "#121214"
+palette_7 = "#121214"
+palette_8 = "#121214"
+palette_9 = "#121214"
+palette_10 = "#121214"
+palette_11 = "#121214"
+palette_12 = "#121214"
+palette_13 = "#121214"
+palette_14 = "#121214"
+palette_15 = "#121214"
+
+[roles]
+bg = "#121214"
+bg_deep = "#0e0e0f"
+surface = "#252223"
+fg = "#af9a91"
+fg_soft = "#80716c"
+fg_bright = "#121214"
+grey = "#685d59"
+grey_dim = "#494240"
+grey_neutral = "#786a65"
+grey_soft = "#594f4c"
+red = "#121214"
+orange = "#121214"
+yellow = "#121214"
+green = "#121214"
+aqua = "#121214"
+blue = "#121214"
+purple = "#121214"
+tint_green = "#121214"
+tint_red = "#121214"
+statusline = "#1f1d1e"
+statusline_accent = "#2e2a2a"
+statusline_fg = "#af9a91"
+on_accent = "#af9a91"
+mode_red = "#121214"
+mode_green = "#121214"
+mode_yellow = "#121214"
+mode_blue = "#121214"
+mode_purple = "#121214"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

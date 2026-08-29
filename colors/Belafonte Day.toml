@@ -1,0 +1,68 @@
+# Belafonte Day
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#d5ccba"
+foreground = "#45373c"
+cursor-color = "#45373c"
+cursor-text = "#d5ccba"
+selection-background = "#968c83"
+selection-foreground = "#45373c"
+palette_0 = "#d5ccba"
+palette_1 = "#d5ccba"
+palette_2 = "#d5ccba"
+palette_3 = "#d5ccba"
+palette_4 = "#d5ccba"
+palette_5 = "#d5ccba"
+palette_6 = "#d5ccba"
+palette_7 = "#d5ccba"
+palette_8 = "#d5ccba"
+palette_9 = "#d5ccba"
+palette_10 = "#d5ccba"
+palette_11 = "#d5ccba"
+palette_12 = "#d5ccba"
+palette_13 = "#d5ccba"
+palette_14 = "#d5ccba"
+palette_15 = "#d5ccba"
+
+[roles]
+bg = "#d5ccba"
+bg_deep = "#e0d9cb"
+surface = "#c4baab"
+fg = "#45373c"
+fg_soft = "#706462"
+fg_bright = "#2d2427"
+grey = "#867a75"
+grey_dim = "#a3988e"
+grey_neutral = "#776b68"
+grey_soft = "#948981"
+red = "#d5ccba"
+orange = "#d5ccba"
+yellow = "#d5ccba"
+green = "#d5ccba"
+aqua = "#d5ccba"
+blue = "#d5ccba"
+purple = "#d5ccba"
+tint_green = "#d5ccba"
+tint_red = "#d5ccba"
+statusline = "#c9c0b0"
+statusline_accent = "#bbb1a3"
+statusline_fg = "#45373c"
+on_accent = "#45373c"
+mode_red = "#d5ccba"
+mode_green = "#d5ccba"
+mode_yellow = "#d5ccba"
+mode_blue = "#d5ccba"
+mode_purple = "#d5ccba"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

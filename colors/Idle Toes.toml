@@ -1,0 +1,68 @@
+# Idle Toes
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#323232"
+foreground = "#ffffff"
+cursor-color = "#d6d6d6"
+cursor-text = "#000000"
+selection-background = "#5b5b5b"
+selection-foreground = "#000000"
+palette_0 = "#323232"
+palette_1 = "#323232"
+palette_2 = "#323232"
+palette_3 = "#323232"
+palette_4 = "#323232"
+palette_5 = "#323232"
+palette_6 = "#323232"
+palette_7 = "#323232"
+palette_8 = "#323232"
+palette_9 = "#323232"
+palette_10 = "#323232"
+palette_11 = "#323232"
+palette_12 = "#323232"
+palette_13 = "#323232"
+palette_14 = "#323232"
+palette_15 = "#323232"
+
+[roles]
+bg = "#323232"
+bg_deep = "#262626"
+surface = "#4b4b4b"
+fg = "#ffffff"
+fg_soft = "#c2c2c2"
+fg_bright = "#323232"
+grey = "#a3a3a3"
+grey_dim = "#7a7a7a"
+grey_neutral = "#b7b7b7"
+grey_soft = "#8e8e8e"
+red = "#323232"
+orange = "#323232"
+yellow = "#323232"
+green = "#323232"
+aqua = "#323232"
+blue = "#323232"
+purple = "#323232"
+tint_green = "#323232"
+tint_red = "#323232"
+statusline = "#424242"
+statusline_accent = "#575757"
+statusline_fg = "#ffffff"
+on_accent = "#ffffff"
+mode_red = "#323232"
+mode_green = "#323232"
+mode_yellow = "#323232"
+mode_blue = "#323232"
+mode_purple = "#323232"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

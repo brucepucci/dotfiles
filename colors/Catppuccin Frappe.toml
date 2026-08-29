@@ -1,0 +1,68 @@
+# Catppuccin Frappe
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#303446"
+foreground = "#c6d0f5"
+cursor-color = "#f2d5cf"
+cursor-text = "#303446"
+selection-background = "#626880"
+selection-foreground = "#c6d0f5"
+palette_0 = "#303446"
+palette_1 = "#303446"
+palette_2 = "#303446"
+palette_3 = "#303446"
+palette_4 = "#303446"
+palette_5 = "#303446"
+palette_6 = "#303446"
+palette_7 = "#303446"
+palette_8 = "#303446"
+palette_9 = "#303446"
+palette_10 = "#303446"
+palette_11 = "#303446"
+palette_12 = "#303446"
+palette_13 = "#303446"
+palette_14 = "#303446"
+palette_15 = "#303446"
+
+[roles]
+bg = "#303446"
+bg_deep = "#242734"
+surface = "#42475b"
+fg = "#c6d0f5"
+fg_soft = "#99a1c0"
+fg_bright = "#303446"
+grey = "#828aa6"
+grey_dim = "#646b83"
+grey_neutral = "#9299b8"
+grey_soft = "#747a95"
+red = "#303446"
+orange = "#303446"
+yellow = "#303446"
+green = "#303446"
+aqua = "#303446"
+blue = "#303446"
+purple = "#303446"
+tint_green = "#303446"
+tint_red = "#303446"
+statusline = "#3c4054"
+statusline_accent = "#4b5066"
+statusline_fg = "#c6d0f5"
+on_accent = "#c6d0f5"
+mode_red = "#303446"
+mode_green = "#303446"
+mode_yellow = "#303446"
+mode_blue = "#303446"
+mode_purple = "#303446"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

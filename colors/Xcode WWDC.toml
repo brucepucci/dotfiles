@@ -1,0 +1,68 @@
+# Xcode WWDC
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#292c36"
+foreground = "#e7e8eb"
+cursor-color = "#e7e8eb"
+cursor-text = "#292c36"
+selection-background = "#494d5c"
+selection-foreground = "#e7e8eb"
+palette_0 = "#292c36"
+palette_1 = "#292c36"
+palette_2 = "#292c36"
+palette_3 = "#292c36"
+palette_4 = "#292c36"
+palette_5 = "#292c36"
+palette_6 = "#292c36"
+palette_7 = "#292c36"
+palette_8 = "#292c36"
+palette_9 = "#292c36"
+palette_10 = "#292c36"
+palette_11 = "#292c36"
+palette_12 = "#292c36"
+palette_13 = "#292c36"
+palette_14 = "#292c36"
+palette_15 = "#292c36"
+
+[roles]
+bg = "#292c36"
+bg_deep = "#1f2128"
+surface = "#40434c"
+fg = "#e7e8eb"
+fg_soft = "#aeb0b5"
+fg_bright = "#292c36"
+grey = "#92939a"
+grey_dim = "#6c6e75"
+grey_neutral = "#a4a6ac"
+grey_soft = "#7e8187"
+red = "#292c36"
+orange = "#292c36"
+yellow = "#292c36"
+green = "#292c36"
+aqua = "#292c36"
+blue = "#292c36"
+purple = "#292c36"
+tint_green = "#292c36"
+tint_red = "#292c36"
+statusline = "#383b44"
+statusline_accent = "#4b4e57"
+statusline_fg = "#e7e8eb"
+on_accent = "#e7e8eb"
+mode_red = "#292c36"
+mode_green = "#292c36"
+mode_yellow = "#292c36"
+mode_blue = "#292c36"
+mode_purple = "#292c36"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

@@ -1,0 +1,68 @@
+# Zenwritten Dark
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#191919"
+foreground = "#bbbbbb"
+cursor-color = "#c9c9c9"
+cursor-text = "#191919"
+selection-background = "#404040"
+selection-foreground = "#bbbbbb"
+palette_0 = "#191919"
+palette_1 = "#191919"
+palette_2 = "#191919"
+palette_3 = "#191919"
+palette_4 = "#191919"
+palette_5 = "#191919"
+palette_6 = "#191919"
+palette_7 = "#191919"
+palette_8 = "#191919"
+palette_9 = "#191919"
+palette_10 = "#191919"
+palette_11 = "#191919"
+palette_12 = "#191919"
+palette_13 = "#191919"
+palette_14 = "#191919"
+palette_15 = "#191919"
+
+[roles]
+bg = "#191919"
+bg_deep = "#131313"
+surface = "#2c2c2c"
+fg = "#bbbbbb"
+fg_soft = "#8a8a8a"
+fg_bright = "#191919"
+grey = "#727272"
+grey_dim = "#525252"
+grey_neutral = "#828282"
+grey_soft = "#626262"
+red = "#191919"
+orange = "#191919"
+yellow = "#191919"
+green = "#191919"
+aqua = "#191919"
+blue = "#191919"
+purple = "#191919"
+tint_green = "#191919"
+tint_red = "#191919"
+statusline = "#262626"
+statusline_accent = "#363636"
+statusline_fg = "#bbbbbb"
+on_accent = "#bbbbbb"
+mode_red = "#191919"
+mode_green = "#191919"
+mode_yellow = "#191919"
+mode_blue = "#191919"
+mode_purple = "#191919"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

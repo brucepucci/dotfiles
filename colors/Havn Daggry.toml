@@ -1,0 +1,68 @@
+# Havn Daggry
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#f8f9fb"
+foreground = "#3b4a7a"
+cursor-color = "#226c4f"
+cursor-text = "#d6dbeb"
+selection-background = "#cfe9dd"
+selection-foreground = "#313c64"
+palette_0 = "#f8f9fb"
+palette_1 = "#f8f9fb"
+palette_2 = "#f8f9fb"
+palette_3 = "#f8f9fb"
+palette_4 = "#f8f9fb"
+palette_5 = "#f8f9fb"
+palette_6 = "#f8f9fb"
+palette_7 = "#f8f9fb"
+palette_8 = "#f8f9fb"
+palette_9 = "#f8f9fb"
+palette_10 = "#f8f9fb"
+palette_11 = "#f8f9fb"
+palette_12 = "#f8f9fb"
+palette_13 = "#f8f9fb"
+palette_14 = "#f8f9fb"
+palette_15 = "#f8f9fb"
+
+[roles]
+bg = "#f8f9fb"
+bg_deep = "#fafafc"
+surface = "#e1e4ec"
+fg = "#3b4a7a"
+fg_soft = "#747ea1"
+fg_bright = "#26304f"
+grey = "#9099b4"
+grey_dim = "#b6bcce"
+grey_neutral = "#7d87a7"
+grey_soft = "#a3aac1"
+red = "#f8f9fb"
+orange = "#f8f9fb"
+yellow = "#f8f9fb"
+green = "#f8f9fb"
+aqua = "#f8f9fb"
+blue = "#f8f9fb"
+purple = "#f8f9fb"
+tint_green = "#f8f9fb"
+tint_red = "#f8f9fb"
+statusline = "#e9ebf1"
+statusline_accent = "#d6dae4"
+statusline_fg = "#3b4a7a"
+on_accent = "#3b4a7a"
+mode_red = "#f8f9fb"
+mode_green = "#f8f9fb"
+mode_yellow = "#f8f9fb"
+mode_blue = "#f8f9fb"
+mode_purple = "#f8f9fb"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

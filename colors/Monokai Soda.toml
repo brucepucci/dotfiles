@@ -1,0 +1,68 @@
+# Monokai Soda
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#1a1a1a"
+foreground = "#c4c5b5"
+cursor-color = "#f6f7ec"
+cursor-text = "#b7b8a8"
+selection-background = "#343434"
+selection-foreground = "#c4c5b5"
+palette_0 = "#1a1a1a"
+palette_1 = "#1a1a1a"
+palette_2 = "#1a1a1a"
+palette_3 = "#1a1a1a"
+palette_4 = "#1a1a1a"
+palette_5 = "#1a1a1a"
+palette_6 = "#1a1a1a"
+palette_7 = "#1a1a1a"
+palette_8 = "#1a1a1a"
+palette_9 = "#1a1a1a"
+palette_10 = "#1a1a1a"
+palette_11 = "#1a1a1a"
+palette_12 = "#1a1a1a"
+palette_13 = "#1a1a1a"
+palette_14 = "#1a1a1a"
+palette_15 = "#1a1a1a"
+
+[roles]
+bg = "#1a1a1a"
+bg_deep = "#141414"
+surface = "#2e2f2d"
+fg = "#c4c5b5"
+fg_soft = "#919286"
+fg_bright = "#1a1a1a"
+grey = "#78786f"
+grey_dim = "#565650"
+grey_neutral = "#88897f"
+grey_soft = "#666760"
+red = "#1a1a1a"
+orange = "#1a1a1a"
+yellow = "#1a1a1a"
+green = "#1a1a1a"
+aqua = "#1a1a1a"
+blue = "#1a1a1a"
+purple = "#1a1a1a"
+tint_green = "#1a1a1a"
+tint_red = "#1a1a1a"
+statusline = "#282826"
+statusline_accent = "#393936"
+statusline_fg = "#c4c5b5"
+on_accent = "#c4c5b5"
+mode_red = "#1a1a1a"
+mode_green = "#1a1a1a"
+mode_yellow = "#1a1a1a"
+mode_blue = "#1a1a1a"
+mode_purple = "#1a1a1a"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

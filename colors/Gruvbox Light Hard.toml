@@ -1,0 +1,70 @@
+# Gruvbox Light Hard
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; CURATED -- hand-tuned, never overwritten by the sync script.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = true
+
+[terminal]
+background = "#f9f5d7"
+foreground = "#3c3836"
+cursor-color = "#3c3836"
+cursor-text = "#f9f5d7"
+selection-background = "#3c3836"
+selection-foreground = "#f9f5d7"
+palette_0 = "#f9f5d7"
+palette_1 = "#f9f5d7"
+palette_2 = "#f9f5d7"
+palette_3 = "#f9f5d7"
+palette_4 = "#f9f5d7"
+palette_5 = "#f9f5d7"
+palette_6 = "#f9f5d7"
+palette_7 = "#f9f5d7"
+palette_8 = "#f9f5d7"
+palette_9 = "#f9f5d7"
+palette_10 = "#f9f5d7"
+palette_11 = "#f9f5d7"
+palette_12 = "#f9f5d7"
+palette_13 = "#f9f5d7"
+palette_14 = "#f9f5d7"
+palette_15 = "#f9f5d7"
+
+[roles]
+bg = "#ebdbb2"
+bg_deep = "#fbf1c7"
+surface = "#d5c4a1"
+fg = "#3c3836"
+fg_soft = "#504945"
+fg_bright = "#282828"
+grey = "#7c6f64"
+grey_dim = "#a89984"
+grey_neutral = "#928374"
+grey_soft = "#bdae93"
+red = "#9d0006"
+orange = "#af3a03"
+yellow = "#b57614"
+green = "#79740e"
+aqua = "#427b58"
+blue = "#076678"
+purple = "#8f3f71"
+tint_green = "#e5e9cb"
+tint_red = "#ecd6cc"
+statusline = "#f5edca"
+statusline_accent = "#eee0b7"
+statusline_fg = "#654735"
+on_accent = "#f9f5d7"
+mode_red = "#c14a4a"
+mode_green = "#6c782e"
+mode_yellow = "#b47109"
+mode_blue = "#45707a"
+mode_purple = "#945e80"
+
+[apps]
+delta_syntax_theme = "gruvbox-light"
+
+[apps.nvim]
+colorscheme = "gruvbox-material"
+contrast = "hard"
+foreground = "material"

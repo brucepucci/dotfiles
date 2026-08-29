@@ -1,0 +1,68 @@
+# Adventure Time
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#1f1d45"
+foreground = "#f8dcc0"
+cursor-color = "#efbf38"
+cursor-text = "#08080a"
+selection-background = "#706b4e"
+selection-foreground = "#f3d9c4"
+palette_0 = "#1f1d45"
+palette_1 = "#1f1d45"
+palette_2 = "#1f1d45"
+palette_3 = "#1f1d45"
+palette_4 = "#1f1d45"
+palette_5 = "#1f1d45"
+palette_6 = "#1f1d45"
+palette_7 = "#1f1d45"
+palette_8 = "#1f1d45"
+palette_9 = "#1f1d45"
+palette_10 = "#1f1d45"
+palette_11 = "#1f1d45"
+palette_12 = "#1f1d45"
+palette_13 = "#1f1d45"
+palette_14 = "#1f1d45"
+palette_15 = "#1f1d45"
+
+[roles]
+bg = "#1f1d45"
+bg_deep = "#171634"
+surface = "#393454"
+fg = "#f8dcc0"
+fg_soft = "#b7a39b"
+fg_bright = "#1f1d45"
+grey = "#968689"
+grey_dim = "#6b6070"
+grey_neutral = "#ac9995"
+grey_soft = "#81737c"
+red = "#1f1d45"
+orange = "#1f1d45"
+yellow = "#1f1d45"
+green = "#1f1d45"
+aqua = "#1f1d45"
+blue = "#1f1d45"
+purple = "#1f1d45"
+tint_green = "#1f1d45"
+tint_red = "#1f1d45"
+statusline = "#302c4f"
+statusline_accent = "#463f5b"
+statusline_fg = "#f8dcc0"
+on_accent = "#f8dcc0"
+mode_red = "#1f1d45"
+mode_green = "#1f1d45"
+mode_yellow = "#1f1d45"
+mode_blue = "#1f1d45"
+mode_purple = "#1f1d45"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

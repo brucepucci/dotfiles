@@ -1,0 +1,68 @@
+# Atelier Sulphurpool
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#202746"
+foreground = "#979db4"
+cursor-color = "#979db4"
+cursor-text = "#202746"
+selection-background = "#5e6687"
+selection-foreground = "#979db4"
+palette_0 = "#202746"
+palette_1 = "#202746"
+palette_2 = "#202746"
+palette_3 = "#202746"
+palette_4 = "#202746"
+palette_5 = "#202746"
+palette_6 = "#202746"
+palette_7 = "#202746"
+palette_8 = "#202746"
+palette_9 = "#202746"
+palette_10 = "#202746"
+palette_11 = "#202746"
+palette_12 = "#202746"
+palette_13 = "#202746"
+palette_14 = "#202746"
+palette_15 = "#202746"
+
+[roles]
+bg = "#202746"
+bg_deep = "#181d34"
+surface = "#2e3553"
+fg = "#979db4"
+fg_soft = "#737a93"
+fg_bright = "#202746"
+grey = "#616882"
+grey_dim = "#4a506c"
+grey_neutral = "#6d748e"
+grey_soft = "#565c78"
+red = "#202746"
+orange = "#202746"
+yellow = "#202746"
+green = "#202746"
+aqua = "#202746"
+blue = "#202746"
+purple = "#202746"
+tint_green = "#202746"
+tint_red = "#202746"
+statusline = "#2a304f"
+statusline_accent = "#353c5a"
+statusline_fg = "#979db4"
+on_accent = "#979db4"
+mode_red = "#202746"
+mode_green = "#202746"
+mode_yellow = "#202746"
+mode_blue = "#202746"
+mode_purple = "#202746"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

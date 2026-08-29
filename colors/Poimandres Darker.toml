@@ -1,0 +1,68 @@
+# Poimandres Darker
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#16161e"
+foreground = "#a6accd"
+cursor-color = "#ffffff"
+cursor-text = "#16161e"
+selection-background = "#a6accd"
+selection-foreground = "#ffffff"
+palette_0 = "#16161e"
+palette_1 = "#16161e"
+palette_2 = "#16161e"
+palette_3 = "#16161e"
+palette_4 = "#16161e"
+palette_5 = "#16161e"
+palette_6 = "#16161e"
+palette_7 = "#16161e"
+palette_8 = "#16161e"
+palette_9 = "#16161e"
+palette_10 = "#16161e"
+palette_11 = "#16161e"
+palette_12 = "#16161e"
+palette_13 = "#16161e"
+palette_14 = "#16161e"
+palette_15 = "#16161e"
+
+[roles]
+bg = "#16161e"
+bg_deep = "#101016"
+surface = "#272833"
+fg = "#a6accd"
+fg_soft = "#7b7f98"
+fg_bright = "#16161e"
+grey = "#65687e"
+grey_dim = "#484a5b"
+grey_neutral = "#747890"
+grey_soft = "#575a6d"
+red = "#16161e"
+orange = "#16161e"
+yellow = "#16161e"
+green = "#16161e"
+aqua = "#16161e"
+blue = "#16161e"
+purple = "#16161e"
+tint_green = "#16161e"
+tint_red = "#16161e"
+statusline = "#22222c"
+statusline_accent = "#30313e"
+statusline_fg = "#a6accd"
+on_accent = "#a6accd"
+mode_red = "#16161e"
+mode_green = "#16161e"
+mode_yellow = "#16161e"
+mode_blue = "#16161e"
+mode_purple = "#16161e"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

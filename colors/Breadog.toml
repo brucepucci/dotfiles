@@ -1,0 +1,68 @@
+# Breadog
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#f1ebe6"
+foreground = "#362c24"
+cursor-color = "#362c24"
+cursor-text = "#f1ebe6"
+selection-background = "#362c24"
+selection-foreground = "#f1ebe6"
+palette_0 = "#f1ebe6"
+palette_1 = "#f1ebe6"
+palette_2 = "#f1ebe6"
+palette_3 = "#f1ebe6"
+palette_4 = "#f1ebe6"
+palette_5 = "#f1ebe6"
+palette_6 = "#f1ebe6"
+palette_7 = "#f1ebe6"
+palette_8 = "#f1ebe6"
+palette_9 = "#f1ebe6"
+palette_10 = "#f1ebe6"
+palette_11 = "#f1ebe6"
+palette_12 = "#f1ebe6"
+palette_13 = "#f1ebe6"
+palette_14 = "#f1ebe6"
+palette_15 = "#f1ebe6"
+
+[roles]
+bg = "#f1ebe6"
+bg_deep = "#f4f0ec"
+surface = "#dbd4cf"
+fg = "#362c24"
+fg_soft = "#6e655e"
+fg_bright = "#231d17"
+grey = "#8a827b"
+grey_dim = "#b0a8a2"
+grey_neutral = "#776f68"
+grey_soft = "#9d958f"
+red = "#f1ebe6"
+orange = "#f1ebe6"
+yellow = "#f1ebe6"
+green = "#f1ebe6"
+aqua = "#f1ebe6"
+blue = "#f1ebe6"
+purple = "#f1ebe6"
+tint_green = "#f1ebe6"
+tint_red = "#f1ebe6"
+statusline = "#e2dcd6"
+statusline_accent = "#cfc9c3"
+statusline_fg = "#362c24"
+on_accent = "#362c24"
+mode_red = "#f1ebe6"
+mode_green = "#f1ebe6"
+mode_yellow = "#f1ebe6"
+mode_blue = "#f1ebe6"
+mode_purple = "#f1ebe6"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

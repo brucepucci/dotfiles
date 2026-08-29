@@ -1,0 +1,68 @@
+# Guezwhoz
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#1d1d1d"
+foreground = "#d9d9d9"
+cursor-color = "#99d4b1"
+cursor-text = "#1d1d1d"
+selection-background = "#245354"
+selection-foreground = "#58d6ce"
+palette_0 = "#1d1d1d"
+palette_1 = "#1d1d1d"
+palette_2 = "#1d1d1d"
+palette_3 = "#1d1d1d"
+palette_4 = "#1d1d1d"
+palette_5 = "#1d1d1d"
+palette_6 = "#1d1d1d"
+palette_7 = "#1d1d1d"
+palette_8 = "#1d1d1d"
+palette_9 = "#1d1d1d"
+palette_10 = "#1d1d1d"
+palette_11 = "#1d1d1d"
+palette_12 = "#1d1d1d"
+palette_13 = "#1d1d1d"
+palette_14 = "#1d1d1d"
+palette_15 = "#1d1d1d"
+
+[roles]
+bg = "#1d1d1d"
+bg_deep = "#161616"
+surface = "#343434"
+fg = "#d9d9d9"
+fg_soft = "#a1a1a1"
+fg_bright = "#1d1d1d"
+grey = "#848484"
+grey_dim = "#5f5f5f"
+grey_neutral = "#979797"
+grey_soft = "#727272"
+red = "#1d1d1d"
+orange = "#1d1d1d"
+yellow = "#1d1d1d"
+green = "#1d1d1d"
+aqua = "#1d1d1d"
+blue = "#1d1d1d"
+purple = "#1d1d1d"
+tint_green = "#1d1d1d"
+tint_red = "#1d1d1d"
+statusline = "#2c2c2c"
+statusline_accent = "#3f3f3f"
+statusline_fg = "#d9d9d9"
+on_accent = "#d9d9d9"
+mode_red = "#1d1d1d"
+mode_green = "#1d1d1d"
+mode_yellow = "#1d1d1d"
+mode_blue = "#1d1d1d"
+mode_purple = "#1d1d1d"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

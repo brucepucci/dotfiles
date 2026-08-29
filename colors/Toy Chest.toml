@@ -1,0 +1,68 @@
+# Toy Chest
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#24364b"
+foreground = "#31d07b"
+cursor-color = "#d5d5d5"
+cursor-text = "#141c25"
+selection-background = "#5f217a"
+selection-foreground = "#d5d5d5"
+palette_0 = "#24364b"
+palette_1 = "#24364b"
+palette_2 = "#24364b"
+palette_3 = "#24364b"
+palette_4 = "#24364b"
+palette_5 = "#24364b"
+palette_6 = "#24364b"
+palette_7 = "#24364b"
+palette_8 = "#24364b"
+palette_9 = "#24364b"
+palette_10 = "#24364b"
+palette_11 = "#24364b"
+palette_12 = "#24364b"
+palette_13 = "#24364b"
+palette_14 = "#24364b"
+palette_15 = "#24364b"
+
+[roles]
+bg = "#24364b"
+bg_deep = "#1b2838"
+surface = "#264851"
+fg = "#31d07b"
+fg_soft = "#2da26d"
+fg_bright = "#24364b"
+grey = "#2b8b65"
+grey_dim = "#296c5c"
+grey_neutral = "#2c9a6a"
+grey_soft = "#2a7b61"
+red = "#24364b"
+orange = "#24364b"
+yellow = "#24364b"
+green = "#24364b"
+aqua = "#24364b"
+blue = "#24364b"
+purple = "#24364b"
+tint_green = "#24364b"
+tint_red = "#24364b"
+statusline = "#25424f"
+statusline_accent = "#265254"
+statusline_fg = "#31d07b"
+on_accent = "#31d07b"
+mode_red = "#24364b"
+mode_green = "#24364b"
+mode_yellow = "#24364b"
+mode_blue = "#24364b"
+mode_purple = "#24364b"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

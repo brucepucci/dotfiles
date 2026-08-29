@@ -1,0 +1,68 @@
+# Argonaut
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#0e1019"
+foreground = "#fffaf4"
+cursor-color = "#ff0018"
+cursor-text = "#ff8ca4"
+selection-background = "#002a3b"
+selection-foreground = "#ffffff"
+palette_0 = "#0e1019"
+palette_1 = "#0e1019"
+palette_2 = "#0e1019"
+palette_3 = "#0e1019"
+palette_4 = "#0e1019"
+palette_5 = "#0e1019"
+palette_6 = "#0e1019"
+palette_7 = "#0e1019"
+palette_8 = "#0e1019"
+palette_9 = "#0e1019"
+palette_10 = "#0e1019"
+palette_11 = "#0e1019"
+palette_12 = "#0e1019"
+palette_13 = "#0e1019"
+palette_14 = "#0e1019"
+palette_15 = "#0e1019"
+
+[roles]
+bg = "#0e1019"
+bg_deep = "#0a0c13"
+surface = "#2b2c33"
+fg = "#fffaf4"
+fg_soft = "#b7b4b2"
+fg_bright = "#0e1019"
+grey = "#939191"
+grey_dim = "#626266"
+grey_neutral = "#aba8a7"
+grey_soft = "#7a797c"
+red = "#0e1019"
+orange = "#0e1019"
+yellow = "#0e1019"
+green = "#0e1019"
+aqua = "#0e1019"
+blue = "#0e1019"
+purple = "#0e1019"
+tint_green = "#0e1019"
+tint_red = "#0e1019"
+statusline = "#21232b"
+statusline_accent = "#393a40"
+statusline_fg = "#fffaf4"
+on_accent = "#fffaf4"
+mode_red = "#0e1019"
+mode_green = "#0e1019"
+mode_yellow = "#0e1019"
+mode_blue = "#0e1019"
+mode_purple = "#0e1019"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

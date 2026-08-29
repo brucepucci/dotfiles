@@ -1,0 +1,68 @@
+# Crayon Pony Fish
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#150707"
+foreground = "#68525a"
+cursor-color = "#68525a"
+cursor-text = "#140707"
+selection-background = "#2b1b1d"
+selection-foreground = "#69525a"
+palette_0 = "#150707"
+palette_1 = "#150707"
+palette_2 = "#150707"
+palette_3 = "#150707"
+palette_4 = "#150707"
+palette_5 = "#150707"
+palette_6 = "#150707"
+palette_7 = "#150707"
+palette_8 = "#150707"
+palette_9 = "#150707"
+palette_10 = "#150707"
+palette_11 = "#150707"
+palette_12 = "#150707"
+palette_13 = "#150707"
+palette_14 = "#150707"
+palette_15 = "#150707"
+
+[roles]
+bg = "#150707"
+bg_deep = "#100505"
+surface = "#1f1011"
+fg = "#68525a"
+fg_soft = "#4f3c41"
+fg_bright = "#150707"
+grey = "#433035"
+grey_dim = "#322124"
+grey_neutral = "#4b383d"
+grey_soft = "#3a292c"
+red = "#150707"
+orange = "#150707"
+yellow = "#150707"
+green = "#150707"
+aqua = "#150707"
+blue = "#150707"
+purple = "#150707"
+tint_green = "#150707"
+tint_red = "#150707"
+statusline = "#1c0d0e"
+statusline_accent = "#241416"
+statusline_fg = "#68525a"
+on_accent = "#68525a"
+mode_red = "#150707"
+mode_green = "#150707"
+mode_yellow = "#150707"
+mode_blue = "#150707"
+mode_purple = "#150707"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

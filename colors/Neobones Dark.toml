@@ -1,0 +1,68 @@
+# Neobones Dark
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#0f191f"
+foreground = "#c6d5cf"
+cursor-color = "#ceddd7"
+cursor-text = "#0f191f"
+selection-background = "#3a3e3d"
+selection-foreground = "#c6d5cf"
+palette_0 = "#0f191f"
+palette_1 = "#0f191f"
+palette_2 = "#0f191f"
+palette_3 = "#0f191f"
+palette_4 = "#0f191f"
+palette_5 = "#0f191f"
+palette_6 = "#0f191f"
+palette_7 = "#0f191f"
+palette_8 = "#0f191f"
+palette_9 = "#0f191f"
+palette_10 = "#0f191f"
+palette_11 = "#0f191f"
+palette_12 = "#0f191f"
+palette_13 = "#0f191f"
+palette_14 = "#0f191f"
+palette_15 = "#0f191f"
+
+[roles]
+bg = "#0f191f"
+bg_deep = "#0b1317"
+surface = "#253034"
+fg = "#c6d5cf"
+fg_soft = "#8f9d9a"
+fg_bright = "#0f191f"
+grey = "#748080"
+grey_dim = "#4f5b5d"
+grey_neutral = "#869391"
+grey_soft = "#616e6e"
+red = "#0f191f"
+orange = "#0f191f"
+yellow = "#0f191f"
+green = "#0f191f"
+aqua = "#0f191f"
+blue = "#0f191f"
+purple = "#0f191f"
+tint_green = "#0f191f"
+tint_red = "#0f191f"
+statusline = "#1e282d"
+statusline_accent = "#303b3f"
+statusline_fg = "#c6d5cf"
+on_accent = "#c6d5cf"
+mode_red = "#0f191f"
+mode_green = "#0f191f"
+mode_yellow = "#0f191f"
+mode_blue = "#0f191f"
+mode_purple = "#0f191f"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

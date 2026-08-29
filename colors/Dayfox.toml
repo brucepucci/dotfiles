@@ -1,0 +1,68 @@
+# Dayfox
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#f6f2ee"
+foreground = "#3d2b5a"
+cursor-color = "#3d2b5a"
+cursor-text = "#f6f2ee"
+selection-background = "#e7d2be"
+selection-foreground = "#3d2b5a"
+palette_0 = "#f6f2ee"
+palette_1 = "#f6f2ee"
+palette_2 = "#f6f2ee"
+palette_3 = "#f6f2ee"
+palette_4 = "#f6f2ee"
+palette_5 = "#f6f2ee"
+palette_6 = "#f6f2ee"
+palette_7 = "#f6f2ee"
+palette_8 = "#f6f2ee"
+palette_9 = "#f6f2ee"
+palette_10 = "#f6f2ee"
+palette_11 = "#f6f2ee"
+palette_12 = "#f6f2ee"
+palette_13 = "#f6f2ee"
+palette_14 = "#f6f2ee"
+palette_15 = "#f6f2ee"
+
+[roles]
+bg = "#f6f2ee"
+bg_deep = "#f8f5f2"
+surface = "#e0dadc"
+fg = "#3d2b5a"
+fg_soft = "#746786"
+fg_bright = "#281c3a"
+grey = "#90859d"
+grey_dim = "#b5acba"
+grey_neutral = "#7e718e"
+grey_soft = "#a398ab"
+red = "#f6f2ee"
+orange = "#f6f2ee"
+yellow = "#f6f2ee"
+green = "#f6f2ee"
+aqua = "#f6f2ee"
+blue = "#f6f2ee"
+purple = "#f6f2ee"
+tint_green = "#f6f2ee"
+tint_red = "#f6f2ee"
+statusline = "#e7e2e2"
+statusline_accent = "#d5ced3"
+statusline_fg = "#3d2b5a"
+on_accent = "#3d2b5a"
+mode_red = "#f6f2ee"
+mode_green = "#f6f2ee"
+mode_yellow = "#f6f2ee"
+mode_blue = "#f6f2ee"
+mode_purple = "#f6f2ee"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

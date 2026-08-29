@@ -1,0 +1,68 @@
+# Nvim Light
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#e0e2ea"
+foreground = "#14161b"
+cursor-color = "#9b9ea4"
+cursor-text = "#14161b"
+selection-background = "#9b9ea4"
+selection-foreground = "#14161b"
+palette_0 = "#e0e2ea"
+palette_1 = "#e0e2ea"
+palette_2 = "#e0e2ea"
+palette_3 = "#e0e2ea"
+palette_4 = "#e0e2ea"
+palette_5 = "#e0e2ea"
+palette_6 = "#e0e2ea"
+palette_7 = "#e0e2ea"
+palette_8 = "#e0e2ea"
+palette_9 = "#e0e2ea"
+palette_10 = "#e0e2ea"
+palette_11 = "#e0e2ea"
+palette_12 = "#e0e2ea"
+palette_13 = "#e0e2ea"
+palette_14 = "#e0e2ea"
+palette_15 = "#e0e2ea"
+
+[roles]
+bg = "#e0e2ea"
+bg_deep = "#e8e9ef"
+surface = "#c8cad1"
+fg = "#14161b"
+fg_soft = "#515359"
+fg_bright = "#0d0e12"
+grey = "#707278"
+grey_dim = "#999ba2"
+grey_neutral = "#5b5d63"
+grey_soft = "#84868d"
+red = "#e0e2ea"
+orange = "#e0e2ea"
+yellow = "#e0e2ea"
+green = "#e0e2ea"
+aqua = "#e0e2ea"
+blue = "#e0e2ea"
+purple = "#e0e2ea"
+tint_green = "#e0e2ea"
+tint_red = "#e0e2ea"
+statusline = "#d0d2d9"
+statusline_accent = "#bbbdc5"
+statusline_fg = "#14161b"
+on_accent = "#14161b"
+mode_red = "#e0e2ea"
+mode_green = "#e0e2ea"
+mode_yellow = "#e0e2ea"
+mode_blue = "#e0e2ea"
+mode_purple = "#e0e2ea"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

@@ -1,0 +1,68 @@
+# Mellifluous
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#1a1a1a"
+foreground = "#dadada"
+cursor-color = "#bfad9e"
+cursor-text = "#1a1a1a"
+selection-background = "#2d2d2d"
+selection-foreground = "#c0af8c"
+palette_0 = "#1a1a1a"
+palette_1 = "#1a1a1a"
+palette_2 = "#1a1a1a"
+palette_3 = "#1a1a1a"
+palette_4 = "#1a1a1a"
+palette_5 = "#1a1a1a"
+palette_6 = "#1a1a1a"
+palette_7 = "#1a1a1a"
+palette_8 = "#1a1a1a"
+palette_9 = "#1a1a1a"
+palette_10 = "#1a1a1a"
+palette_11 = "#1a1a1a"
+palette_12 = "#1a1a1a"
+palette_13 = "#1a1a1a"
+palette_14 = "#1a1a1a"
+palette_15 = "#1a1a1a"
+
+[roles]
+bg = "#1a1a1a"
+bg_deep = "#141414"
+surface = "#313131"
+fg = "#dadada"
+fg_soft = "#a0a0a0"
+fg_bright = "#1a1a1a"
+grey = "#848484"
+grey_dim = "#5d5d5d"
+grey_neutral = "#979797"
+grey_soft = "#707070"
+red = "#1a1a1a"
+orange = "#1a1a1a"
+yellow = "#1a1a1a"
+green = "#1a1a1a"
+aqua = "#1a1a1a"
+blue = "#1a1a1a"
+purple = "#1a1a1a"
+tint_green = "#1a1a1a"
+tint_red = "#1a1a1a"
+statusline = "#292929"
+statusline_accent = "#3d3d3d"
+statusline_fg = "#dadada"
+on_accent = "#dadada"
+mode_red = "#1a1a1a"
+mode_green = "#1a1a1a"
+mode_yellow = "#1a1a1a"
+mode_blue = "#1a1a1a"
+mode_purple = "#1a1a1a"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

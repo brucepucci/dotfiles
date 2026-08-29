@@ -1,0 +1,68 @@
+# Kanso Mist
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#22262d"
+foreground = "#c5c9c7"
+cursor-color = "#c5c9c7"
+cursor-text = "#22262d"
+selection-background = "#43464e"
+selection-foreground = "#c5c9c7"
+palette_0 = "#22262d"
+palette_1 = "#22262d"
+palette_2 = "#22262d"
+palette_3 = "#22262d"
+palette_4 = "#22262d"
+palette_5 = "#22262d"
+palette_6 = "#22262d"
+palette_7 = "#22262d"
+palette_8 = "#22262d"
+palette_9 = "#22262d"
+palette_10 = "#22262d"
+palette_11 = "#22262d"
+palette_12 = "#22262d"
+palette_13 = "#22262d"
+palette_14 = "#22262d"
+palette_15 = "#22262d"
+
+[roles]
+bg = "#22262d"
+bg_deep = "#1a1c22"
+surface = "#363a3f"
+fg = "#c5c9c7"
+fg_soft = "#949899"
+fg_bright = "#22262d"
+grey = "#7c8082"
+grey_dim = "#5b5f63"
+grey_neutral = "#8c9091"
+grey_soft = "#6b6f72"
+red = "#22262d"
+orange = "#22262d"
+yellow = "#22262d"
+green = "#22262d"
+aqua = "#22262d"
+blue = "#22262d"
+purple = "#22262d"
+tint_green = "#22262d"
+tint_red = "#22262d"
+statusline = "#2f3339"
+statusline_accent = "#3f4349"
+statusline_fg = "#c5c9c7"
+on_accent = "#c5c9c7"
+mode_red = "#22262d"
+mode_green = "#22262d"
+mode_yellow = "#22262d"
+mode_blue = "#22262d"
+mode_purple = "#22262d"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

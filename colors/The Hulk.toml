@@ -1,0 +1,68 @@
+# The Hulk
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#1b1d1e"
+foreground = "#b5b5b5"
+cursor-color = "#16b61b"
+cursor-text = "#000000"
+selection-background = "#4d504c"
+selection-foreground = "#31892f"
+palette_0 = "#1b1d1e"
+palette_1 = "#1b1d1e"
+palette_2 = "#1b1d1e"
+palette_3 = "#1b1d1e"
+palette_4 = "#1b1d1e"
+palette_5 = "#1b1d1e"
+palette_6 = "#1b1d1e"
+palette_7 = "#1b1d1e"
+palette_8 = "#1b1d1e"
+palette_9 = "#1b1d1e"
+palette_10 = "#1b1d1e"
+palette_11 = "#1b1d1e"
+palette_12 = "#1b1d1e"
+palette_13 = "#1b1d1e"
+palette_14 = "#1b1d1e"
+palette_15 = "#1b1d1e"
+
+[roles]
+bg = "#1b1d1e"
+bg_deep = "#141616"
+surface = "#2d2f30"
+fg = "#b5b5b5"
+fg_soft = "#878788"
+fg_bright = "#1b1d1e"
+grey = "#707171"
+grey_dim = "#515253"
+grey_neutral = "#7f8080"
+grey_soft = "#606162"
+red = "#1b1d1e"
+orange = "#1b1d1e"
+yellow = "#1b1d1e"
+green = "#1b1d1e"
+aqua = "#1b1d1e"
+blue = "#1b1d1e"
+purple = "#1b1d1e"
+tint_green = "#1b1d1e"
+tint_red = "#1b1d1e"
+statusline = "#27292a"
+statusline_accent = "#373839"
+statusline_fg = "#b5b5b5"
+on_accent = "#b5b5b5"
+mode_red = "#1b1d1e"
+mode_green = "#1b1d1e"
+mode_yellow = "#1b1d1e"
+mode_blue = "#1b1d1e"
+mode_purple = "#1b1d1e"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

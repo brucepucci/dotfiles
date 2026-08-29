@@ -1,0 +1,68 @@
+# Hot Dog Stand
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#ea3323"
+foreground = "#ffffff"
+cursor-color = "#ffff54"
+cursor-text = "#ea3323"
+selection-background = "#ffff54"
+selection-foreground = "#000000"
+palette_0 = "#ea3323"
+palette_1 = "#ea3323"
+palette_2 = "#ea3323"
+palette_3 = "#ea3323"
+palette_4 = "#ea3323"
+palette_5 = "#ea3323"
+palette_6 = "#ea3323"
+palette_7 = "#ea3323"
+palette_8 = "#ea3323"
+palette_9 = "#ea3323"
+palette_10 = "#ea3323"
+palette_11 = "#ea3323"
+palette_12 = "#ea3323"
+palette_13 = "#ea3323"
+palette_14 = "#ea3323"
+palette_15 = "#ea3323"
+
+[roles]
+bg = "#ea3323"
+bg_deep = "#b0261a"
+surface = "#ed4b3d"
+fg = "#ffffff"
+fg_soft = "#f9c2bd"
+fg_bright = "#ea3323"
+grey = "#f6a39c"
+grey_dim = "#f17a70"
+grey_neutral = "#f8b8b2"
+grey_soft = "#f38f86"
+red = "#ea3323"
+orange = "#ea3323"
+yellow = "#ea3323"
+green = "#ea3323"
+aqua = "#ea3323"
+blue = "#ea3323"
+purple = "#ea3323"
+tint_green = "#ea3323"
+tint_red = "#ea3323"
+statusline = "#ec4335"
+statusline_accent = "#ee584b"
+statusline_fg = "#ffffff"
+on_accent = "#ffffff"
+mode_red = "#ea3323"
+mode_green = "#ea3323"
+mode_yellow = "#ea3323"
+mode_blue = "#ea3323"
+mode_purple = "#ea3323"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

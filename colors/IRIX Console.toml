@@ -1,0 +1,68 @@
+# IRIX Console
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#0c0c0c"
+foreground = "#f2f2f2"
+cursor-color = "#c7c7c7"
+cursor-text = "#8c8c8c"
+selection-background = "#c2deff"
+selection-foreground = "#000000"
+palette_0 = "#0c0c0c"
+palette_1 = "#0c0c0c"
+palette_2 = "#0c0c0c"
+palette_3 = "#0c0c0c"
+palette_4 = "#0c0c0c"
+palette_5 = "#0c0c0c"
+palette_6 = "#0c0c0c"
+palette_7 = "#0c0c0c"
+palette_8 = "#0c0c0c"
+palette_9 = "#0c0c0c"
+palette_10 = "#0c0c0c"
+palette_11 = "#0c0c0c"
+palette_12 = "#0c0c0c"
+palette_13 = "#0c0c0c"
+palette_14 = "#0c0c0c"
+palette_15 = "#0c0c0c"
+
+[roles]
+bg = "#0c0c0c"
+bg_deep = "#090909"
+surface = "#282828"
+fg = "#f2f2f2"
+fg_soft = "#adadad"
+fg_bright = "#0c0c0c"
+grey = "#8a8a8a"
+grey_dim = "#5c5c5c"
+grey_neutral = "#a2a2a2"
+grey_soft = "#737373"
+red = "#0c0c0c"
+orange = "#0c0c0c"
+yellow = "#0c0c0c"
+green = "#0c0c0c"
+aqua = "#0c0c0c"
+blue = "#0c0c0c"
+purple = "#0c0c0c"
+tint_green = "#0c0c0c"
+tint_red = "#0c0c0c"
+statusline = "#1e1e1e"
+statusline_accent = "#353535"
+statusline_fg = "#f2f2f2"
+on_accent = "#f2f2f2"
+mode_red = "#0c0c0c"
+mode_green = "#0c0c0c"
+mode_yellow = "#0c0c0c"
+mode_blue = "#0c0c0c"
+mode_purple = "#0c0c0c"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""

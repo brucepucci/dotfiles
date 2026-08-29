@@ -1,0 +1,68 @@
+# Iceberg Light
+# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
+# [roles] map the 16 colors onto what our apps need; derived from them by scripts/sync-ghostty-themes.py -- edit freely.
+# [apps] carries optional per-app hints (delta syntax theme, nvim
+# colorscheme); templates fall back to derived/neutral values without them.
+
+[meta]
+curated = false
+
+[terminal]
+background = "#e8e9ec"
+foreground = "#33374c"
+cursor-color = "#33374c"
+cursor-text = "#e8e9ec"
+selection-background = "#33374c"
+selection-foreground = "#e8e9ec"
+palette_0 = "#e8e9ec"
+palette_1 = "#e8e9ec"
+palette_2 = "#e8e9ec"
+palette_3 = "#e8e9ec"
+palette_4 = "#e8e9ec"
+palette_5 = "#e8e9ec"
+palette_6 = "#e8e9ec"
+palette_7 = "#e8e9ec"
+palette_8 = "#e8e9ec"
+palette_9 = "#e8e9ec"
+palette_10 = "#e8e9ec"
+palette_11 = "#e8e9ec"
+palette_12 = "#e8e9ec"
+palette_13 = "#e8e9ec"
+palette_14 = "#e8e9ec"
+palette_15 = "#e8e9ec"
+
+[roles]
+bg = "#e8e9ec"
+bg_deep = "#eeeef1"
+surface = "#d2d4d9"
+fg = "#33374c"
+fg_soft = "#696c7c"
+fg_bright = "#212431"
+grey = "#848794"
+grey_dim = "#a9abb4"
+grey_neutral = "#727584"
+grey_soft = "#9799a4"
+red = "#e8e9ec"
+orange = "#e8e9ec"
+yellow = "#e8e9ec"
+green = "#e8e9ec"
+aqua = "#e8e9ec"
+blue = "#e8e9ec"
+purple = "#e8e9ec"
+tint_green = "#e8e9ec"
+tint_red = "#e8e9ec"
+statusline = "#dadbdf"
+statusline_accent = "#c7c9cf"
+statusline_fg = "#33374c"
+on_accent = "#33374c"
+mode_red = "#e8e9ec"
+mode_green = "#e8e9ec"
+mode_yellow = "#e8e9ec"
+mode_blue = "#e8e9ec"
+mode_purple = "#e8e9ec"
+
+[apps]
+delta_syntax_theme = "none"
+
+[apps.nvim]
+colorscheme = ""
