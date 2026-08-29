@@ -202,7 +202,8 @@ restart. Light mode pairs with Ghostty's Gruvbox Light Hard.
 
 ### lualine.nvim
 Statusline — mode, branch, diagnostics, position. Theme follows `'background`
-via a function (lualine's gruvbox-material theme is dark-only).
+via a function: dark is lualine's gruvbox-material, light is a hand-rolled
+Gruvbox Material Light Hard table (lualine ships no material-light theme).
 
 ### which-key.nvim
 Press `<Space>` and pause: it lists what's available under that prefix. This is

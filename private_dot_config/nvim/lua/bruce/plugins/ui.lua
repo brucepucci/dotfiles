@@ -16,14 +16,36 @@ return {
         event = "VeryLazy",
         opts = {
             options = {
-                -- lualine's "gruvbox-material" theme is dark-only (hardcoded
-                -- palette, ignores 'background'), so pick per side: its
-                -- built-in "gruvbox_light" is the light counterpart. A
-                -- function re-evaluates because lualine re-runs setup() on
-                -- OptionSet background -- which is exactly what
-                -- core/appearance.lua triggers when the OS flips.
+                -- Follows 'background', which core/appearance.lua sets from the
+                -- OS: lualine re-runs setup() on OptionSet background, and a
+                -- function theme re-evaluates then. Dark side is lualine's
+                -- built-in gruvbox-material; light side is a hand-rolled table
+                -- because lualine ships no material-light theme (its
+                -- "gruvbox_light" is plain Gruvbox, off-palette next to
+                -- gruvbox-material's light rendering). Colors are Gruvbox
+                -- Material Light Hard, taken verbatim from the colorscheme's
+                -- own palette (autoload/gruvbox_material.vim), mirroring the
+                -- segment shape of lualine's gruvbox-material (dark) theme.
                 theme = function()
-                    return vim.o.background == "light" and "gruvbox_light" or "gruvbox-material"
+                    if vim.o.background ~= "light" then
+                        return "gruvbox-material"
+                    end
+                    local fg = "#654735" -- fg0
+                    local surface1, surface2 = "#f5edca", "#eee0b7" -- bg1/bg_statusline3
+                    local on_accent = "#f9f5d7" -- bg0
+                    return {
+                        normal = {
+                            a = { fg = on_accent, bg = "#a89984", gui = "bold" },
+                            b = { fg = fg, bg = surface2 },
+                            c = { fg = fg, bg = surface1 },
+                        },
+                        command = { a = { fg = on_accent, bg = "#45707a", gui = "bold" } }, -- blue
+                        inactive = { a = { fg = fg, bg = surface2 } },
+                        insert = { a = { fg = on_accent, bg = "#6c782e", gui = "bold" } }, -- green
+                        replace = { a = { fg = on_accent, bg = "#b47109", gui = "bold" } }, -- yellow
+                        terminal = { a = { fg = on_accent, bg = "#945e80", gui = "bold" } }, -- purple
+                        visual = { a = { fg = on_accent, bg = "#c14a4a", gui = "bold" } }, -- red
+                    }
                 end,
             },
         },
