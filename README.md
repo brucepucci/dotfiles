@@ -74,8 +74,9 @@ if you install Neovim some other way.
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts |
 | `~/.config/lazygit/config.yml` | delta as lazygit's pager |
 | `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
-| `~/.pi/agent/settings.json` | pi coding agent: terminal-following Gruvbox theme pair, `zai` provider, `glm-5.3` default |
-| `.chezmoidata/palette.toml` | Single source of truth for every color (repo-only — never applied; templates render from it) |
+| `~/.pi/agent/settings.json` | pi coding agent: appearance-following theme pair, `zai` provider, `glm-5.3` default |
+| `.chezmoidata/palette.toml` | The three settings that drive every color (repo-only — never applied) |
+| `colors/` | One palette file per Ghostty theme (repo-only); source for everything rendered |
 
 **One shell everywhere.** Ghostty, Terminal.app, iTerm2, and anyone SSH-ing
 into this machine all get the same zsh: `~/.zprofile` sets the login PATH,
@@ -181,10 +182,10 @@ runs before big changes.
 #    exercises the result the way real sessions do: fresh-window shell,
 #    the legacy ZDOTDIR guard, SSH prompt segment, history shared across
 #    shells, EDITOR fallback, secrets staying out, ghostty config hygiene,
-#    the light-mode wiring (ghostty theme pair, nvim OS-appearance sync,
-#    delta-theme wrapper exercised with fake `defaults`/`delta` shims), and
-#    the palette single-source check (no orphan hexes, names match
-#    [palette.scheme]).
+#    the light/dark mode wiring (ghostty theme line, nvim mode module,
+#    delta-theme wrapper exercised with fake `defaults`/`delta` shims),
+#    and the color-catalog checks (settings resolve into colors/, the
+#    aggregate is fresh, no orphan hexes, roles render verbatim).
 scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
 
 # 2. ~1 min. The same, inside a clean Debian 12 userland on the colima VM.
@@ -224,42 +225,56 @@ Adding a plugin means dropping a file into
 `private_dot_config/nvim/lua/bruce/plugins/` — they are auto-imported, so no
 `init.lua` edit is needed.
 
-## Changing the color scheme
+## Changing how everything looks
 
-Every color this repo generates comes from one file:
-[.chezmoidata/palette.toml](.chezmoidata/palette.toml), in three layers:
+Three settings in [.chezmoidata/palette.toml](.chezmoidata/palette.toml) — no
+hex, no per-app themes:
 
-- **`[palette.scheme]`** — identity: the curated theme *names* each app runs
-  (Ghostty's light/dark pair, delta's bat syntax themes, nvim's
-  gruvbox-material options, pi's auto-switching pair).
-- **`[palette.light]` / `[palette.dark]`** — raw roles: the hex values, with
-  upstream provenance in comments, for the only surfaces that must hold real
-  colors (the two pi themes, lualine's light statusline table, the prompt's
-  orange).
-- role→token mapping lives in each surface's `.tmpl` (target paths are
-  unchanged from before the migration — only the source gained `.tmpl`).
+```toml
+[palette]
+theme = "system"                   # "system" | "light" | "dark"
+light_theme = "Gruvbox Light Hard"
+dark_theme = "Gruvbox Material Dark"
+```
 
-**Tweak one color:** edit the role, then `chezmoi diff && chezmoi apply`.
-Only the surfaces consuming that role change — e.g. flipping
-`[palette.dark].tint_green` changes exactly one line, pi's dark
-`toolSuccessBg`.
+- **`light_theme` / `dark_theme`** are Ghostty theme names — browse with
+  `ghostty +list-themes` (highlighting one there previews its 16-color
+  mapping). Type the name exactly as shown, `chezmoi diff && chezmoi apply`,
+  and every surface follows: Ghostty runs the theme itself; the zsh prompt
+  renders in indexed colors it inherits from the terminal; pi's TUI themes
+  are generated from the theme's palette; delta uses the theme's bat syntax
+  theme when it has one (else `none` — the terminal's own colors, still
+  cohesive); nvim and lualine use the theme's curated colorscheme when it
+  names one, else a colorscheme generated from the palette.
+- **`theme`** picks the mode: `system` follows the OS light/dark appearance
+  live — Ghostty auto-switches its pair, nvim re-syncs on focus, delta
+  detects per invocation; `light`/`dark` pin one look everywhere, always,
+  regardless of what the OS says.
 
-**Switch scheme family:** swap the names in `[palette.scheme]`, then rename
-`dot_pi/agent/themes/<name>.json.tmpl` to match the new pair — file names,
-each theme's `"name"` field, and `pi_pair` must agree (the smoke test checks
-all three). The lualine dark side returns a built-in theme name and the light
-table's role mapping may need porting (`plugins/ui.lua.tmpl`); the nvim
-colorscheme plugin is swapped in its lazy spec along with
-`[palette.scheme.nvim]`.
+The data behind a name lives in `colors/<name>.toml`: the terminal palette
+synced verbatim from Ghostty's own theme file, the `[roles]` that map the 16
+colors onto what the apps need (derived on import), and optional `[apps]`
+hints — the delta syntax theme and the nvim colorscheme with its options.
+Two rules:
 
-Generated files are build artifacts — edit the data file, never `~`. The
-smoke test fails on any hex in a generated output that the palette does not
-define, and on any embedded theme name that disagrees with `[palette.scheme]`.
+- A name you typed that has no file yet just needs one run of
+  `python3 scripts/sync-ghostty-themes.py` (imports anything new from
+  Ghostty's catalog, refreshes `[terminal]` on existing files, regenerates
+  the aggregate `.chezmoidata/colors.toml` the templates read).
+- Tune a theme by editing its file's `[roles]` — and add `curated = true`
+  under `[meta]` so the sync script never overwrites your tuning. The two
+  Gruvbox themes ship curated this way, preserving the colors this stack
+  has always rendered.
 
-Two palettes the repo deliberately does **not** generate: Ghostty's theme
-rendering (it ships curated Gruvbox themes — we only name them) and nvim's
-colorscheme itself (upstream `sainnhe/gruvbox-material`). The palette's hex
-roles duplicate only what the raw-color surfaces need.
+Everything else — the aggregate, the pi themes, nvim's `core/theming.lua`,
+the ghostty/delta/gitconfig lines — is a build artifact; the smoke test
+fails if the aggregate goes stale, a rendered output carries a hex no theme
+file defines, or a surface stops matching the settings.
+
+pi specifics: its theme files are named `dotfiles-{light,dark}.json`
+regardless of which themes are active (a theme swap never renames files),
+and `settings.json` picks the pair — or a single theme when the mode is
+pinned.
 
 ## Updating plugins
 

@@ -24,30 +24,38 @@ pi coding agent (Z.ai/GLM models).
 dot_zshrc                  # interactive shell: options, history, aliases, prompt
 dot_zprofile               # login-shell PATH (Homebrew, ~/.local/bin)
 dot_local/bin/executable_delta-theme.tmpl   # ~/.local/bin: delta, colored for the
-                            # current OS appearance; git + lazygit call it;
-                            # theme names render from .chezmoidata/palette.toml
+                            # configured mode/theme; git + lazygit call it
+dot_gitconfig.tmpl         # delta fallback syntax-theme from the theme files
 private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
-.chezmoidata/palette.toml  # SINGLE SOURCE OF TRUTH for all colors: [palette.scheme]
-                            # names (ghostty/delta/nvim/pi) + [palette.light]/[dark]
-                            # raw roles; consumed by every *.tmpl below
+.chezmoidata/palette.toml  # THE THREE SETTINGS users edit: theme (light|dark|
+                            # system), light_theme, dark_theme -- Ghostty theme
+                            # names, browsable with `ghostty +list-themes`
+colors/<theme name>.toml   # one file per Ghostty theme (463 imported): the
+                            # terminal palette verbatim + derived [roles] +
+                            # [apps] hints; curated files are hand-tuned
+.chezmoidata/colors.toml   # GENERATED aggregate of colors/ (build artifact),
+                            # read by templates as .colors."<theme name>";
+                            # regenerate with scripts/sync-ghostty-themes.py
+scripts/sync-ghostty-themes.py  # import/refresh from Ghostty's theme catalog;
+                            # derives roles from the 16 colors; --check = smoke
 private_dot_config/nvim/
-├── init.lua              # sets mapleader, syncs OS appearance, then requires
+├── init.lua              # sets mapleader, syncs appearance, then requires
 │                         # core.* and bruce.lazy
 ├── lazy-lock.json        # committed; pins exact plugin revisions
 └── lua/bruce/
     ├── lazy.lua          # bootstrap + { import = "bruce.plugins" }
-    ├── core/             # options, keymaps, autocmds, appearance, maximize
+    ├── core/theming.lua.tmpl  # GENERATED: mode, nvim scheme hint, both
+    │                     # themes' role tables -- nvim's ONLY rendered file
+    ├── core/appearance.lua    # mode-aware background + scheme application
+    ├── colors/scheme.lua      # generated fallback colorscheme (no hint)
     └── plugins/          # one spec file per concern, auto-imported
-                            # (colorscheme.lua.tmpl + ui.lua.tmpl render from
-                            # the palette; targets keep the .lua names)
 private_dot_config/zsh/ps1.zsh.tmpl   # the prompt (git state, duration, exit
-                            # code); GB_ORANGE renders from the palette
+                            # code); fully indexed colors 0-15
 private_dot_config/ghostty/config.tmpl # terminal appearance only — no shell settings;
-                            # theme pair follows the OS: light:…,dark:… (names
-                            # from the palette)
-dot_pi/agent/              # settings.json.tmpl + themes/*.json.tmpl — the pi
-                            # TUI's theme pair and both raw palettes, generated
-                            # from [palette.light]/[palette.dark]
+                            # theme line from the settings (pair or single)
+dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
+                            # .json.tmpl — the pi TUI's themes, generated from
+                            # the active themes' roles (stable file names)
 ```
 
 Adding a plugin = drop a file in `lua/bruce/plugins/` returning a lazy.nvim
@@ -74,14 +82,18 @@ was broken for months with no error shown. Let failures be loud.
 `pcall` is fine where failure is genuinely expected and not exceptional (e.g.
 `vim.treesitter.start` on a filetype with no parser).
 
-**Colors come from `.chezmoidata/palette.toml`.** One source of truth, three
-layers (`[palette.scheme]` names, `[palette.light]/[dark]` raw roles,
-per-template mapping). Never hardcode a hex or theme name in a managed file:
-make it a `.tmpl` that renders from the palette. The smoke test's "palette is
-the single source" step is the drift guard — it fails on orphan hexes and on
-names that disagree with `[palette.scheme]`. `chezmoi re-add` skips
-template-sourced files (e.g. pi's `settings.json.tmpl`): fold pi's self-bumps
-in by hand. See README "Changing the color scheme" for the runbook.
+**Colors: three settings plus the theme catalog.** Users edit only
+`.chezmoidata/palette.toml` (`theme`, `light_theme`, `dark_theme` — Ghostty
+theme names; `ghostty +list-themes` is the browser). Theme data lives in
+`colors/<name>.toml` (terminal palette + derived/hand-curated `[roles]` +
+`[apps]` hints); `.chezmoidata/colors.toml` is the generated aggregate.
+Never hardcode a hex or theme name in a managed file — render it from
+`.palette`/`.colors` or read it via `bruce.core.theming`. In nvim, only
+`core/theming.lua` is generated; the rest is static Lua. The smoke test's
+color-catalog step is the drift guard (stale aggregate, orphan hexes,
+settings-vs-surfaces mismatches). `chezmoi re-add` skips template-sourced
+files (e.g. pi's `settings.json.tmpl`): fold pi's self-bumps in by hand.
+See README "Changing how everything looks" for the runbook.
 
 **Servers come from Homebrew, not Mason.** Mason is deliberately not installed:
 one package manager, versions visible in `Brewfile`, no duplicate copies, no
