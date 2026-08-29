@@ -7,37 +7,47 @@ reviewing code an AI agent wrote.
 
 ## New machine
 
-```bash
-# 1. Credentials FIRST. This repo is private, so chezmoi's clone needs them.
-brew install chezmoi gh
-gh auth login          # choose HTTPS
-gh auth setup-git      # installs the git credential helper
+Five commands on macOS. Order matters — see the notes.
 
-# 2. Config
+```bash
+# 0. Homebrew, if this machine has never had it
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 1. Credentials. This repo is PRIVATE, so chezmoi's clone needs them.
+brew install chezmoi gh
+gh auth login            # choose HTTPS
+gh auth setup-git        # installs the git credential helper
+
+# 2. Config -> ~/.config/nvim, ~/.gitconfig, ~/.config/ghostty, ~/.config/zsh-ghostty
 chezmoi init --apply brucepucci
 
-# 3. Dependencies (language servers, ripgrep, lazygit, ipython, ...)
+# 3. Everything the config needs: Neovim, language servers, ripgrep, fd,
+#    lazygit, delta, ipython, tree-sitter, the Nerd Font, Ghostty itself
 brew bundle --file="$(chezmoi source-path)/Brewfile"
 
-# 4. Plugins, pinned to the exact revisions in lazy-lock.json
+# 4. Plugins, at the exact revisions pinned in lazy-lock.json
 nvim --headless "+Lazy! restore" +qa
 ```
 
-> **Step 1 is not optional.** `chezmoi init` clones over HTTPS and this repo is
-> private, so without a credential helper it fails with
-> `Authentication failed`. There is no SSH key registered on this account, so
-> `--ssh` is not a fallback either.
+Then open Ghostty and run `nvim`. That is the whole thing.
 
-> **Step 3 before opening Neovim.** Servers come from Homebrew, not Mason. If
-> you launch `nvim` first you get a warning naming the missing servers — it is
-> not silent, but it is avoidable.
+> **Step 1 is not optional.** `chezmoi init` clones over HTTPS, and this repo
+> is private, so without a credential helper it fails with
+> `Authentication failed`. No SSH key is registered on this account either, so
+> `--ssh` is not a fallback.
 
-If Homebrew is not installed yet, start with
-`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
+> **Do step 3 before step 4.** Language servers come from Homebrew, not Mason.
+> Launching Neovim earlier is not fatal — it warns and names what is missing —
+> but `Lazy! restore` also needs `tree-sitter` to build parsers.
 
-**Requires Neovim 0.12+.** The config refuses to load below that and tells you
-so, rather than half-working: `vim.lsp.config`, `vim.hl`, and nvim-treesitter's
-`main` branch all need it.
+> **Not using Ghostty?** The Nerd Font is installed by step 3, but only Ghostty
+> picks it up automatically. In iTerm2 or another terminal, set the font to
+> JetBrainsMono Nerd Font by hand or icons render as boxes.
+
+**Requires Neovim 0.12+.** Below that the config refuses to load and says so,
+rather than half-working: `vim.lsp.config`, `vim.hl`, and nvim-treesitter's
+`main` branch all need it. Homebrew's `neovim` is current, so this only bites
+if you install Neovim some other way.
 
 ## What is managed
 
