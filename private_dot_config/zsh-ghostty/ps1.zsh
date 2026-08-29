@@ -28,18 +28,20 @@ GB_GIT_ICON=' '
 # ---------------------------------------------------------------------------
 zstyle ':vcs_info:*' enable git
 zstyle ':vcs_info:git:*' check-for-changes true
-zstyle ':vcs_info:git:*' unstagedstr "%F{$GB_RED}●%f"
-zstyle ':vcs_info:git:*' stagedstr   "%F{$GB_YELLOW}●%f"
+# Git state, in sync with the snacks explorer's git-status column -- same
+# glyphs (snacks defaults), same colors (its Staged/Modified groups link to
+# DiagnosticHint/DiagnosticWarn = gruvbox-material purple/yellow, which are
+# indexed colors 5 and 3 here):
+#   ● purple -- staged, in the index (filled = locked in)
+#   ○ yellow -- changed, not staged (open = still loose)
+# Untracked files are deliberately NOT shown: probing for them meant
+# `git ls-files --others` scanning the whole worktree on EVERY prompt -- by
+# far the most expensive thing this prompt did. `git status` when you want
+# the full picture; set check-for-changes to false for a branch-only prompt.
+zstyle ':vcs_info:git:*' unstagedstr "%F{$GB_YELLOW}○%f"
+zstyle ':vcs_info:git:*' stagedstr   "%F{$GB_PURPLE}●%f"
 zstyle ':vcs_info:git:*' formats       " %F{$GB_AQUA}${GB_GIT_ICON}%b%f%u%c"
 zstyle ':vcs_info:git:*' actionformats " %F{$GB_AQUA}${GB_GIT_ICON}%b%f %F{$GB_ORANGE}(%a)%f%u%c"
-
-# vcs_info ignores untracked files by default; this adds a gray dot for them.
-zstyle ':vcs_info:git*+set-message:*' hooks git-untracked
-+vi-git-untracked() {
-  [[ $(git rev-parse --is-inside-work-tree 2>/dev/null) == true ]] || return
-  git ls-files --others --exclude-standard --directory --no-empty-directory \
-    --error-unmatch . >/dev/null 2>&1 && hook_com[unstaged]+="%F{$GB_GRAY}●%f"
-}
 
 # ---------------------------------------------------------------------------
 # Hooks: command duration (only when it exceeds the threshold) + vcs refresh
@@ -64,7 +66,7 @@ add-zsh-hook precmd  _gb_precmd
 
 # ---------------------------------------------------------------------------
 # Prompt assembly
-#   [user@host ]path git-branch●● [⚙jobs] ❯
+#   [user@host ]path git-branch●○ [⚙jobs] ❯
 #                                        right side:  ✗exit  elapsed
 # ---------------------------------------------------------------------------
 GB_HOST=''

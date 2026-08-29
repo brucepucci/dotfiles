@@ -2,8 +2,8 @@
 
 This config exists for one job: **reviewing code that an AI agent wrote.**
 
-Most of the typing happens elsewhere now — Claude Code in one terminal split,
-Neovim in the other. So the editor's job has shifted from *writing* to
+Most of the typing happens elsewhere now — the pi coding agent in one terminal
+split, Neovim in the other. So the editor's job has shifted from *writing* to
 *reading a diff and deciding what to keep*. Everything below is built around
 that.
 
@@ -21,7 +21,7 @@ Ghostty, split in two:
 | `⌘⇧D` | Split down |
 | `⌘[` / `⌘]` | Move between splits |
 
-Claude Code on one side, `nvim` on the other. That's the whole arrangement —
+pi on one side, `nvim` on the other. That's the whole arrangement —
 no tmux involved.
 
 **You do not need to reload files.** When the agent rewrites something you have
