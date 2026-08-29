@@ -195,10 +195,14 @@ proper tables). Ships a standalone binary; no Node needed.
 ## Appearance
 
 ### gruvbox-material
-The colorscheme. Hard contrast, material palette.
+The colorscheme. Hard contrast, material palette. Follows the OS appearance:
+core/appearance.lua sets `'background` from macOS light/dark before plugins
+load and re-syncs on FocusGained, so a mid-session OS flip recolors without a
+restart. Light mode pairs with Ghostty's Gruvbox Light Hard.
 
 ### lualine.nvim
-Statusline — mode, branch, diagnostics, position.
+Statusline — mode, branch, diagnostics, position. Theme follows `'background`
+via a function (lualine's gruvbox-material theme is dark-only).
 
 ### which-key.nvim
 Press `<Space>` and pause: it lists what's available under that prefix. This is

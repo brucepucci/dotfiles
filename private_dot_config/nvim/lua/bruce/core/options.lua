@@ -19,7 +19,9 @@ opt.smartcase = true
 -- appearance
 opt.cursorline = true
 opt.termguicolors = true
-opt.background = "dark"
+-- 'background' is NOT pinned here: it follows the OS appearance (light/dark)
+-- via core/appearance.lua, which runs before plugins and re-syncs on
+-- FocusGained. Pinning it would fight that.
 opt.signcolumn = "yes" -- always on, so gitsigns/diagnostics never shift the text
 
 -- backspace
