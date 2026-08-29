@@ -1,0 +1,14 @@
+return {
+    "sainnhe/gruvbox-material",
+    lazy = false,
+    priority = 1001, -- ahead of snacks (1000), so nothing renders unstyled
+    config = function()
+        {{- /* background/foreground options and the colorscheme name come
+             from .chezmoidata/palette.toml ([palette.scheme.nvim]); change
+             them there, then `chezmoi apply` */}}
+        vim.g.gruvbox_material_background = "{{ .palette.scheme.nvim.contrast }}" -- "hard" | "medium" | "soft"
+        vim.g.gruvbox_material_foreground = "{{ .palette.scheme.nvim.foreground }}" -- "material" | "mix" | "original"
+        vim.g.gruvbox_material_better_performance = 1
+        vim.cmd.colorscheme("{{ .palette.scheme.nvim.colorscheme }}")
+    end,
+}

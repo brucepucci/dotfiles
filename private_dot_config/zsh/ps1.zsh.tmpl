@@ -13,6 +13,9 @@ setopt PROMPT_SUBST
 # automatically, no edit here required. Terminals without theme support just
 # render the indexed colors of their own palette.
 # Orange has no slot in the 16-color palette, so it stays hex.
+{{- /* GB_ORANGE renders from .chezmoidata/palette.toml ([palette.dark].orange):
+     one prompt file serves both appearances, and the dark orange reads on
+     both -- the role is pinned to the dark variant on purpose */}}
 # ---------------------------------------------------------------------------
 GB_GRAY=8
 GB_RED=1
@@ -21,7 +24,7 @@ GB_YELLOW=3
 GB_BLUE=4
 GB_PURPLE=5
 GB_AQUA=6
-GB_ORANGE='#e78a4e'
+GB_ORANGE='{{ .palette.dark.orange }}'
 
 # Branch glyph. Replace with 'git:' or '⎇ ' if it renders as a box.
 GB_GIT_ICON=' '
