@@ -34,8 +34,17 @@ brew "ipython"              # the REPL iron.nvim drives (<leader>`)
 
 # --- build / runtime ------------------------------------------------------
 brew "tree-sitter-cli"      # nvim-treesitter `main` compiles parsers (needs >= 0.26.1)
-brew "node"                 # fallback only; markdown-preview ships its own binary
+brew "node"                 # REQUIRED: pi (below) installs via npm; also builds
+                            # markdown-preview on aarch64 Linux
 brew "fastfetch"            # banner in the Ghostty zshrc (guarded, optional)
+
+# --- coding agent ---------------------------------------------------------
+# pi, the terminal coding agent. No Homebrew formula exists, so it comes from
+# npm -- which is why `node` above is a hard dependency. Unpinned = latest,
+# matching the brew entries; `pi --version` shows what landed. Config and
+# model defaults come from chezmoi (~/.pi/agent/settings.json); the Z.ai API
+# key is a secret and is NOT in this repo -- see README, new-machine step 5.
+system "npm", "install", "-g", "@earendil-works/pi-coding-agent"
 
 # --- macOS only -----------------------------------------------------------
 # The config renders Nerd Font glyphs (diagnostics, markdown icons, file

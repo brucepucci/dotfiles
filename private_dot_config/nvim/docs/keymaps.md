@@ -99,7 +99,7 @@ unsaved changes to the same file, you get a prompt instead of losing them.
 | `<leader>fk` | **Every keymap**, searchable, jumps to its definition |
 | `<leader>fr` | Reopen the last picker where you left it |
 | `<leader>.` | File explorer |
-| `<leader>?` | This file |
+| `<leader>?` | Docs picker (this file is one of the choices) |
 
 Inside a picker: `<C-j>` / `<C-k>` move, `<C-q>` sends everything to the
 quickfix list, `<Tab>` multi-selects, `?` shows the rest. In the buffers

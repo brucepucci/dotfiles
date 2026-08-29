@@ -2,12 +2,12 @@
 
 Terminal setup, managed with [chezmoi](https://chezmoi.io).
 
-Neovim 0.12 · lazy.nvim · native LSP (ruff + pyright) · snacks.nvim · built for
-reviewing code an AI agent wrote.
+Neovim 0.12 · lazy.nvim · native LSP (ruff + pyright) · snacks.nvim · pi +
+GLM via Z.ai · built for reviewing code an AI agent wrote.
 
 ## New machine
 
-Five commands on macOS. Order matters — see the notes.
+Six commands on macOS. Order matters — see the notes.
 
 ```bash
 # 0. Homebrew, if this machine has never had it
@@ -22,14 +22,23 @@ gh auth setup-git        # installs the git credential helper
 chezmoi init --apply brucepucci
 
 # 3. Everything the config needs: Neovim, language servers, ripgrep, fd,
-#    lazygit, delta, ipython, tree-sitter, the Nerd Font, Ghostty itself
+#    lazygit, delta, ipython, tree-sitter, the Nerd Font, Ghostty itself,
+#    and the pi coding agent (installed from npm)
 brew bundle --file="$(chezmoi source-path)/Brewfile"
 
 # 4. Plugins, at the exact revisions pinned in lazy-lock.json
 nvim --headless "+Lazy! restore" +qa
+
+# 5. The one manual step: pi needs a Z.ai API key, and secrets never go in
+#    git. Get a key from https://z.ai, then:
+pi                        # /login -> zai -> paste the key
+#    (or: export ZAI_API_KEY=... before launching pi)
 ```
 
-Then open Ghostty and run `nvim`. That is the whole thing.
+Then open Ghostty and run `nvim` — or `pi`, once step 5 is done. That is the
+whole thing: nothing is left to configure or install by hand — editor,
+terminal, shell, git tooling, and coding agent are all in place. From here on,
+every change is an edit in this repo plus `chezmoi apply`.
 
 > **Step 1 is not optional.** `chezmoi init` clones over HTTPS, and this repo
 > is private, so without a credential helper it fails with
@@ -58,6 +67,7 @@ if you install Neovim some other way.
 | `~/.config/lazygit/config.yml` | delta as lazygit's pager |
 | `~/.config/ghostty/config` | Theme, and the `ZDOTDIR` pointing at the shell below |
 | `~/.config/zsh-ghostty/` | zsh config for Ghostty sessions — `.zshrc` and `ps1.zsh` |
+| `~/.pi/agent/settings.json` | pi coding agent: dark theme, `zai` provider, `glm-5.3` default |
 
 **Ghostty sessions use their own shell config.** The Ghostty config sets
 `ZDOTDIR=~/.config/zsh-ghostty`, so `~/.zshrc` and the oh-my-zsh setup in
@@ -71,7 +81,31 @@ both exist, so there is only ever one.
 
 Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
 generated), `~/.ssh/`, `~/.config/gh/hosts.yml` (auth token), and `~/.oh-my-zsh`
-(92MB of third-party code).
+(92MB of third-party code). For pi: `~/.pi/agent/auth.json` (the Z.ai API key —
+a secret), `~/.pi/agent/sessions/` (transcripts), and
+`~/.pi/agent/models-store.json` (a catalog cache pi refetches from Z.ai).
+
+## pi + Z.ai
+
+`pi` is the terminal coding agent, running Z.ai's GLM models on their Coding
+Plan. `zai` is a **built-in** pi provider, so the whole setup is three pieces:
+
+1. the npm package — `@earendil-works/pi-coding-agent`, installed by the
+   Brewfile alongside its one hard dependency, `node`;
+2. `~/.pi/agent/settings.json` — chezmoi-managed; sets the dark theme and the
+   `zai` / `glm-5.3` startup defaults (change them in pi with `/model` +
+   Ctrl+S);
+3. the API key — stored by `/login` in `~/.pi/agent/auth.json` (step 5 above),
+   since it is a secret and cannot live in this repo.
+
+`settings.json` also carries `lastChangelogVersion`, which pi bumps by itself
+on updates, so `chezmoi diff` will show that one field drifting after an
+upgrade — harmless, like a lazy-lock drift. If you change model defaults via
+`/model`, fold them back in:
+
+```bash
+chezmoi re-add ~/.pi/agent/settings.json
+```
 
 ## Linux / WSL
 

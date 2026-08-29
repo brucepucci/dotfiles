@@ -49,7 +49,12 @@ require("lazy").setup({
                 "tarPlugin",
                 "tutor",
                 "zipPlugin",
+                -- 0.12 replaced netrw with TWO plugins: legacy netrwPlugin.vim
+                -- and the new net.lua. Disabling only the old name left net.lua
+                -- sourcing at startup. The snacks explorer replaces it, and
+                -- gx is a core mapping since 0.11, so nothing is lost.
                 "netrwPlugin",
+                "net",
                 "matchit",
                 "matchparen",
                 "rplugin",

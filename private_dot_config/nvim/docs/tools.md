@@ -217,13 +217,19 @@ then `chezmoi apply`.
 
 ### tree-sitter CLI, node *(CLI)*
 `tree-sitter` builds the parsers nvim-treesitter installs (needs ≥ 0.26.1).
-`node` is fallback insurance for markdown-preview, which normally uses its own
-binary.
+`node` is a hard dependency of pi, which installs from npm — see below. It
+also builds markdown-preview's app on platforms with no prebuilt binary.
 
 ### gh *(CLI)*
 GitHub CLI. Load-bearing for setup: the dotfiles repo is private, so
 `gh auth login` and `gh auth setup-git` are what let chezmoi clone it on a new
 machine.
+
+### pi *(CLI)*
+The terminal coding agent, running Z.ai's GLM models. Installed from npm by
+the Brewfile; the `zai` / `glm-5.3` defaults come from chezmoi as
+`~/.pi/agent/settings.json`. The API key is a secret and stays out of this
+repo — `/login` inside pi stores it in `~/.pi/agent/auth.json`.
 
 ---
 

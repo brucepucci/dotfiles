@@ -58,8 +58,9 @@ zle -N down-line-or-beginning-search
 bindkey '^[[A' up-line-or-beginning-search
 bindkey '^[[B' down-line-or-beginning-search
 
-# Option+Left / Option+Right word jumping requires macos-option-as-alt = true
-# in the Ghostty config; emacs mode then binds ESC-b / ESC-f automatically.
+# Option+Left / Option+Right word jumping works out of the box: Ghostty
+# sends its own word-motion sequences, and emacs mode binds ESC-b / ESC-f
+# automatically. No macos-option-as-alt setting is needed.
 
 # --- Aliases ----------------------------------------------------------------
 # Colorized ls is spelled differently across implementations: GNU wants

@@ -75,8 +75,6 @@ return {
             -- npm rewrites yarn.lock; hand it back so lazy can still update.
             vim.fn.system({ "git", "-C", plugin.dir, "checkout", "--", "app/yarn.lock" })
         end,
-        -- These must be set in init, not config: the plugin reads them as it
-        -- loads, which happens before config runs.
         -- Only the two settings that differ from the plugin's own defaults.
         -- The other 14 restated them, and the empty Lua tables in
         -- mkdp_preview_options marshalled to Vimscript Lists rather than Dicts

@@ -86,11 +86,10 @@ keymap.set("n", "<leader>/", function()
     vim.lsp.buf.hover()
 end, { desc = "Hover docs" })
 
--- Docs living with the config. <leader>? is the discoverable entry point;
--- which-key advertises it the moment you press <leader>.
 -- Docs living with the config. One key, then pick -- rather than <leader>?
 -- plus <leader>??, where the first would be a strict prefix of the second and
--- would stall for 'timeoutlen' on every press.
+-- would stall for 'timeoutlen' on every press. <leader>? is the discoverable
+-- entry point; which-key advertises it the moment you press <leader>.
 keymap.set("n", "<leader>?", function()
     local dir = vim.fn.stdpath("config") .. "/docs"
     local files = vim.fn.glob(dir .. "/*.md", false, true)

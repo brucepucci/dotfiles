@@ -4,11 +4,13 @@ Guidance for Claude Code working in this repo.
 
 ## What this is
 
-A chezmoi-managed dotfiles repo, scoped to Neovim only.
+A chezmoi-managed dotfiles repo for an agent-focused terminal workflow:
+Neovim is the bulk of it, plus Ghostty, the Ghostty-scoped zsh, git tooling
+(delta, lazygit), and the pi coding agent (Z.ai/GLM models).
 
-- **Source of truth:** `private_dot_config/nvim/` in this repo.
-- **Target:** `~/.config/nvim` — a build artifact. **Never edit it directly.**
-  Edit here, then `chezmoi apply`.
+- **Source of truth:** this repo — `private_dot_config/nvim/` for Neovim.
+- **Target:** the files in `$HOME` (`~/.config/nvim` etc.) — build artifacts.
+  **Never edit them directly.** Edit here, then `chezmoi apply`.
 - `private_` prefix exists because `~/.config` is mode 0700; chezmoi preserves that.
 - `dot_` prefix maps to a leading `.` in the target. Any dotfile nested inside a
   managed directory **must** use it — chezmoi silently skips source entries

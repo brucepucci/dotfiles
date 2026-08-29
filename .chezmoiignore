@@ -18,3 +18,11 @@ LICENSE
 .config/zsh-ghostty/.zsh_history
 .config/zsh-ghostty/.zcompdump*
 .config/zsh-ghostty/*.bak
+
+# Same idea for the pi coding agent (~/.pi/agent/): auth.json holds the Z.ai
+# API key and is a SECRET, models-store.json is a catalog cache pi refetches
+# from the provider, and sessions/ is transcripts. An accidental
+# `chezmoi add ~/.pi` must not sweep any of them into the repo.
+.pi/agent/auth.json
+.pi/agent/models-store.json
+.pi/agent/sessions
