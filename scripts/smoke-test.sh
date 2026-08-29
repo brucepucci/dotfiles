@@ -14,6 +14,8 @@
 #   5. history written in one shell is visible in a brand-new shell
 #   6. ghostty's config contains no shell settings, and secrets are not
 #      applied
+#   7. the prompt's git-state markers keep their spacing in every state
+#      (clean / staged / both) -- each marker carries its own leading space
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -121,6 +123,27 @@ out="$(env -i HOME="$NEWHOME" TERM=xterm-256color \
       2>/dev/null || true)"
 [[ "$out" == *"seg=yes"* ]] || die "SSH prompt lacks user@host segment"
 ok "user@host segment present over SSH"
+
+step "prompt git-state glyphs keep their spacing"
+# The staged/unstaged markers carry their own leading space (issue #5): they
+# must never render touching each other or the branch name, and a clean tree
+# must carry neither glyph nor a stray gap. Branch name is irrelevant to the
+# assertions, so CI's git default (master) is fine.
+grepo="$WORK/grepo"
+git init -q "$grepo"
+git -C "$grepo" -c user.email=smoke@t -c user.name=smoke commit -q --allow-empty -m x
+run_vcs() { (cd "$grepo" && zsh -c '
+  source "'$NEWHOME'"/.config/zsh/ps1.zsh
+  vcs_info; print -r -- "$vcs_info_msg_0_"'); }
+msg="$(run_vcs)"
+[[ "$msg" == *" ○"* || "$msg" == *" ●"* ]] && die "clean tree shows markers: $msg"
+echo x >"$grepo/f" && git -C "$grepo" add f
+msg="$(run_vcs)"
+[[ "$msg" == *" ●"* && "$msg" != *"○"* ]] || die "staged-only state wrong: $msg"
+echo y >>"$grepo/f"
+msg="$(run_vcs)"
+[[ "$msg" == *" ○"* && "$msg" == *" ●"* ]] || die "markers lost their gap: $msg"
+ok "glyphs separated; clean tree clean"
 
 step "history shared across separate shells"
 TOKEN="smoke-$(date +%s)-$RANDOM"
