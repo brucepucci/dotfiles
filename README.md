@@ -18,7 +18,7 @@ brew install chezmoi gh
 gh auth login            # choose HTTPS
 gh auth setup-git        # installs the git credential helper
 
-# 2. Config -> ~/.config/nvim, ~/.gitconfig, ~/.config/ghostty, ~/.config/zsh-ghostty
+# 2. Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty
 chezmoi init --apply brucepucci
 
 # 3. Everything the config needs: Neovim, language servers, ripgrep, fd,
@@ -29,10 +29,14 @@ brew bundle --file="$(chezmoi source-path)/Brewfile"
 # 4. Plugins, at the exact revisions pinned in lazy-lock.json
 nvim --headless "+Lazy! restore" +qa
 
-# 5. The one manual step: pi needs a Z.ai API key, and secrets never go in
-#    git. Get a key from https://z.ai, then:
-pi                        # /login -> zai -> paste the key
-#    (or: export ZAI_API_KEY=... before launching pi)
+# 5. The one manual step: secrets never go in git. Create
+#    ~/.zsh/secrets.zsh from the installed template and fill in your keys:
+cp ~/.zsh/secrets.example.zsh ~/.zsh/secrets.zsh
+chmod 600 ~/.zsh/secrets.zsh
+$EDITOR ~/.zsh/secrets.zsh   # ZAI_API_KEY (https://z.ai), GITHUB_TOKEN, ...
+#    pi reads ZAI_API_KEY from the environment; gh keeps working via its
+#    own hosts.yml either way. (pi's /login is an alternative: it writes
+#    ~/.pi/agent/auth.json, which then takes precedence over the variable.)
 ```
 
 Then open Ghostty and run `nvim` — or `pi`, once step 5 is done. That is the
@@ -50,8 +54,10 @@ every change is an edit in this repo plus `chezmoi apply`.
 > but `Lazy! restore` also needs `tree-sitter` to build parsers.
 
 > **Not using Ghostty?** The Nerd Font is installed by step 3, but only Ghostty
-> picks it up automatically. In iTerm2 or another terminal, set the font to
-> JetBrainsMono Nerd Font by hand or icons render as boxes.
+> picks it up automatically. In Terminal.app or iTerm2, set the font to
+> JetBrainsMono Nerd Font by hand or icons — and the prompt's git branch mark —
+> render as boxes. The shell itself needs nothing: every terminal reads the
+> same `~/.zshrc`.
 
 **Requires Neovim 0.12+.** Below that the config refuses to load and says so,
 rather than half-working: `vim.lsp.config`, `vim.hl`, and nvim-treesitter's
@@ -62,17 +68,26 @@ if you install Neovim some other way.
 
 | Path | What |
 |---|---|
+| `~/.zshrc`, `~/.zprofile` | The shell — every terminal and every SSH session |
+| `~/.config/zsh/ps1.zsh` | The prompt: git state, duration, exit code |
 | `~/.config/nvim/` | The editor |
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts |
 | `~/.config/lazygit/config.yml` | delta as lazygit's pager |
-| `~/.config/ghostty/config` | Theme, and the `ZDOTDIR` pointing at the shell below |
-| `~/.config/zsh-ghostty/` | zsh config for Ghostty sessions — `.zshrc` and `ps1.zsh` |
+| `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
 | `~/.pi/agent/settings.json` | pi coding agent: dark theme, `zai` provider, `glm-5.3` default |
 
-**Ghostty sessions use their own shell config.** The Ghostty config sets
-`ZDOTDIR=~/.config/zsh-ghostty`, so `~/.zshrc` and the oh-my-zsh setup in
-`$HOME` are **not** read there. That directory is the one managed here; the
-`$HOME` ones are deliberately left alone.
+**One shell everywhere.** Ghostty, Terminal.app, iTerm2, and anyone SSH-ing
+into this machine all get the same zsh: `~/.zprofile` sets the login PATH,
+`~/.zshrc` carries options, aliases, completion and keybindings, and
+`~/.config/zsh/ps1.zsh` renders the prompt. History is a single shared file
+(`~/.zsh_history` with `SHARE_HISTORY`), so a command typed in one terminal is
+immediately searchable from another. oh-my-zsh and powerlevel10k are gone —
+the Ghostty setup they were replaced by is now the default everywhere, and the
+Ghostty config itself sets nothing shell-related.
+
+Secrets — GitHub token, API keys — belong in `~/.zsh/secrets.zsh`, which
+`~/.zshrc` sources when present. That file is deliberately unmanaged (see
+below): secrets never go in git.
 
 The Ghostty config lives at the XDG path, not
 `~/Library/Application Support/com.mitchellh.ghostty/config.ghostty`. Ghostty
@@ -80,9 +95,10 @@ reads both on macOS and only the XDG one on Linux — and it **merges** them whe
 both exist, so there is only ever one.
 
 Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
-generated), `~/.ssh/`, `~/.config/gh/hosts.yml` (auth token), and `~/.oh-my-zsh`
-(92MB of third-party code). For pi: `~/.pi/agent/auth.json` (the Z.ai API key —
-a secret), `~/.pi/agent/sessions/` (transcripts), and
+generated), `~/.zsh/secrets.zsh` (API keys and tokens — a secret), `~/.ssh/`,
+and `~/.config/gh/hosts.yml` (auth token). For pi: `~/.pi/agent/auth.json`
+(an optional copy of the Z.ai key written by `/login` — it takes precedence
+over `ZAI_API_KEY` when present), `~/.pi/agent/sessions/` (transcripts), and
 `~/.pi/agent/models-store.json` (a catalog cache pi refetches from Z.ai).
 
 ## pi + Z.ai
@@ -95,8 +111,11 @@ Plan. `zai` is a **built-in** pi provider, so the whole setup is three pieces:
 2. `~/.pi/agent/settings.json` — chezmoi-managed; sets the dark theme and the
    `zai` / `glm-5.3` startup defaults (change them in pi with `/model` +
    Ctrl+S);
-3. the API key — stored by `/login` in `~/.pi/agent/auth.json` (step 5 above),
-   since it is a secret and cannot live in this repo.
+3. the API key — `ZAI_API_KEY` in `~/.zsh/secrets.zsh` (step 5 above), in
+   the same place as every other key: it is a secret like the rest and
+   cannot live in this repo. pi's `/login` is an alternative that writes
+   `~/.pi/agent/auth.json` instead; when that file exists it takes
+   precedence over the environment variable.
 
 `settings.json` also carries `lastChangelogVersion`, which pi bumps by itself
 on updates, so `chezmoi diff` will show that one field drifting after an
@@ -145,6 +164,40 @@ sudo apt install wslu       # provides wslview
 markdown-preview ships no prebuilt binary for this platform. The build detects
 that and falls back to compiling the Node app, so `<leader>mp` still works —
 but it needs `npm`, which the Brewfile installs.
+
+## Testing changes
+
+Three tiers, by cost. Tier 1 runs in about a second and should follow every
+change to the shell config; tier 3 is a real macOS VM for full new-machine
+runs before big changes.
+
+```bash
+# 1. Seconds, no VM. Applies the repo into a pristine throwaway HOME and
+#    exercises the result the way real sessions do: fresh-window shell,
+#    the legacy ZDOTDIR guard, SSH prompt segment, history shared across
+#    shells, EDITOR fallback, secrets staying out, ghostty config hygiene.
+scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
+
+# 2. ~1 min. The same, inside a clean Debian 12 userland on the colima VM.
+#    Catches "works on my mac" assumptions (GNU vs BSD ls, no Homebrew,
+#    nvim absent so the EDITOR fallback branch actually runs).
+scripts/test-linux-vm.sh           # --full adds Homebrew-on-Linux + brew
+                                   # bundle + plugin restore (~25 min): the
+                                   # "New machine" steps on Linux, verbatim
+
+# 3. The real thing: a disposable macOS VM via tart (Virtualization
+#    framework; first run downloads a ~15 GB image, clones are cheap).
+brew install tart
+tart clone ghcr.io/cirruslabs/macos-sequoia:latest dotfiles-test
+tart run dotfiles-test             # Cirrus images ship ssh admin/admin
+ssh admin@$(tart ip dotfiles-test) # then run New-machine steps 0-4 inside
+tart delete dotfiles-test          # done -- throw it away
+```
+
+CI runs tier 1 on Ubuntu for every push and PR
+(`.github/workflows/smoke.yml`). Tiers 1-2 cover everything chezmoi manages;
+only tier 3 exercises `brew bundle`, the GUI apps, and the terminal
+emulators themselves.
 
 ## Editing the config
 

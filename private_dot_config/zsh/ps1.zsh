@@ -1,14 +1,17 @@
 # ps1.zsh — theme-following prompt for zsh 5.7+ (macOS ships 5.9)
-# Source it from .zshrc:   source ${ZDOTDIR:-$HOME}/ps1.zsh
+# Sourced by ~/.zshrc from here (~/.config/zsh/ps1.zsh). Same prompt in
+# every terminal: Ghostty, Terminal.app, iTerm2, SSH.
 
 zmodload zsh/datetime
 autoload -Uz vcs_info add-zsh-hook
 setopt PROMPT_SUBST
 
 # ---------------------------------------------------------------------------
-# Palette — indexed colors (0-15), so the prompt follows whatever theme Ghostty
-# has set rather than pinning hex. Currently Gruvbox Material Dark; switching
-# themes now recolors the prompt automatically, no edit here required.
+# Palette — indexed colors (0-15), so the prompt follows whatever theme the
+# terminal emulator has set rather than pinning hex. Currently Gruvbox
+# Material Dark in Ghostty; switching themes there recolors the prompt
+# automatically, no edit here required. Terminals without theme support just
+# render the indexed colors of their own palette.
 # Orange has no slot in the 16-color palette, so it stays hex.
 # ---------------------------------------------------------------------------
 GB_GRAY=8

@@ -1,0 +1,13 @@
+# Ghostty configuration.
+#
+# Lives at the XDG path rather than
+# ~/Library/Application Support/com.mitchellh.ghostty/config.ghostty because
+# Ghostty reads both on macOS and only this one on Linux. Note it MERGES the
+# two when both exist, so keep only this one.
+#
+# TERMINAL APPEARANCE ONLY. The shell itself — prompt, history, aliases,
+# completion, secrets — is global: every terminal and SSH session reads
+# ~/.zshrc and ~/.zprofile. Nothing shell-related is set here, so there is
+# exactly one obvious place to change the shell: the dotfiles repo's dot_zshrc.
+
+theme = Gruvbox Material Dark
