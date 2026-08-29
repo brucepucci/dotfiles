@@ -1,0 +1,106 @@
+# palette.toml — the single source of truth for every color this repo
+# generates, served to all templates as .palette (chezmoi: files in
+# .chezmoidata/<name>.<ext> become .<name> in template data).
+#
+# Three layers:
+#   [scheme]      identity — which curated themes each app runs. Apps that
+#                 consume *names* (Ghostty, delta/bat, nvim's colorscheme
+#                 plugin) never see a hex from us; a scheme family swap is a
+#                 name edit here + `chezmoi apply`.
+#   [light]/[dark] raw roles — hex values for the surfaces that must hold
+#                 real colors (pi themes, lualine's light table, the
+#                 prompt's orange). A one-color tweak is a value edit here.
+#   layer 3        per-surface mapping — lives in each .tmpl, which decides
+#                 which role feeds which token.
+#
+# Consequences:
+#   - Files rendered from this data are build artifacts; edit them here,
+#     never in $HOME (scripts/smoke-test.sh fails the build if a hex creeps
+#     into an output that this file does not define).
+#   - Values are duplicated from upstream palettes ON PURPOSE (cited per
+#     section); this file does not generate nvim's or Ghostty's themes, it
+#     only feeds the surfaces that have no curated theme to name.
+#   - The applied tree is byte-stable: rendering is apply-time only, zero
+#     runtime cost, and light/dark switching keeps working exactly as
+#     before (Ghostty's light:/dark: pair, pi's a/b theme pair, nvim's
+#     OptionSet machinery are untouched — only where the literals live).
+
+[palette.scheme]
+family      = "gruvbox"
+light_theme = "Gruvbox Light Hard"      # Ghostty's name for the light side
+dark_theme  = "Gruvbox Material Dark"   # Ghostty's name — deliberately
+                                       # asymmetric: dark is *Material*,
+                                       # light is plain Gruvbox (Hard)
+delta_light = "gruvbox-light"           # bat syntax-theme names (delta)
+delta_dark  = "gruvbox-dark"
+pi_pair     = "gruvbox-light/gruvbox-dark" # pi: light/dark auto-switch pair
+
+[palette.scheme.nvim] # options for the sainnhe/gruvbox-material plugin
+colorscheme = "gruvbox-material"
+contrast    = "hard"     # "hard" | "medium" | "soft" (background set)
+foreground  = "material" # "material" | "mix" | "original"
+
+# ---------------------------------------------------------------------------
+# Light variant. Two upstream palettes feed the light side, so it is split:
+# [light] is plain Gruvbox Light (morhetz/gruvbox README palette) — the pi
+# light theme is built from it, matching Ghostty's "Gruvbox Light Hard".
+# [light.material] is Gruvbox Material Light (sainnhe/gruvbox-material,
+# autoload/gruvbox_material.vim) — only lualine's statusline consumes it,
+# mirroring the dark side's built-in gruvbox-material lualine theme.
+# ---------------------------------------------------------------------------
+
+[palette.light] # plain Gruvbox Light — token names per morhetz/gruvbox
+bg0_hard = "#f9f5d7" # light0_hard  lualine text-on-accent (= material bg0)
+bg0      = "#fbf1c7" # light0       pi bgDeep
+bg1      = "#ebdbb2" # light1       pi bg
+surface  = "#d5c4a1" # light2       pi surface
+fg       = "#3c3836" # dark1 (light-mode fg)  pi fg
+fg_soft  = "#504945" # dark2        pi fgSoft
+grey     = "#7c6f64" # dark4        pi grey
+grey_dim = "#a89984" # light4       pi greyDim; lualine normal-a segment
+grey_neutral = "#928374" # gray     pi syntaxComment
+grey_soft    = "#bdae93" # light3   pi thinkingOff
+red    = "#9d0006" # faded accents — pi light theme vars
+orange = "#af3a03"
+yellow = "#b57614"
+green  = "#79740e"
+aqua   = "#427b58"
+blue   = "#076678"
+purple = "#8f3f71"
+tint_green = "#e5e9cb" # pi toolSuccessBg (green-tinted bg)
+tint_red   = "#ecd6cc" # pi toolErrorBg   (red-tinted bg)
+
+[palette.light.material] # Gruvbox Material Light — lualine statusline only
+fg                = "#654735" # lualine segment text
+statusline        = "#f5edca" # lualine 'c' (filename) segment bg
+statusline_accent = "#eee0b7" # lualine 'b' segment bg
+red    = "#c14a4a" # mode-segment colors, mirroring lualine's
+blue   = "#45707a" #   built-in gruvbox-material (dark) shape
+green  = "#6c782e"
+yellow = "#b47109"
+purple = "#945e80"
+
+# ---------------------------------------------------------------------------
+# Dark variant. One palette feeds everything: Gruvbox Material Dark
+# (sainnhe/gruvbox-material, medium background, material foreground) — the
+# same look nvim's colorscheme, lualine's built-in theme, and Ghostty's
+# "Gruvbox Material Dark" render.
+# ---------------------------------------------------------------------------
+
+[palette.dark]
+bg0        = "#282828" # pi bgDeep
+bg1        = "#32302f" # pi bg
+surface    = "#45403d" # pi surface
+fg         = "#d4be98" # pi fg
+fg_bright  = "#ebdbb2" # pi fgBright
+grey       = "#928374" # pi grey; pi syntaxComment
+grey_dim   = "#7c6f64" # pi greyDim
+red    = "#ea6962" # pi vars; ps1 GB_ORANGE is dark.orange (the prompt is a
+orange = "#e78a4e" #   single file for both modes and pins the dark value)
+yellow = "#d8a657"
+green  = "#a9b665"
+aqua   = "#89b482"
+blue   = "#7daea3"
+purple = "#d3869b"
+tint_green = "#2d3325" # pi toolSuccessBg
+tint_red   = "#3a2c2c" # pi toolErrorBg
