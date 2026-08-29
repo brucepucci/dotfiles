@@ -4,14 +4,17 @@
 [init]
 	defaultBranch = main
 [core]
-	pager = delta
+	pager = delta-theme
 [interactive]
-	diffFilter = delta --color-only
+	diffFilter = delta-theme --color-only
 [delta]
 	navigate = true
 	side-by-side = true
 	line-numbers = true
 	syntax-theme = gruvbox-dark
+	# Appearance (light/dark + syntax theme) is decided per invocation by the
+	# delta-theme wrapper in ~/.local/bin; the line above only covers a bare
+	# `delta` typed by hand, which stays dark -- the default look.
 [merge]
 	conflictstyle = zdiff3
 [diff]

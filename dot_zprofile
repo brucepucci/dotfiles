@@ -8,3 +8,8 @@ if [[ -x /opt/homebrew/bin/brew ]]; then
 elif [[ -x /usr/local/bin/brew ]]; then
   eval "$(/usr/local/bin/brew shellenv)"
 fi
+
+# Personal, machine-local scripts (not Homebrew-managed). delta-theme lives
+# here -- the appearance-aware delta wrapper used by git's pager and lazygit.
+path+=(~/.local/bin)
+export PATH

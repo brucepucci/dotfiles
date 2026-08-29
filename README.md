@@ -175,7 +175,10 @@ runs before big changes.
 # 1. Seconds, no VM. Applies the repo into a pristine throwaway HOME and
 #    exercises the result the way real sessions do: fresh-window shell,
 #    the legacy ZDOTDIR guard, SSH prompt segment, history shared across
-#    shells, EDITOR fallback, secrets staying out, ghostty config hygiene.
+#    shells, EDITOR fallback, secrets staying out, ghostty config hygiene,
+#    and the light-mode wiring (ghostty theme pair, nvim OS-appearance
+#    sync, delta-theme wrapper exercised with fake `defaults`/`delta`
+#    shims -- no GUI toggling required).
 scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
 
 # 2. ~1 min. The same, inside a clean Debian 12 userland on the colima VM.

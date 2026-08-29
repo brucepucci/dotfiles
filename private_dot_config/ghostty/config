@@ -10,4 +10,11 @@
 # ~/.zshrc and ~/.zprofile. Nothing shell-related is set here, so there is
 # exactly one obvious place to change the shell: the dotfiles repo's dot_zshrc.
 
-theme = Gruvbox Material Dark
+# The theme follows the OS appearance: Ghostty auto-switches between the two
+# (light:<name>,dark:<name>). Deliberately asymmetric: dark is Gruvbox
+# *Material* Dark, light is plain Gruvbox Light *Hard* -- preference. The
+# rest of the stack follows the same signal: the zsh prompt uses indexed
+# colors 0-15, Neovim sets 'background' from the OS
+# (lua/bruce/core/appearance.lua), and delta-theme (~/.local/bin, wired into
+# git and lazygit) picks the matching delta syntax theme.
+theme = light:Gruvbox Light Hard,dark:Gruvbox Material Dark

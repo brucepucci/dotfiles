@@ -14,7 +14,19 @@ return {
     {
         "nvim-lualine/lualine.nvim",
         event = "VeryLazy",
-        opts = { options = { theme = "gruvbox-material" } },
+        opts = {
+            options = {
+                -- lualine's "gruvbox-material" theme is dark-only (hardcoded
+                -- palette, ignores 'background'), so pick per side: its
+                -- built-in "gruvbox_light" is the light counterpart. A
+                -- function re-evaluates because lualine re-runs setup() on
+                -- OptionSet background -- which is exactly what
+                -- core/appearance.lua triggers when the OS flips.
+                theme = function()
+                    return vim.o.background == "light" and "gruvbox_light" or "gruvbox-material"
+                end,
+            },
+        },
     },
 
     -- Anti-rot: this keymap set is idiosyncratic, so make it self-documenting
