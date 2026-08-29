@@ -26,25 +26,27 @@ return {
                 -- Material Light Hard, taken verbatim from the colorscheme's
                 -- own palette (autoload/gruvbox_material.vim), mirroring the
                 -- segment shape of lualine's gruvbox-material (dark) theme.
+                {{- /* the ten hexes below are generated from
+                     .chezmoidata/palette.toml; edit roles there, not here */}}
                 theme = function()
                     if vim.o.background ~= "light" then
                         return "gruvbox-material"
                     end
-                    local fg = "#654735" -- fg0
-                    local surface1, surface2 = "#f5edca", "#eee0b7" -- bg1/bg_statusline3
-                    local on_accent = "#f9f5d7" -- bg0
+                    local fg = "{{ .palette.light.material.fg }}" -- fg0
+                    local surface1, surface2 = "{{ .palette.light.material.statusline }}", "{{ .palette.light.material.statusline_accent }}" -- bg1/bg_statusline3
+                    local on_accent = "{{ .palette.light.bg0_hard }}" -- bg0
                     return {
                         normal = {
-                            a = { fg = on_accent, bg = "#a89984", gui = "bold" },
+                            a = { fg = on_accent, bg = "{{ .palette.light.grey_dim }}", gui = "bold" },
                             b = { fg = fg, bg = surface2 },
                             c = { fg = fg, bg = surface1 },
                         },
-                        command = { a = { fg = on_accent, bg = "#45707a", gui = "bold" } }, -- blue
+                        command = { a = { fg = on_accent, bg = "{{ .palette.light.material.blue }}", gui = "bold" } }, -- blue
                         inactive = { a = { fg = fg, bg = surface2 } },
-                        insert = { a = { fg = on_accent, bg = "#6c782e", gui = "bold" } }, -- green
-                        replace = { a = { fg = on_accent, bg = "#b47109", gui = "bold" } }, -- yellow
-                        terminal = { a = { fg = on_accent, bg = "#945e80", gui = "bold" } }, -- purple
-                        visual = { a = { fg = on_accent, bg = "#c14a4a", gui = "bold" } }, -- red
+                        insert = { a = { fg = on_accent, bg = "{{ .palette.light.material.green }}", gui = "bold" } }, -- green
+                        replace = { a = { fg = on_accent, bg = "{{ .palette.light.material.yellow }}", gui = "bold" } }, -- yellow
+                        terminal = { a = { fg = on_accent, bg = "{{ .palette.light.material.purple }}", gui = "bold" } }, -- purple
+                        visual = { a = { fg = on_accent, bg = "{{ .palette.light.material.red }}", gui = "bold" } }, -- red
                     }
                 end,
             },
