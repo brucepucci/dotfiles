@@ -1,22 +1,39 @@
 #!/bin/sh
-# delta-theme -- delta with syntax colors matching the macOS appearance.
+# delta-theme -- delta with syntax colors matching the configured look.
 #
-# The light-mode counterpart of Ghostty's `theme = light:...,dark:...` and
-# Neovim's OS-following 'background' (lua/bruce/core/appearance.lua): dark
-# syntax colors on a light terminal (and vice versa) are unreadable. Used as
-# git's pager and lazygit's diff renderer; every flag is passed through.
+# Used as git's pager and lazygit's diff renderer; every flag is passed
+# through. The mode and the syntax theme names are baked in by chezmoi from
+# .chezmoidata/palette.toml at apply time:
 #
-# Detection: `defaults read -g AppleInterfaceStyle` prints "Dark" and exits 0
-# in dark mode; in light mode the key does not exist and it exits nonzero.
-# Without `defaults` (Linux, non-macOS host) stay dark -- today's look.
+#   mode   theme = "light" or "dark" pins the appearance; "system" follows
+#          the OS, like Ghostty's light:/dark: pair and Neovim's
+#          OS-following 'background' (dark syntax on a light terminal and
+#          vice versa are unreadable). Detection: `defaults read -g
+#          AppleInterfaceStyle` prints "Dark" and exits 0 in dark mode; in
+#          light mode the key does not exist and it exits nonzero. Without
+#          `defaults` (Linux) stay dark -- the default look.
+#   themes the chosen Ghostty themes' bat syntax themes, when they have
+#          curated ones (see colors/<name>.toml in the dotfiles repo);
+#          otherwise "none", which disables bat syntax colors so delta
+#          falls back to the terminal's own 16-color palette -- still
+#          cohesive with the active Ghostty theme.
 
-mode=dark
-if command -v defaults >/dev/null 2>&1; then
-    defaults read -g AppleInterfaceStyle >/dev/null 2>&1 || mode=light
-fi
+MODE='{{ .palette.theme }}'
+DARK_SYNTAX='{{ (index .colors .palette.dark_theme).apps.delta_syntax_theme }}'
+LIGHT_SYNTAX='{{ (index .colors .palette.light_theme).apps.delta_syntax_theme }}'
+
+case "$MODE" in
+light|dark) mode=$MODE ;;
+*)
+    mode=dark
+    if command -v defaults >/dev/null 2>&1; then
+        defaults read -g AppleInterfaceStyle >/dev/null 2>&1 || mode=light
+    fi
+    ;;
+esac
 
 if [ "$mode" = dark ]; then
-    exec delta --dark --syntax-theme {{ .palette.scheme.delta_dark }} "$@"
+    exec delta --dark --syntax-theme "$DARK_SYNTAX" "$@"
 else
-    exec delta --light --syntax-theme {{ .palette.scheme.delta_light }} "$@"
+    exec delta --light --syntax-theme "$LIGHT_SYNTAX" "$@"
 fi

@@ -1,16 +1,28 @@
--- appearance.lua -- follow the macOS interface style.
+-- appearance.lua -- the light/dark mode, from the palette settings.
 --
--- The whole terminal stack renders light when the OS is Light: Ghostty
--- switches itself via its `theme = light:...,dark:...` line, the zsh prompt
--- follows the terminal's indexed colors by design, and this module does the
--- same for Neovim. Dark stays the default where the probe is unavailable
--- (Linux, non-macOS hosts), which is exactly today's look.
+-- The mode is rendered into core/theming.lua from .chezmoidata/palette.toml:
+--   theme = "system" -- follow the macOS interface style live, the way
+--     Ghostty's theme pair and the prompt's indexed colors do; flipping the
+--     OS mid-session needs no restart (Dark stays the default where the
+--     probe is unavailable, i.e. non-macOS hosts).
+--   theme = "light"/"dark" -- pin the whole stack, OS be damned.
 --
--- Called from init.lua before plugins load, so the colorscheme renders the
--- right palette from the first frame, and again from autocmds.lua on
--- FocusGained, so flipping the OS mid-session needs no restart.
+-- This module also owns applying the colorscheme when the active themes
+-- have no curated nvim scheme: lua/bruce/colors/scheme.lua generates one
+-- from the same theme roles. With a curated scheme the plugin applies
+-- itself (it loads with priority 1001, just after this runs at startup).
+--
+-- Called from init.lua before plugins load, so the first frame renders the
+-- right palette, and again from autocmds.lua on FocusGained.
+
+local theming = require("bruce.core.theming")
 
 local M = {}
+
+-- Whether the scheme for the current background has been applied at least
+-- once: the first sync() must apply even when 'background' already matches,
+-- because at startup nothing else would.
+local applied = false
 
 -- `defaults read -g AppleInterfaceStyle` prints "Dark" and exits 0 in dark
 -- mode; in light mode the key does not exist and it exits nonzero.
@@ -25,19 +37,29 @@ function M.detect()
     return "light"
 end
 
--- Set 'background' from the OS, and react when it changed.
+-- Resolve the mode, set 'background', and (re)render the scheme if needed.
 function M.sync()
-    local detected = M.detect()
-    if vim.o.background == detected then
+    local detected
+    if theming.mode == "system" then
+        detected = M.detect()
+    else
+        detected = theming.mode
+    end
+    if vim.o.background == detected and applied then
         return
     end
     vim.o.background = detected
-    -- Setting 'background' alone does not recolor an already-loaded scheme:
-    -- gruvbox-material picks its palette when :colorscheme runs. Re-issue it
-    -- (only meaningful once a scheme is loaded; at startup the plugin's own
-    -- colorscheme call right after this renders the new palette anyway).
-    if vim.g.colors_name then
-        vim.cmd.colorscheme(vim.g.colors_name)
+    applied = true
+    if theming.nvim_colorscheme ~= "" then
+        -- Curated plugin scheme: re-issuing :colorscheme re-renders it for
+        -- the new background (at startup the plugin's own config call right
+        -- after this does it; re-issuing then would be redundant but
+        -- harmless -- colors_name is unset until it loads).
+        if vim.g.colors_name then
+            vim.cmd.colorscheme(theming.nvim_colorscheme)
+        end
+    else
+        require("bruce.colors.scheme").apply(detected)
     end
     -- Let listeners react (lualine needs no nudge -- it re-setups itself on
     -- OptionSet background -- but anything else can hook this).

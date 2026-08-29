@@ -1,6 +1,6 @@
 {
   "lastChangelogVersion": "0.84.4",
-  "theme": "{{ .palette.scheme.pi_pair }}",
+  "theme": "{{ if eq .palette.theme "system" }}dotfiles-light/dotfiles-dark{{ else if eq .palette.theme "light" }}dotfiles-light{{ else }}dotfiles-dark{{ end }}",
   "defaultProvider": "zai",
   "defaultModel": "glm-5.3"
 }

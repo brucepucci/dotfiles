@@ -1,24 +1,28 @@
 {
   "$schema": "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
-{{- /* GENERATED from .chezmoidata/palette.toml ([palette.dark]) -- do not
-     hand-edit; change the role there and `chezmoi apply`. Var-referencing
-     entries (Layer 3 mapping) stay literal on purpose. */}}
-  "name": "gruvbox-dark",
+{{- /* GENERATED from the palette settings (.chezmoidata/palette.toml) and the
+     dark theme's roles (.chezmoidata/colors.toml) -- do not hand-edit;
+     change a color in colors/<name>.toml and `chezmoi apply`. The file name
+     is stable across theme changes; entries referencing the theme's own
+     vars stay literal (that mapping is Layer 3, decided per surface). */ -}}
+{{ $t := index .colors .palette.dark_theme }}
+  "name": "dotfiles-dark",
   "vars": {
-    "bg": "{{ .palette.dark.bg1 }}",
-    "bgDeep": "{{ .palette.dark.bg0 }}",
-    "surface": "{{ .palette.dark.surface }}",
-    "fg": "{{ .palette.dark.fg }}",
-    "fgBright": "{{ .palette.dark.fg_bright }}",
-    "grey": "{{ .palette.dark.grey }}",
-    "greyDim": "{{ .palette.dark.grey_dim }}",
-    "red": "{{ .palette.dark.red }}",
-    "orange": "{{ .palette.dark.orange }}",
-    "yellow": "{{ .palette.dark.yellow }}",
-    "green": "{{ .palette.dark.green }}",
-    "aqua": "{{ .palette.dark.aqua }}",
-    "blue": "{{ .palette.dark.blue }}",
-    "purple": "{{ .palette.dark.purple }}"
+    "bg": "{{ $t.roles.bg }}",
+    "bgDeep": "{{ $t.roles.bg_deep }}",
+    "surface": "{{ $t.roles.surface }}",
+    "fg": "{{ $t.roles.fg }}",
+    "fgSoft": "{{ $t.roles.fg_soft }}",
+    "fgBright": "{{ $t.roles.fg_bright }}",
+    "grey": "{{ $t.roles.grey }}",
+    "greyDim": "{{ $t.roles.grey_dim }}",
+    "red": "{{ $t.roles.red }}",
+    "orange": "{{ $t.roles.orange }}",
+    "yellow": "{{ $t.roles.yellow }}",
+    "green": "{{ $t.roles.green }}",
+    "aqua": "{{ $t.roles.aqua }}",
+    "blue": "{{ $t.roles.blue }}",
+    "purple": "{{ $t.roles.purple }}"
   },
   "colors": {
     "accent": "blue",
@@ -42,8 +46,8 @@
     "customMessageText": "",
     "customMessageLabel": "blue",
     "toolPendingBg": "bg",
-    "toolSuccessBg": "{{ .palette.dark.tint_green }}",
-    "toolErrorBg": "{{ .palette.dark.tint_red }}",
+    "toolSuccessBg": "{{ $t.roles.tint_green }}",
+    "toolErrorBg": "{{ $t.roles.tint_red }}",
     "toolTitle": "fgBright",
     "toolOutput": "",
     "mdHeading": "yellow",
@@ -59,7 +63,7 @@
     "toolDiffAdded": "green",
     "toolDiffRemoved": "red",
     "toolDiffContext": "grey",
-    "syntaxComment": "grey",
+    "syntaxComment": "{{ $t.roles.grey_neutral }}",
     "syntaxKeyword": "red",
     "syntaxFunction": "blue",
     "syntaxVariable": "orange",
@@ -68,7 +72,7 @@
     "syntaxType": "yellow",
     "syntaxOperator": "blue",
     "syntaxPunctuation": "fg",
-    "thinkingOff": "surface",
+    "thinkingOff": "{{ $t.roles.grey_soft }}",
     "thinkingMinimal": "greyDim",
     "thinkingLow": "grey",
     "thinkingMedium": "green",
