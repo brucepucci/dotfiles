@@ -85,6 +85,13 @@ _gb_precmd() {
 add-zsh-hook preexec _gb_preexec
 add-zsh-hook precmd  _gb_precmd
 
+# `clear` deserves a clean slate: it is a command, so _gb_preexec arms the
+# pre-prompt blank line above -- without this, one blank line would sit alone
+# at the top of the freshly cleared screen. Dropping the flag after clearing
+# suppresses it. Interactive-only by nature (aliases), and the variable lives
+# here so the coupling stays inside this file.
+alias clear='command clear; unset _gb_had_command'
+
 # ---------------------------------------------------------------------------
 # Prompt assembly
 #   [user@host ]path git-branch●○ [⚙jobs] ❯
