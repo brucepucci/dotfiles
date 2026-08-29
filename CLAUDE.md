@@ -46,7 +46,9 @@ shell env lines there. History is one shared file, `~/.zsh_history`.
 
 **Secrets never go in this repo.** They live in `~/.zsh/secrets.zsh`
 (`private_dot_zsh/secrets.example.zsh` is the template; the real file is in
-`.chezmoiignore`). Same for `~/.pi/agent/auth.json`.
+`.chezmoiignore`). That includes the Z.ai key: `ZAI_API_KEY`. pi's `/login`
+may also write a copy to `~/.pi/agent/auth.json`, which takes precedence
+over the env var when present — also unmanaged, also never committed.
 
 **No `pcall(require, ...)` guards.** The previous config wrapped every plugin
 file in `local ok, x = pcall(require, "..."); if not ok then return end`. That

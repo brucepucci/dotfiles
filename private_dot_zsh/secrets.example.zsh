@@ -5,9 +5,15 @@
 # .chezmoiignore precisely so it can never be committed by accident.
 # Secrets never go in this repo.
 
-# GitHub. `gh` keeps its own token in ~/.config/gh/hosts.yml; export one here
-# only for tools that want GITHUB_TOKEN / GH_TOKEN in the environment.
-# export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Z.ai — the pi coding agent's key (provider "zai"; get one at https://z.ai).
+# pi's /login is an alternative that writes ~/.pi/agent/auth.json; if that
+# file exists it takes precedence over this variable.
+# export ZAI_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# GitHub. gh prefers a token in the environment over its own
+# ~/.config/gh/hosts.yml — same token today, but if you re-run
+# `gh auth login`, refresh or comment out this line.
+# export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
 
 # Anthropic
 # export ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

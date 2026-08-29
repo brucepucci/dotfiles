@@ -236,8 +236,9 @@ machine.
 ### pi *(CLI)*
 The terminal coding agent, running Z.ai's GLM models. Installed from npm by
 the Brewfile; the `zai` / `glm-5.3` defaults come from chezmoi as
-`~/.pi/agent/settings.json`. The API key is a secret and stays out of this
-repo — `/login` inside pi stores it in `~/.pi/agent/auth.json`.
+`~/.pi/agent/settings.json`. The API key is `ZAI_API_KEY` in
+`~/.zsh/secrets.zsh`, in the same place as every other secret; `/login`
+inside pi is an alternative that stores it in `~/.pi/agent/auth.json`.
 
 ---
 

@@ -29,13 +29,14 @@ brew bundle --file="$(chezmoi source-path)/Brewfile"
 # 4. Plugins, at the exact revisions pinned in lazy-lock.json
 nvim --headless "+Lazy! restore" +qa
 
-# 5. The one manual step: secrets never go in git.
-#    pi's Z.ai key -- get one from https://z.ai, then:
-pi                        # /login -> zai -> paste the key
-#    (or: export ZAI_API_KEY=... before launching pi)
-#
-#    Shell secrets (GitHub token, API keys), if you use them:
-#    cp ~/.zsh/secrets.example.zsh ~/.zsh/secrets.zsh   # then fill it in, chmod 600
+# 5. The one manual step: secrets never go in git. Create
+#    ~/.zsh/secrets.zsh from the installed template and fill in your keys:
+cp ~/.zsh/secrets.example.zsh ~/.zsh/secrets.zsh
+chmod 600 ~/.zsh/secrets.zsh
+$EDITOR ~/.zsh/secrets.zsh   # ZAI_API_KEY (https://z.ai), GITHUB_TOKEN, ...
+#    pi reads ZAI_API_KEY from the environment; gh keeps working via its
+#    own hosts.yml either way. (pi's /login is an alternative: it writes
+#    ~/.pi/agent/auth.json, which then takes precedence over the variable.)
 ```
 
 Then open Ghostty and run `nvim` — or `pi`, once step 5 is done. That is the
@@ -96,7 +97,8 @@ both exist, so there is only ever one.
 Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
 generated), `~/.zsh/secrets.zsh` (API keys and tokens — a secret), `~/.ssh/`,
 and `~/.config/gh/hosts.yml` (auth token). For pi: `~/.pi/agent/auth.json`
-(the Z.ai API key — a secret), `~/.pi/agent/sessions/` (transcripts), and
+(an optional copy of the Z.ai key written by `/login` — it takes precedence
+over `ZAI_API_KEY` when present), `~/.pi/agent/sessions/` (transcripts), and
 `~/.pi/agent/models-store.json` (a catalog cache pi refetches from Z.ai).
 
 ## pi + Z.ai
@@ -109,8 +111,11 @@ Plan. `zai` is a **built-in** pi provider, so the whole setup is three pieces:
 2. `~/.pi/agent/settings.json` — chezmoi-managed; sets the dark theme and the
    `zai` / `glm-5.3` startup defaults (change them in pi with `/model` +
    Ctrl+S);
-3. the API key — stored by `/login` in `~/.pi/agent/auth.json` (step 5 above),
-   since it is a secret and cannot live in this repo.
+3. the API key — `ZAI_API_KEY` in `~/.zsh/secrets.zsh` (step 5 above), in
+   the same place as every other key: it is a secret like the rest and
+   cannot live in this repo. pi's `/login` is an alternative that writes
+   `~/.pi/agent/auth.json` instead; when that file exists it takes
+   precedence over the environment variable.
 
 `settings.json` also carries `lastChangelogVersion`, which pi bumps by itself
 on updates, so `chezmoi diff` will show that one field drifting after an

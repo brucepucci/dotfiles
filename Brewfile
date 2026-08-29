@@ -43,7 +43,8 @@ brew "fastfetch"            # banner in ~/.zshrc (guarded, optional)
 # npm -- which is why `node` above is a hard dependency. Unpinned = latest,
 # matching the brew entries; `pi --version` shows what landed. Config and
 # model defaults come from chezmoi (~/.pi/agent/settings.json); the Z.ai API
-# key is a secret and is NOT in this repo -- see README, new-machine step 5.
+# key lives in ~/.zsh/secrets.zsh with the other secrets -- see README,
+# new-machine step 5.
 system "npm", "install", "-g", "@earendil-works/pi-coding-agent"
 
 # --- macOS only -----------------------------------------------------------
