@@ -1,15 +1,21 @@
-# ~/.config/zsh-ghostty/.zshrc
-# Interactive config for Ghostty sessions only. Nothing here is shared with
-# the oh-my-zsh setup in $HOME, and $HOME/.zshenv and $HOME/.zprofile are NOT
-# read while ZDOTDIR points at this directory.
+# ~/.zshrc — the interactive shell config, read by EVERY terminal on this
+# machine: Ghostty, Terminal.app, iTerm2, and SSH sessions alike. Managed by
+# chezmoi (dot_zshrc in the dotfiles repo) — edit it there, not here.
+# Login-shell PATH lives in ~/.zprofile; this file is the interactive half:
+# options, history, completion, keybindings, aliases, secrets, prompt.
 
 # --- PATH -------------------------------------------------------------------
-# Re-establish Homebrew, since ~/.zprofile is bypassed.
+# Login shells get Homebrew from ~/.zprofile; this re-establishes it for
+# non-login interactive shells (nested zsh, emulators that skip .zprofile).
 if [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [[ -x /usr/local/bin/brew ]]; then
   eval "$(/usr/local/bin/brew shellenv)"
 fi
+
+# Tools that install to ~/.local/bin (uv, remctl). Guarded so machines
+# without it stay quiet.
+[[ -x $HOME/.local/bin/env ]] && . "$HOME/.local/bin/env"
 
 # Version managers, if used. Uncomment what applies.
 # eval "$(mise activate zsh)"
@@ -27,7 +33,11 @@ else
 fi
 
 # --- History ----------------------------------------------------------------
-HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
+# ONE history file for every terminal and every SSH session, deliberately
+# $HOME-pinned so nothing can quietly fork history off to a second file
+# again. SHARE_HISTORY merges sessions live: a command entered in Ghostty is
+# immediately on Ctrl-R in iTerm2 (and vice versa).
+HISTFILE="$HOME/.zsh_history"
 HISTSIZE=50000
 SAVEHIST=50000
 setopt EXTENDED_HISTORY SHARE_HISTORY INC_APPEND_HISTORY
@@ -40,8 +50,11 @@ setopt EXTENDED_GLOB NO_NOMATCH   # NO_NOMATCH: unmatched globs pass through
                                   # unchanged instead of erroring, as in bash
 
 # --- Completion -------------------------------------------------------------
+# Hand-written completions (e.g. remctl), if present.
+[[ -d $HOME/.zsh/completions ]] && fpath=($HOME/.zsh/completions $fpath)
+
 autoload -Uz compinit
-compinit -d "${ZDOTDIR:-$HOME}/.zcompdump"
+compinit -d "$HOME/.zcompdump"
 zmodload zsh/complist
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
@@ -58,9 +71,9 @@ zle -N down-line-or-beginning-search
 bindkey '^[[A' up-line-or-beginning-search
 bindkey '^[[B' down-line-or-beginning-search
 
-# Option+Left / Option+Right word jumping works out of the box: Ghostty
-# sends its own word-motion sequences, and emacs mode binds ESC-b / ESC-f
-# automatically. No macos-option-as-alt setting is needed.
+# Option+Left / Option+Right word jumping works in Ghostty out of the box,
+# and iTerm2/Terminal.app send compatible sequences; emacs mode binds
+# ESC-b / ESC-f automatically. No macos-option-as-alt setting is needed.
 
 # --- Aliases ----------------------------------------------------------------
 # Colorized ls is spelled differently across implementations: GNU wants
@@ -79,12 +92,18 @@ alias la="ls -lhA $_ls_color"
 unset _ls_color
 alias grep='grep --color=auto'
 
+# --- Secrets ----------------------------------------------------------------
+# API keys and tokens (GitHub, Anthropic, ...) live in ~/.zsh/secrets.zsh —
+# outside this repo on purpose; see .chezmoiignore. Optional file: machines
+# with no secrets just skip this.
+[[ -r $HOME/.zsh/secrets.zsh ]] && source $HOME/.zsh/secrets.zsh
+
 # --- Prompt -----------------------------------------------------------------
-source "${ZDOTDIR:-$HOME}/ps1.zsh"
+source "$HOME/.config/zsh/ps1.zsh"
 
 # --- Greeting ---------------------------------------------------------------
-# Banner on new interactive Ghostty shells. No p10k instant prompt in this
-# config, so console output here is not captured or discarded.
+# Banner on new interactive shells. No p10k-style instant prompt exists
+# anymore, so console output here is not captured or discarded.
 if [[ -o interactive ]] && command -v fastfetch >/dev/null; then
   fastfetch
 fi

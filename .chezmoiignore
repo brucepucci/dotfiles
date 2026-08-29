@@ -12,12 +12,13 @@ CLAUDE.md
 Brewfile
 LICENSE
 
-# Generated or private files inside directories we DO manage. chezmoi only
-# tracks what is explicitly added, but these are listed so an accidental
-# `chezmoi add ~/.config/zsh-ghostty` cannot sweep them in.
-.config/zsh-ghostty/.zsh_history
-.config/zsh-ghostty/.zcompdump*
-.config/zsh-ghostty/*.bak
+# Generated or private files at $HOME. chezmoi only tracks what is
+# explicitly added, but these are listed so an accidental
+# `chezmoi add ~/.zshrc` (or `chezmoi add ~`) cannot sweep them in.
+# ~/.zsh/secrets.zsh holds API keys and tokens — a SECRET, never commit it.
+.zsh_history
+.zcompdump*
+.zsh/secrets.zsh
 
 # Same idea for the pi coding agent (~/.pi/agent/): auth.json holds the Z.ai
 # API key and is a SECRET, models-store.json is a catalog cache pi refetches

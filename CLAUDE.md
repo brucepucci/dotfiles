@@ -5,8 +5,9 @@ Guidance for Claude Code working in this repo.
 ## What this is
 
 A chezmoi-managed dotfiles repo for an agent-focused terminal workflow:
-Neovim is the bulk of it, plus Ghostty, the Ghostty-scoped zsh, git tooling
-(delta, lazygit), and the pi coding agent (Z.ai/GLM models).
+Neovim is the bulk of it, plus the zsh shell config shared by every terminal
+and SSH session, Ghostty (theme only), git tooling (delta, lazygit), and the
+pi coding agent (Z.ai/GLM models).
 
 - **Source of truth:** this repo — `private_dot_config/nvim/` for Neovim.
 - **Target:** the files in `$HOME` (`~/.config/nvim` etc.) — build artifacts.
@@ -19,6 +20,9 @@ Neovim is the bulk of it, plus Ghostty, the Ghostty-scoped zsh, git tooling
 ## Architecture
 
 ```
+dot_zshrc                  # interactive shell: options, history, aliases, prompt
+dot_zprofile               # login-shell PATH (Homebrew)
+private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
 private_dot_config/nvim/
 ├── init.lua              # sets mapleader, then requires core.* and bruce.lazy
 ├── lazy-lock.json        # committed; pins exact plugin revisions
@@ -26,12 +30,23 @@ private_dot_config/nvim/
     ├── lazy.lua          # bootstrap + { import = "bruce.plugins" }
     ├── core/             # options, keymaps, autocmds, maximize
     └── plugins/          # one spec file per concern, auto-imported
+private_dot_config/zsh/ps1.zsh   # the prompt (git state, duration, exit code)
+private_dot_config/ghostty/config # terminal appearance only — no shell settings
 ```
 
 Adding a plugin = drop a file in `lua/bruce/plugins/` returning a lazy.nvim
 spec. No `init.lua` edit.
 
 ## Rules for this config
+
+**One shell everywhere.** `~/.zshrc` + `~/.zprofile` + `~/.config/zsh/ps1.zsh`
+are the only shell config; every terminal and SSH session reads them. The
+Ghostty config sets nothing shell-related — do not reintroduce a ZDOTDIR or
+shell env lines there. History is one shared file, `~/.zsh_history`.
+
+**Secrets never go in this repo.** They live in `~/.zsh/secrets.zsh`
+(`private_dot_zsh/secrets.example.zsh` is the template; the real file is in
+`.chezmoiignore`). Same for `~/.pi/agent/auth.json`.
 
 **No `pcall(require, ...)` guards.** The previous config wrapped every plugin
 file in `local ok, x = pcall(require, "..."); if not ok then return end`. That

@@ -18,7 +18,7 @@ brew install chezmoi gh
 gh auth login            # choose HTTPS
 gh auth setup-git        # installs the git credential helper
 
-# 2. Config -> ~/.config/nvim, ~/.gitconfig, ~/.config/ghostty, ~/.config/zsh-ghostty
+# 2. Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty
 chezmoi init --apply brucepucci
 
 # 3. Everything the config needs: Neovim, language servers, ripgrep, fd,
@@ -29,10 +29,13 @@ brew bundle --file="$(chezmoi source-path)/Brewfile"
 # 4. Plugins, at the exact revisions pinned in lazy-lock.json
 nvim --headless "+Lazy! restore" +qa
 
-# 5. The one manual step: pi needs a Z.ai API key, and secrets never go in
-#    git. Get a key from https://z.ai, then:
+# 5. The one manual step: secrets never go in git.
+#    pi's Z.ai key -- get one from https://z.ai, then:
 pi                        # /login -> zai -> paste the key
 #    (or: export ZAI_API_KEY=... before launching pi)
+#
+#    Shell secrets (GitHub token, API keys), if you use them:
+#    cp ~/.zsh/secrets.example.zsh ~/.zsh/secrets.zsh   # then fill it in, chmod 600
 ```
 
 Then open Ghostty and run `nvim` — or `pi`, once step 5 is done. That is the
@@ -50,8 +53,10 @@ every change is an edit in this repo plus `chezmoi apply`.
 > but `Lazy! restore` also needs `tree-sitter` to build parsers.
 
 > **Not using Ghostty?** The Nerd Font is installed by step 3, but only Ghostty
-> picks it up automatically. In iTerm2 or another terminal, set the font to
-> JetBrainsMono Nerd Font by hand or icons render as boxes.
+> picks it up automatically. In Terminal.app or iTerm2, set the font to
+> JetBrainsMono Nerd Font by hand or icons — and the prompt's git branch mark —
+> render as boxes. The shell itself needs nothing: every terminal reads the
+> same `~/.zshrc`.
 
 **Requires Neovim 0.12+.** Below that the config refuses to load and says so,
 rather than half-working: `vim.lsp.config`, `vim.hl`, and nvim-treesitter's
@@ -62,17 +67,26 @@ if you install Neovim some other way.
 
 | Path | What |
 |---|---|
+| `~/.zshrc`, `~/.zprofile` | The shell — every terminal and every SSH session |
+| `~/.config/zsh/ps1.zsh` | The prompt: git state, duration, exit code |
 | `~/.config/nvim/` | The editor |
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts |
 | `~/.config/lazygit/config.yml` | delta as lazygit's pager |
-| `~/.config/ghostty/config` | Theme, and the `ZDOTDIR` pointing at the shell below |
-| `~/.config/zsh-ghostty/` | zsh config for Ghostty sessions — `.zshrc` and `ps1.zsh` |
+| `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
 | `~/.pi/agent/settings.json` | pi coding agent: dark theme, `zai` provider, `glm-5.3` default |
 
-**Ghostty sessions use their own shell config.** The Ghostty config sets
-`ZDOTDIR=~/.config/zsh-ghostty`, so `~/.zshrc` and the oh-my-zsh setup in
-`$HOME` are **not** read there. That directory is the one managed here; the
-`$HOME` ones are deliberately left alone.
+**One shell everywhere.** Ghostty, Terminal.app, iTerm2, and anyone SSH-ing
+into this machine all get the same zsh: `~/.zprofile` sets the login PATH,
+`~/.zshrc` carries options, aliases, completion and keybindings, and
+`~/.config/zsh/ps1.zsh` renders the prompt. History is a single shared file
+(`~/.zsh_history` with `SHARE_HISTORY`), so a command typed in one terminal is
+immediately searchable from another. oh-my-zsh and powerlevel10k are gone —
+the Ghostty setup they were replaced by is now the default everywhere, and the
+Ghostty config itself sets nothing shell-related.
+
+Secrets — GitHub token, API keys — belong in `~/.zsh/secrets.zsh`, which
+`~/.zshrc` sources when present. That file is deliberately unmanaged (see
+below): secrets never go in git.
 
 The Ghostty config lives at the XDG path, not
 `~/Library/Application Support/com.mitchellh.ghostty/config.ghostty`. Ghostty
@@ -80,9 +94,9 @@ reads both on macOS and only the XDG one on Linux — and it **merges** them whe
 both exist, so there is only ever one.
 
 Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
-generated), `~/.ssh/`, `~/.config/gh/hosts.yml` (auth token), and `~/.oh-my-zsh`
-(92MB of third-party code). For pi: `~/.pi/agent/auth.json` (the Z.ai API key —
-a secret), `~/.pi/agent/sessions/` (transcripts), and
+generated), `~/.zsh/secrets.zsh` (API keys and tokens — a secret), `~/.ssh/`,
+and `~/.config/gh/hosts.yml` (auth token). For pi: `~/.pi/agent/auth.json`
+(the Z.ai API key — a secret), `~/.pi/agent/sessions/` (transcripts), and
 `~/.pi/agent/models-store.json` (a catalog cache pi refetches from Z.ai).
 
 ## pi + Z.ai

@@ -36,7 +36,7 @@ brew "ipython"              # the REPL iron.nvim drives (<leader>`)
 brew "tree-sitter-cli"      # nvim-treesitter `main` compiles parsers (needs >= 0.26.1)
 brew "node"                 # REQUIRED: pi (below) installs via npm; also builds
                             # markdown-preview on aarch64 Linux
-brew "fastfetch"            # banner in the Ghostty zshrc (guarded, optional)
+brew "fastfetch"            # banner in ~/.zshrc (guarded, optional)
 
 # --- coding agent ---------------------------------------------------------
 # pi, the terminal coding agent. No Homebrew formula exists, so it comes from
@@ -47,9 +47,10 @@ brew "fastfetch"            # banner in the Ghostty zshrc (guarded, optional)
 system "npm", "install", "-g", "@earendil-works/pi-coding-agent"
 
 # --- macOS only -----------------------------------------------------------
-# The config renders Nerd Font glyphs (diagnostics, markdown icons, file
-# icons). Ghostty ships one as its default face, so this is invisible here --
-# but any other terminal shows placeholder boxes.
+# The config and the zsh prompt render Nerd Font glyphs (diagnostics,
+# markdown icons, the prompt's git branch mark). Ghostty ships one as its
+# default face, but Terminal.app and iTerm2 do not — without setting the
+# font there by hand, glyphs show as placeholder boxes.
 cask "font-jetbrains-mono-nerd-font" if OS.mac?
 cask "ghostty" if OS.mac?
 
