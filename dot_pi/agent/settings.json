@@ -1,6 +1,6 @@
 {
   "lastChangelogVersion": "0.84.4",
-  "theme": "light/dark",
+  "theme": "gruvbox-light/gruvbox-dark",
   "defaultProvider": "zai",
   "defaultModel": "glm-5.3"
 }
