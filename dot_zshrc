@@ -54,7 +54,18 @@ setopt EXTENDED_GLOB NO_NOMATCH   # NO_NOMATCH: unmatched globs pass through
 [[ -d $HOME/.zsh/completions ]] && fpath=($HOME/.zsh/completions $fpath)
 
 autoload -Uz compinit
-compinit -d "$HOME/.zcompdump"
+# compinit consults compaudit and y/n-PROMPTS when it finds insecure fpath
+# dirs — owned by neither root nor $USER; GitHub's runner images ship
+# exactly that (image built as uid 1000, jobs run as uid 1001). On a tty
+# that is a fine, deliberate question; with no tty (CI, -c shells,
+# scripted ssh) the prompt cannot be answered and compinit aborts
+# silently: no completions, no dump file, no error shown. Keep the audit
+# for interactive shells, skip it where it can only break things.
+if [[ -t 0 ]]; then
+  compinit -d "$HOME/.zcompdump"
+else
+  compinit -d "$HOME/.zcompdump" -u
+fi
 zmodload zsh/complist
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
