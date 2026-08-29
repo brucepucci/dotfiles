@@ -8,7 +8,7 @@
 # Source entries beginning with "." (.github/, .gitignore) are ignored by
 # chezmoi automatically and need no entry here.
 README.md
-CLAUDE.md
+AGENTS.md
 Brewfile
 LICENSE
 scripts/

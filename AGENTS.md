@@ -1,6 +1,7 @@
-# CLAUDE.md
+# AGENTS.md
 
-Guidance for Claude Code working in this repo.
+Guidance for coding agents working in this repo (pi, Claude Code,
+or anything else that reads the cross-agent AGENTS.md convention).
 
 ## What this is
 
