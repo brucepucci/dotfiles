@@ -1,0 +1,18 @@
+# ~/.config/zsh-ghostty/.zshenv — LEGACY REDIRECT GUARD. Not shell config.
+#
+# The pre-unification Ghostty config pointed ZDOTDIR at this directory. A
+# Ghostty still running from before that change keeps exporting ZDOTDIR for
+# every window it opens (its config hot-reload does not pick up an atomic
+# file replace), so zsh looks for its rc files HERE, finds none, and silently
+# falls back to /etc defaults: no ~/.zprofile, no ~/.zshrc — stock prompt and
+# no Homebrew on PATH. Any other process holding the old env (editors, agents,
+# nested shells) breaks the same way.
+#
+# zsh reads $ZDOTDIR/.zshenv before every other user file, then re-resolves
+# ZDOTDIR (falling back to $HOME) for each later one. Unsetting it here sends
+# the shell back to the real ~/.zprofile and ~/.zshrc, repairing those stale
+# sessions in place.
+#
+# Inert once no pre-migration process remains — safe to delete after a
+# reboot, or the next Ghostty restart makes it unreachable.
+unset ZDOTDIR
