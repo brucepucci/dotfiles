@@ -41,8 +41,13 @@ zstyle ':vcs_info:git:*' check-for-changes true
 # `git ls-files --others` scanning the whole worktree on EVERY prompt -- by
 # far the most expensive thing this prompt did. `git status` when you want
 # the full picture; set check-for-changes to false for a branch-only prompt.
-zstyle ':vcs_info:git:*' unstagedstr "%F{$GB_YELLOW}○%f"
-zstyle ':vcs_info:git:*' stagedstr   "%F{$GB_PURPLE}●%f"
+#
+# Each marker carries a leading space. It separates the two glyphs when both
+# are present and separates the first from the branch name (the nerd-font
+# branch icon is wide and crowds what follows), while vanishing with the
+# marker itself -- a clean tree gets no stray gap.
+zstyle ':vcs_info:git:*' unstagedstr "%F{$GB_YELLOW} ○%f"
+zstyle ':vcs_info:git:*' stagedstr   "%F{$GB_PURPLE} ●%f"
 zstyle ':vcs_info:git:*' formats       " %F{$GB_AQUA}${GB_GIT_ICON}%b%f%u%c"
 zstyle ':vcs_info:git:*' actionformats " %F{$GB_AQUA}${GB_GIT_ICON}%b%f %F{$GB_ORANGE}(%a)%f%u%c"
 
