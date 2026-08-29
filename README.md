@@ -74,7 +74,7 @@ if you install Neovim some other way.
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts |
 | `~/.config/lazygit/config.yml` | delta as lazygit's pager |
 | `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
-| `~/.pi/agent/settings.json` | pi coding agent: dark theme, `zai` provider, `glm-5.3` default |
+| `~/.pi/agent/settings.json` | pi coding agent: terminal-following `light/dark` theme, `zai` provider, `glm-5.3` default |
 
 **One shell everywhere.** Ghostty, Terminal.app, iTerm2, and anyone SSH-ing
 into this machine all get the same zsh: `~/.zprofile` sets the login PATH,

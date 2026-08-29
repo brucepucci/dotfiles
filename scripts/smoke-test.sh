@@ -94,6 +94,8 @@ grep -q $'^\tpager = delta-theme$' "$NEWHOME/.gitconfig" \
   || die "git core.pager is not delta-theme"
 grep -q 'command: delta-theme --paging=never' "$NEWHOME/.config/lazygit/config.yml" \
   || die "lazygit does not render through delta-theme"
+grep -q '"theme": "light/dark"' "$NEWHOME/.pi/agent/settings.json" \
+  || die "pi TUI theme is not terminal-following (light/dark)"
 out="$(fresh_zsh '[[ $path[(r)$HOME/.local/bin] ]] && echo lbin=yes')"
 [[ "$out" == *lbin=yes* ]] || die "login PATH does not include ~/.local/bin"
 # The wrapper itself, hermetically: fake `defaults` + fake `delta`, both
