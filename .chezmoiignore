@@ -11,6 +11,7 @@ README.md
 CLAUDE.md
 Brewfile
 LICENSE
+scripts/
 
 # Generated or private files at $HOME. chezmoi only tracks what is
 # explicitly added, but these are listed so an accidental

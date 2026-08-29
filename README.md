@@ -160,6 +160,40 @@ markdown-preview ships no prebuilt binary for this platform. The build detects
 that and falls back to compiling the Node app, so `<leader>mp` still works —
 but it needs `npm`, which the Brewfile installs.
 
+## Testing changes
+
+Three tiers, by cost. Tier 1 runs in about a second and should follow every
+change to the shell config; tier 3 is a real macOS VM for full new-machine
+runs before big changes.
+
+```bash
+# 1. Seconds, no VM. Applies the repo into a pristine throwaway HOME and
+#    exercises the result the way real sessions do: fresh-window shell,
+#    the legacy ZDOTDIR guard, SSH prompt segment, history shared across
+#    shells, EDITOR fallback, secrets staying out, ghostty config hygiene.
+scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
+
+# 2. ~1 min. The same, inside a clean Debian 12 userland on the colima VM.
+#    Catches "works on my mac" assumptions (GNU vs BSD ls, no Homebrew,
+#    nvim absent so the EDITOR fallback branch actually runs).
+scripts/test-linux-vm.sh           # --full adds Homebrew-on-Linux + brew
+                                   # bundle + plugin restore (~25 min): the
+                                   # "New machine" steps on Linux, verbatim
+
+# 3. The real thing: a disposable macOS VM via tart (Virtualization
+#    framework; first run downloads a ~15 GB image, clones are cheap).
+brew install tart
+tart clone ghcr.io/cirruslabs/macos-sequoia:latest dotfiles-test
+tart run dotfiles-test             # Cirrus images ship ssh admin/admin
+ssh admin@$(tart ip dotfiles-test) # then run New-machine steps 0-4 inside
+tart delete dotfiles-test          # done -- throw it away
+```
+
+CI runs tier 1 on Ubuntu for every push and PR
+(`.github/workflows/smoke.yml`). Tiers 1-2 cover everything chezmoi manages;
+only tier 3 exercises `brew bundle`, the GUI apps, and the terminal
+emulators themselves.
+
 ## Editing the config
 
 **Edit in the source directory, not in `~/.config/nvim`.** The target is a build

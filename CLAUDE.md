@@ -84,6 +84,9 @@ bad update bisectable via `git log -p -- private_dot_config/nvim/lazy-lock.json`
 ## Verifying a change
 
 ```bash
+scripts/smoke-test.sh      # from-scratch apply + shell behavior, ~1s -- run
+                           # this after EVERY change (see README "Testing
+                           # changes" for the VM tiers)
 chezmoi diff && chezmoi apply
 nvim --headless "+checkhealth" "+w! /tmp/h.txt" +qa && grep -E 'ERROR|WARNING' /tmp/h.txt
 ```
