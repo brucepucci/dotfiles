@@ -97,7 +97,11 @@ keymap.set("n", "<leader>?", function()
     vim.ui.select(files, {
         prompt = "Docs",
         format_item = function(f)
-            return vim.fn.fnamemodify(f, ":t:r"):gsub("-", " ")
+            -- Parens truncate gsub's second return (the replacement count);
+            -- bare, format_item would return two values where one is expected.
+            -- (Caught by lua_ls + lazydev -- the first real type catch in this
+            -- config; see plugins/lua-dev.lua.)
+            return (vim.fn.fnamemodify(f, ":t:r"):gsub("-", " "))
         end,
     }, function(choice)
         if choice then

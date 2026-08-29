@@ -6,7 +6,7 @@ Key bindings are in [keymaps.md](keymaps.md), and
 [getting-started.md](getting-started.md) walks the review workflow end to end.
 This file is the "what is this thing and why do I have it" reference.
 
-The shape of the setup: **17 Neovim plugins** (down from 34), **language
+The shape of the setup: **18 Neovim plugins** (down from 34), **language
 servers and CLI tools from Homebrew** rather than a second package manager
 inside the editor, and **several things that used to be plugins now handled by
 Neovim itself**.
@@ -134,6 +134,14 @@ types.
 
 ### lua-language-server, marksman *(CLI)*
 Lua (for editing this config) and markdown.
+
+### lazydev.nvim
+Teaches lua-language-server about Neovim: its bundled API types load when you
+open a Lua file, and plugin globals (`Snacks`, `MiniIcons`) get their real
+types when the name appears. Without it, every `vim.` line warns "Undefined
+global `vim`" -- that was the yellow triangles on every config file. It also
+catches real mistakes: its first day found a `gsub` double-return leaking out
+of a callback in `core/keymaps.lua`.
 
 ### blink.cmp
 Completion. Replaced seven plugins (nvim-cmp plus six companions). Sources are
