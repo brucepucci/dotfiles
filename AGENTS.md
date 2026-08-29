@@ -23,9 +23,13 @@ pi coding agent (Z.ai/GLM models).
 ```
 dot_zshrc                  # interactive shell: options, history, aliases, prompt
 dot_zprofile               # login-shell PATH (Homebrew, ~/.local/bin)
-dot_local/bin/executable_delta-theme   # ~/.local/bin: delta, colored for the
-                            # current OS appearance; git + lazygit call it
+dot_local/bin/executable_delta-theme.tmpl   # ~/.local/bin: delta, colored for the
+                            # current OS appearance; git + lazygit call it;
+                            # theme names render from .chezmoidata/palette.toml
 private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
+.chezmoidata/palette.toml  # SINGLE SOURCE OF TRUTH for all colors: [palette.scheme]
+                            # names (ghostty/delta/nvim/pi) + [palette.light]/[dark]
+                            # raw roles; consumed by every *.tmpl below
 private_dot_config/nvim/
 ├── init.lua              # sets mapleader, syncs OS appearance, then requires
 │                         # core.* and bruce.lazy
@@ -34,9 +38,16 @@ private_dot_config/nvim/
     ├── lazy.lua          # bootstrap + { import = "bruce.plugins" }
     ├── core/             # options, keymaps, autocmds, appearance, maximize
     └── plugins/          # one spec file per concern, auto-imported
-private_dot_config/zsh/ps1.zsh   # the prompt (git state, duration, exit code)
-private_dot_config/ghostty/config # terminal appearance only — no shell settings;
-                            # theme follows the OS: light:…,dark:…
+                            # (colorscheme.lua.tmpl + ui.lua.tmpl render from
+                            # the palette; targets keep the .lua names)
+private_dot_config/zsh/ps1.zsh.tmpl   # the prompt (git state, duration, exit
+                            # code); GB_ORANGE renders from the palette
+private_dot_config/ghostty/config.tmpl # terminal appearance only — no shell settings;
+                            # theme pair follows the OS: light:…,dark:… (names
+                            # from the palette)
+dot_pi/agent/              # settings.json.tmpl + themes/*.json.tmpl — the pi
+                            # TUI's theme pair and both raw palettes, generated
+                            # from [palette.light]/[palette.dark]
 ```
 
 Adding a plugin = drop a file in `lua/bruce/plugins/` returning a lazy.nvim
@@ -62,6 +73,15 @@ was broken for months with no error shown. Let failures be loud.
 
 `pcall` is fine where failure is genuinely expected and not exceptional (e.g.
 `vim.treesitter.start` on a filetype with no parser).
+
+**Colors come from `.chezmoidata/palette.toml`.** One source of truth, three
+layers (`[palette.scheme]` names, `[palette.light]/[dark]` raw roles,
+per-template mapping). Never hardcode a hex or theme name in a managed file:
+make it a `.tmpl` that renders from the palette. The smoke test's "palette is
+the single source" step is the drift guard — it fails on orphan hexes and on
+names that disagree with `[palette.scheme]`. `chezmoi re-add` skips
+template-sourced files (e.g. pi's `settings.json.tmpl`): fold pi's self-bumps
+in by hand. See README "Changing the color scheme" for the runbook.
 
 **Servers come from Homebrew, not Mason.** Mason is deliberately not installed:
 one package manager, versions visible in `Brewfile`, no duplicate copies, no

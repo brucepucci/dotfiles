@@ -22,6 +22,9 @@
 #   9. light-mode wiring is in place: ghostty's light/dark theme pair, nvim's
 #      OS-appearance sync, and the delta-theme wrapper (exercised with fake
 #      `defaults`/`delta` shims, so no GUI toggling is required)
+#  10. the palette data file is the single source of color definitions: no
+#      hex value appears in a generated output that .chezmoidata/palette.toml
+#      does not define, and every embedded theme name matches [palette.scheme]
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -122,6 +125,59 @@ out="$(env PATH="$wrap/light:/usr/bin:/bin" \
 [[ "$out" == "ARGV:--light ARGV:--syntax-theme ARGV:gruvbox-light ARGV:extra " ]] \
   || die "delta-theme light state wrong: $out"
 ok "ghostty pair, nvim sync, delta wrapper, PATH all in place"
+
+step "palette is the single source of color definitions"
+# Drift guard for the .chezmoidata/palette.toml migration (issue #17).
+# Values are read through chezmoi itself (execute-template renders from the
+# same .chezmoidata the templates see), so no TOML parsing is needed.
+palhex="$(grep -hoE '#[0-9a-fA-F]{6}' "$SOURCE/.chezmoidata/palette.toml" | sort -u)"
+[[ -n "$palhex" ]] || die "no hex values found in palette.toml"
+# Every hex in any color-carrying output must be defined by the palette --
+# including files that should hold none today (ghostty config, gitconfig,
+# delta-theme): a hardcoded color anywhere is a regression of the migration.
+for f in "$NEWHOME/.pi/agent/themes/gruvbox-light.json" \
+         "$NEWHOME/.pi/agent/themes/gruvbox-dark.json" \
+         "$NEWHOME/.config/zsh/ps1.zsh" \
+         "$NEWHOME/.config/nvim/lua/bruce/plugins/ui.lua" \
+         "$NEWHOME/.config/nvim/lua/bruce/plugins/colorscheme.lua" \
+         "$NEWHOME/.config/ghostty/config" \
+         "$NEWHOME/.gitconfig" \
+         "$NEWHOME/.local/bin/delta-theme"; do
+  for h in $(grep -hoE '#[0-9a-fA-F]{6}' "$f" | sort -u); do
+    grep -qxF "$h" <<<"$palhex" \
+      || die "$(basename "$f") carries hex $h, not defined in palette.toml"
+  done
+done
+# Theme names embedded in outputs must match [palette.scheme].
+palval() { chezmoi --source "$SOURCE" execute-template "$1"; }
+pair="$(palval '{{ .palette.scheme.pi_pair }}')"
+[[ "$(sed -n 's/.*"theme": "\([^"]*\)".*/\1/p' "$NEWHOME/.pi/agent/settings.json")" == "$pair" ]] \
+  || die "pi settings theme pair does not match [palette.scheme]"
+for t in "${pair%%/*}" "${pair##*/}"; do
+  f="$NEWHOME/.pi/agent/themes/$t.json"
+  [[ -f "$f" ]] || die "pi pair member '$t' has no theme file"
+  [[ "$(sed -n 's/.*"name": "\([^"]*\)".*/\1/p' "$f")" == "$t" ]] \
+    || die "pi theme $t.json declares a different name"
+done
+[[ "$(grep '^theme = ' "$NEWHOME/.config/ghostty/config")" \
+   == "theme = light:$(palval '{{ .palette.scheme.light_theme }}'),dark:$(palval '{{ .palette.scheme.dark_theme }}')" ]] \
+  || die "ghostty theme line does not match [palette.scheme]"
+contrast="$(palval '{{ .palette.scheme.nvim.contrast }}')"
+foreground="$(palval '{{ .palette.scheme.nvim.foreground }}')"
+grep -q "gruvbox_material_background = \"$contrast\"" \
+  "$NEWHOME/.config/nvim/lua/bruce/plugins/colorscheme.lua" \
+  || die "nvim background contrast does not match [palette.scheme.nvim]"
+grep -q "gruvbox_material_foreground = \"$foreground\"" \
+  "$NEWHOME/.config/nvim/lua/bruce/plugins/colorscheme.lua" \
+  || die "nvim foreground variant does not match [palette.scheme.nvim]"
+ddark="$(palval '{{ .palette.scheme.delta_dark }}')"; dlight="$(palval '{{ .palette.scheme.delta_light }}')"
+grep -q -- "--syntax-theme $ddark" "$NEWHOME/.local/bin/delta-theme" \
+  || die "delta-theme dark syntax theme does not match [palette.scheme]"
+grep -q -- "--syntax-theme $dlight" "$NEWHOME/.local/bin/delta-theme" \
+  || die "delta-theme light syntax theme does not match [palette.scheme]"
+grep -q "syntax-theme = $ddark" "$NEWHOME/.gitconfig" \
+  || die "gitconfig delta fallback does not match [palette.scheme]"
+ok "no orphan hexes; ghostty/pi/nvim/delta names all match the palette"
 
 step "fresh login shell (new terminal window)"
 out="$(fresh_zsh '

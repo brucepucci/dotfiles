@@ -75,6 +75,7 @@ if you install Neovim some other way.
 | `~/.config/lazygit/config.yml` | delta as lazygit's pager |
 | `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
 | `~/.pi/agent/settings.json` | pi coding agent: terminal-following Gruvbox theme pair, `zai` provider, `glm-5.3` default |
+| `.chezmoidata/palette.toml` | Single source of truth for every color (repo-only — never applied; templates render from it) |
 
 **One shell everywhere.** Ghostty, Terminal.app, iTerm2, and anyone SSH-ing
 into this machine all get the same zsh: `~/.zprofile` sets the login PATH,
@@ -119,11 +120,15 @@ Plan. `zai` is a **built-in** pi provider, so the whole setup is three pieces:
 
 `settings.json` also carries `lastChangelogVersion`, which pi bumps by itself
 on updates, so `chezmoi diff` will show that one field drifting after an
-upgrade — harmless, like a lazy-lock drift. If you change model defaults via
-`/model`, fold them back in:
+upgrade — harmless, like a lazy-lock drift. The file is a chezmoi template
+(its `theme` pair renders from the palette, below), and `chezmoi re-add`
+skips template-sourced files — so after changing model defaults via `/model`,
+fold them into `dot_pi/agent/settings.json.tmpl` by hand:
 
 ```bash
-chezmoi re-add ~/.pi/agent/settings.json
+chezmoi cd
+$EDITOR dot_pi/agent/settings.json.tmpl   # port defaultModel etc.
+chezmoi diff && chezmoi apply
 ```
 
 ## Linux / WSL
@@ -176,9 +181,10 @@ runs before big changes.
 #    exercises the result the way real sessions do: fresh-window shell,
 #    the legacy ZDOTDIR guard, SSH prompt segment, history shared across
 #    shells, EDITOR fallback, secrets staying out, ghostty config hygiene,
-#    and the light-mode wiring (ghostty theme pair, nvim OS-appearance
-#    sync, delta-theme wrapper exercised with fake `defaults`/`delta`
-#    shims -- no GUI toggling required).
+#    the light-mode wiring (ghostty theme pair, nvim OS-appearance sync,
+#    delta-theme wrapper exercised with fake `defaults`/`delta` shims), and
+#    the palette single-source check (no orphan hexes, names match
+#    [palette.scheme]).
 scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
 
 # 2. ~1 min. The same, inside a clean Debian 12 userland on the colima VM.
@@ -217,6 +223,43 @@ chezmoi apply               # install
 Adding a plugin means dropping a file into
 `private_dot_config/nvim/lua/bruce/plugins/` — they are auto-imported, so no
 `init.lua` edit is needed.
+
+## Changing the color scheme
+
+Every color this repo generates comes from one file:
+[.chezmoidata/palette.toml](.chezmoidata/palette.toml), in three layers:
+
+- **`[palette.scheme]`** — identity: the curated theme *names* each app runs
+  (Ghostty's light/dark pair, delta's bat syntax themes, nvim's
+  gruvbox-material options, pi's auto-switching pair).
+- **`[palette.light]` / `[palette.dark]`** — raw roles: the hex values, with
+  upstream provenance in comments, for the only surfaces that must hold real
+  colors (the two pi themes, lualine's light statusline table, the prompt's
+  orange).
+- role→token mapping lives in each surface's `.tmpl` (target paths are
+  unchanged from before the migration — only the source gained `.tmpl`).
+
+**Tweak one color:** edit the role, then `chezmoi diff && chezmoi apply`.
+Only the surfaces consuming that role change — e.g. flipping
+`[palette.dark].tint_green` changes exactly one line, pi's dark
+`toolSuccessBg`.
+
+**Switch scheme family:** swap the names in `[palette.scheme]`, then rename
+`dot_pi/agent/themes/<name>.json.tmpl` to match the new pair — file names,
+each theme's `"name"` field, and `pi_pair` must agree (the smoke test checks
+all three). The lualine dark side returns a built-in theme name and the light
+table's role mapping may need porting (`plugins/ui.lua.tmpl`); the nvim
+colorscheme plugin is swapped in its lazy spec along with
+`[palette.scheme.nvim]`.
+
+Generated files are build artifacts — edit the data file, never `~`. The
+smoke test fails on any hex in a generated output that the palette does not
+define, and on any embedded theme name that disagrees with `[palette.scheme]`.
+
+Two palettes the repo deliberately does **not** generate: Ghostty's theme
+rendering (it ships curated Gruvbox themes — we only name them) and nvim's
+colorscheme itself (upstream `sainnhe/gruvbox-material`). The palette's hex
+roles duplicate only what the raw-color surfaces need.
 
 ## Updating plugins
 
