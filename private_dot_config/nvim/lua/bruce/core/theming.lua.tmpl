@@ -4,6 +4,13 @@
 {{ $hintD := $d.apps.nvim.colorscheme -}}
 {{ $hint := "" -}}
 {{ if and (ne $hintL "") (eq $hintL $hintD) }}{{ $hint = $hintL }}{{ end -}}
+{{- /* contrast/foreground are optional keys (only curated schemes carry
+     them); index-lookup returns nil for absent keys instead of erroring
+     under missingkey=error */}}
+{{ $contrast := "" -}}
+{{ $foreground := "" -}}
+{{ if index $d.apps.nvim "contrast" }}{{ $contrast = index $d.apps.nvim "contrast" }}{{ end -}}
+{{ if index $d.apps.nvim "foreground" }}{{ $foreground = index $d.apps.nvim "foreground" }}{{ end -}}
 -- theming.lua -- GENERATED from .chezmoidata/palette.toml (the three
 -- settings) and .chezmoidata/colors.toml (the chosen themes' roles). Do not
 -- edit by hand: change the settings or colors/<name>.toml, then
@@ -23,8 +30,8 @@ return {
     -- options for the curated scheme (gruvbox-material's globals; see
     -- plugins/colorscheme.lua)
     nvim_options = {
-        gruvbox_material_background = "{{ $d.apps.nvim.contrast }}",
-        gruvbox_material_foreground = "{{ $d.apps.nvim.foreground }}",
+        gruvbox_material_background = "{{ $contrast }}",
+        gruvbox_material_foreground = "{{ $foreground }}",
     },
     -- both themes' semantic roles, keyed by the 'background' value
     palettes = {

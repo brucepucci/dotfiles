@@ -107,12 +107,15 @@ def parse_ghostty_theme(path):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
+            # ghostty palette lines are `palette = N=#hex` -- the number and
+            # the color both sit on the value side of the first `=`
+            m = re.fullmatch(r"palette\s*=\s*(\d+)\s*=\s*(\S+)", line)
+            if m:
+                term["palette_%s" % m.group(1)] = m.group(2)
+                continue
             key, _, value = line.partition("=")
             key, value = key.strip(), value.strip()
-            m = re.fullmatch(r"palette (\d+)", key)
-            if m:
-                term["palette_%s" % m.group(1)] = value
-            elif key in dict(TERMINAL_KEYS):
+            if key in dict(TERMINAL_KEYS):
                 term[key] = value
     if "background" not in term or "foreground" not in term:
         return None  # not a usable theme (some catalog entries are stubs)
