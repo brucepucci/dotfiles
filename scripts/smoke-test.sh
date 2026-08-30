@@ -381,7 +381,8 @@ wrap_zsh() {  # $1 = cwd, $2 = pi args (single-quoted inside the payload)
 }
 proj="$WORK/demoproj"; mkdir -p "$proj"
 # 1. topic-named session, args passed through, hint printed
-out="$(wrap_zsh "$proj" "-n 'Auth Refactor'")"
+rc=0; out="$(wrap_zsh "$proj" "-n 'Auth Refactor'")" \
+  || { rc=$?; die "case-1 inner zsh exited $rc -- output: $out"; }
 grep -qF 'new-session -s auth-refactor command pi -n Auth\ Refactor' "$TLOG" \
   || die "topic naming/passthrough wrong: $(tail -1 "$TLOG")"
 grep -qxF auth-refactor "$SESS" || die "topic session not minted"
@@ -389,7 +390,8 @@ grep -qxF auth-refactor "$SESS" || die "topic session not minted"
 [[ "$out" == *'detach Ctrl-b d'* ]] || die "creation hint missing: $out"
 # 2. default name from the project dir; numbered siblings on collision
 : > "$TLOG"; printf 'demoproj\ndemoproj-2\n' > "$SESS"
-wrap_zsh "$proj" "" >/dev/null
+wrap_zsh "$proj" "" >/dev/null \
+  || die "case-2 inner zsh exited -- output: $(tail -1 "$TLOG")"
 grep -qF 'new-session -s demoproj-3 command pi' "$TLOG" \
   || die "collision numbering wrong: $(tail -1 "$TLOG")"
 # 3. an explicitly taken topic refuses -- nothing silently renamed
