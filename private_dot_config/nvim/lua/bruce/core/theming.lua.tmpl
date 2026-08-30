@@ -1,14 +1,14 @@
 {{- /* Everything here is resolved at apply time by scripts/ghostty-theme.py:
-     the three settings from theme.toml (the repo root), the themes parsed
+     the three appearance settings from settings.toml (the repo root), the themes parsed
      and derived straight from Ghostty's own catalog -- so any theme
      `ghostty +list-themes` shows works, with nothing cached that can go
      stale. */ -}}
 {{ $a := output (joinPath .chezmoi.sourceDir "scripts/ghostty-theme.py") "appearance" | trim | fromJson -}}
 {{ $l := $a.light -}}
 {{ $d := $a.dark -}}
--- theming.lua -- GENERATED at apply time from theme.toml (the three
--- settings, at the repo root) and Ghostty's theme catalog (via
--- scripts/ghostty-theme.py). Do not edit by hand: change theme.toml, then
+-- theming.lua -- GENERATED at apply time from settings.toml (the three
+-- appearance settings, at the repo root) and Ghostty's theme catalog (via
+-- scripts/ghostty-theme.py). Do not edit by hand: change settings.toml, then
 -- `chezmoi apply`.
 --
 -- This is Neovim's single point of contact with the palette system. Static

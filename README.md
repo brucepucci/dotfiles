@@ -84,7 +84,7 @@ if you install Neovim some other way.
 | `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
 | `~/.tmux.conf` | tmux, kept minimal: pi's extended-keys, OSC 52 clipboard, truecolor passthrough — detachable sessions only |
 | `~/.pi/agent/settings.json` | pi coding agent: appearance-following theme pair, `zai` provider, `glm-5.3` default |
-| `theme.toml` | The three settings that drive every color — visible at the repo root (never applied; themes resolve from Ghostty at apply time) |
+| `settings.toml` | The settings that drive every color, plus the `tmux_wrap` flag — visible at the repo root (never applied; themes resolve from Ghostty at apply time) |
 
 **One shell everywhere.** Ghostty, Terminal.app, iTerm2, and anyone SSH-ing
 into this machine all get the same zsh: `~/.zprofile` sets the login PATH,
@@ -163,8 +163,10 @@ session `auth-refactor` *and* pi's own session display name. A session dies
 when pi exits, so `tmux ls` lists exactly the live conversations — nothing
 dangles. pi runs unwrapped already inside a tmux session (a manual session
 keeps its own bare pi), from `$HOME`, for one-shot runs (`pi -p`, `--help`,
-management subcommands), or with `PI_TMUX_WRAP=never` — and the wrapper is
-guarded like everything else: no tmux installed means plain pi.
+management subcommands), or with `tmux_wrap = "off"` in `settings.toml`
+(per machine or shell: `PI_TMUX_WRAP=never`; one forced run: `=force`) —
+and the wrapper is guarded like everything else: no tmux installed means
+plain pi.
 
 For anything that isn't pi — nvim, a dev server, plain shells — start it
 under tmux by hand:
@@ -324,15 +326,16 @@ Adding a plugin means dropping a file into
 `private_dot_config/nvim/lua/bruce/plugins/` — they are auto-imported, so no
 `init.lua` edit is needed.
 
-## Changing how everything looks
+## Changing the settings
 
-Three settings in [theme.toml](theme.toml), right at the repo root — no
-hex, no per-app themes:
+Four settings in [settings.toml](settings.toml), right at the repo root —
+no hex, no per-app themes:
 
 ```toml
 theme = "system"                   # "system" | "light" | "dark"
 light_theme = "Gruvbox Light Hard"
 dark_theme = "Gruvbox Material Dark"
+tmux_wrap = "on"                   # "on" | "off": pi in detachable tmux sessions?
 ```
 
 - **`light_theme` / `dark_theme`** are Ghostty theme names — browse with
@@ -347,6 +350,12 @@ dark_theme = "Gruvbox Material Dark"
   live — Ghostty auto-switches its pair, nvim re-syncs on focus, delta
   detects per invocation; `light`/`dark` pin one look everywhere, always,
   regardless of what the OS says.
+- **`tmux_wrap`** is the one behavior knob: `on` (default) gives every new
+  pi conversation its own detachable tmux session; `off` runs pi bare —
+  no sessions to rejoin from the phone (`pi -c` still resumes a
+  conversation from any machine). A machine-level env override still
+  wins: `PI_TMUX_WRAP=never` for one shell, `=force` to wrap for one run
+  despite the setting.
 
 The data behind a name is resolved **at apply time, nothing cached**:
 `scripts/ghostty-theme.py` parses each theme straight out of Ghostty's own

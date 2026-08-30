@@ -36,6 +36,11 @@
 #      (-2/-3 on collision) or the sanitized -n topic, and falls through
 #      to plain pi inside tmux / without the binary / from $HOME / for
 #      one-shot -p runs — exercised with fake tmux+pi shims
+#  13. the tmux_wrap setting: "on" (the committed value) renders no env
+#      default and leaves PI_TMUX_WRAP unset; "off" renders
+#      : ${PI_TMUX_WRAP:=never} into ~/.zshrc (second apply against a
+#      flipped settings file via DOTFILES_SETTINGS_FILE, the same override
+#      pattern as the themes dir); an invalid value fails the resolver
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -116,14 +121,14 @@ ok "no command=/env= lines"
 
 step "light-mode: the whole stack follows the appearance setting"
 # theme lookup helpers: the same resolver the templates call at apply time.
-# Settings come from theme.toml (the user-facing file at the repo root).
+# Settings come from settings.toml (the user-facing file at the repo root).
 themeset() { python3 "$SOURCE/scripts/ghostty-theme.py" --setting "$1"; }
 themeget() { python3 "$SOURCE/scripts/ghostty-theme.py" --get "$@"; }
 MODE="$(themeset theme)"
 LTHEME="$(themeset light_theme)"
 DTHEME="$(themeset dark_theme)"
 [[ "$MODE" == system || "$MODE" == light || "$MODE" == dark ]] \
-  || die "theme.toml: theme must be system|light|dark, got: $MODE"
+  || die "settings.toml: theme must be system|light|dark, got: $MODE"
 # Ghostty is the anchor: one theme line, pair when following the OS, single
 # theme when pinned.
 if [[ "$MODE" == system ]]; then
@@ -194,7 +199,8 @@ fi
 ok "ghostty theme line, nvim mode, delta wrapper, pi pair all match the settings"
 
 step "colors: themes resolve on the fly, no orphan hexes"
-# The palette system: 3 settings (theme.toml, repo root) and NO cached
+# The palette system: the appearance settings (settings.toml, repo root)
+# and NO cached
 # theme data -- templates resolve each name at apply time via
 # scripts/ghostty-theme.py, straight from Ghostty's own catalog. Guards, in order: both names
 # resolve (this is the same call the templates make); every hex in a
@@ -453,5 +459,36 @@ env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
     >/dev/null 2>&1 || true
 [[ -s "$PLOG" ]] || die "without tmux the wrapper must fall through to pi"
 ok "creates named sessions, never attaches; guards fall through to plain pi"
+
+step "tmux_wrap setting: on leaves the env alone, off defaults it to never"
+# settings.toml (repo root) carries tmux_wrap = on|off. The committed value
+# is "on": the applied ~/.zshrc carries no default and PI_TMUX_WRAP stays
+# unset in interactive shells. "off" renders : ${PI_TMUX_WRAP:=never} into
+# ~/.zshrc -- proven with a second apply against a settings file flipped to
+# off (the resolver reads DOTFILES_SETTINGS_FILE, same override pattern as
+# DOTFILES_GHOSTTY_THEMES).
+[[ "$(python3 "$SOURCE/scripts/ghostty-theme.py" --setting tmux_wrap)" == on ]] \
+  || die "resolver: committed tmux_wrap must read 'on'"
+grep -qF ': ${PI_TMUX_WRAP:=never}' "$NEWHOME/.zshrc" \
+  && die "tmux_wrap=on must not render a PI_TMUX_WRAP default into ~/.zshrc"
+fresh_zsh '[[ -z ${PI_TMUX_WRAP:-} ]]' >/dev/null \
+  || die "tmux_wrap=on: PI_TMUX_WRAP must stay unset in interactive shells"
+offsettings="$WORK/settings-off.toml"
+sed 's/^tmux_wrap = "on"/tmux_wrap = "off"/' "$SOURCE/settings.toml" > "$offsettings"
+offhome="$WORK/home-off"; mkdir -p "$offhome"
+DOTFILES_SETTINGS_FILE="$offsettings" \
+  chezmoi --source "$SOURCE" --destination "$offhome" apply \
+  || die "tmux_wrap=off: apply failed"
+grep -qF ': ${PI_TMUX_WRAP:=never}' "$offhome/.zshrc" \
+  || die 'tmux_wrap=off must render ": ${PI_TMUX_WRAP:=never}" into ~/.zshrc'
+env -i HOME="$offhome" TERM=xterm-256color PATH="/usr/bin:/bin" \
+    /bin/zsh -l -i -c '[[ ${PI_TMUX_WRAP:-} == never ]]' >/dev/null 2>&1 \
+  || die "tmux_wrap=off: interactive shells must see PI_TMUX_WRAP=never"
+badsettings="$WORK/settings-bad.toml"
+sed 's/^tmux_wrap = "on"/tmux_wrap = "sometimes"/' "$SOURCE/settings.toml" > "$badsettings"
+DOTFILES_SETTINGS_FILE="$badsettings" \
+  python3 "$SOURCE/scripts/ghostty-theme.py" --setting tmux_wrap >/dev/null 2>&1 \
+  && die "resolver: an invalid tmux_wrap value must fail loudly"
+ok "on leaves the env alone; off defaults it to never; invalid fails apply"
 
 printf '\nALL PASS\n'

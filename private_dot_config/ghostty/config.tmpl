@@ -12,7 +12,7 @@
 #
 {{ $a := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "appearance" | trim | fromJson -}}
 # The theme names and the light/dark mode are not set here at all: they come
-# from theme.toml at the repo root (three settings -- browse the names with
+# from settings.toml at the repo root (the appearance settings -- browse the names with
 # `ghostty +list-themes`). theme = "system" renders the light:/dark: pair
 # Ghostty auto-switches with the OS; "light"/"dark" pin one theme for the
 # whole stack. The rest of the stack follows the same signal: the zsh prompt

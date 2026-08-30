@@ -2,19 +2,20 @@
 """ghostty-theme.py -- the palette system: settings + Ghostty's catalog.
 
 Called by the chezmoi templates themselves (via the `output` template
-function) at apply time, so neither the three settings nor any theme data
+function) at apply time, so neither the settings nor any theme data
 is served through chezmoi's hidden .chezmoidata machinery:
 
   ghostty-theme.py appearance     # JSON: mode, both theme names, both
                                   # themes' full resolved palettes -- what
                                   # every template renders from
-  ghostty-theme.py --setting <k>  # one of: theme, light_theme, dark_theme
+  ghostty-theme.py --setting <k>  # one of: theme, light_theme, dark_theme,
+                                  # tmux_wrap
   ghostty-theme.py <name>         # JSON: {terminal, roles} for one theme
   ghostty-theme.py --get <name> <path>  # one value, e.g. roles.bg
   ghostty-theme.py --hexes <name>...    # every hex the theme(s) define
 
-The settings live in theme.toml at the repo root (the user-facing file);
-names are parsed from Ghostty's own catalog (the files behind
+The settings live in settings.toml at the repo root (the user-facing
+file); names are parsed from Ghostty's own catalog (the files behind
 `ghostty +list-themes`) and every derived value is computed from the
 theme's 16-color palette. New Ghostty themes work with zero repo changes;
 nothing here can go stale. Ghostty is therefore a prerequisite for
@@ -26,7 +27,8 @@ greys, accents (red..purple + a blended orange), diff tints, and lualine's
 mode-segment colors.
 
 Set DOTFILES_GHOSTTY_THEMES to point at a themes directory explicitly
-(custom installs, tests).
+(custom installs, tests). Set DOTFILES_SETTINGS_FILE to read a different
+settings file (tests render off-variants without touching the repo's).
 
 Exits nonzero with a pointed message for unknown names, invalid settings,
 or a missing Ghostty install (apply fails loudly).
@@ -187,17 +189,21 @@ def derive_roles(term):
 
 
 # ---------------------------------------------------------------------------
-# the user-facing settings (theme.toml at the repo root)
+# the user-facing settings (settings.toml at the repo root)
 # ---------------------------------------------------------------------------
 
 SETTING_KEYS = ("theme", "light_theme", "dark_theme")
-SETTINGS_FILE = os.path.join(REPO, "theme.toml")
+OPTIONAL_SETTING_KEYS = ("tmux_wrap",)
+SETTINGS_FILE = os.environ.get("DOTFILES_SETTINGS_FILE") or os.path.join(
+    REPO, "settings.toml")
+SETTINGS_BASENAME = os.path.basename(SETTINGS_FILE)
 
 
 def read_settings():
     if not os.path.isfile(SETTINGS_FILE):
-        die("theme.toml is missing from the repo root -- it holds the three "
-            "appearance settings (theme, light_theme, dark_theme)")
+        die("%s is missing from the repo root -- it holds the appearance "
+            "settings (theme, light_theme, dark_theme) and tmux_wrap"
+            % SETTINGS_BASENAME)
     settings = {}
     for line in open(SETTINGS_FILE, encoding="utf-8"):
         line = line.strip()
@@ -207,10 +213,16 @@ def read_settings():
         settings[key.strip()] = value.strip().strip('"')
     for key in SETTING_KEYS:
         if not settings.get(key):
-            die("theme.toml: '%s' is missing or empty" % key)
+            die("%s: '%s' is missing or empty" % (SETTINGS_BASENAME, key))
     if settings["theme"] not in ("system", "light", "dark"):
-        die("theme.toml: theme must be system, light, or dark -- got '%s'"
-            % settings["theme"])
+        die("%s: theme must be system, light, or dark -- got '%s'"
+            % (SETTINGS_BASENAME, settings["theme"]))
+    # tmux_wrap is optional and defaults to on; anything but on/off is a
+    # typo, not a choice -- fail the apply loudly.
+    settings.setdefault("tmux_wrap", "on")
+    if settings["tmux_wrap"] not in ("on", "off"):
+        die("%s: tmux_wrap must be on or off -- got '%s'"
+            % (SETTINGS_BASENAME, settings["tmux_wrap"]))
     return settings
 
 
@@ -256,8 +268,8 @@ def main():
         sys.exit(2)
 
     if args[0] == "--setting":
-        if len(args) != 2 or args[1] not in SETTING_KEYS:
-            die("usage: --setting <theme|light_theme|dark_theme>")
+        if len(args) != 2 or args[1] not in SETTING_KEYS + OPTIONAL_SETTING_KEYS:
+            die("usage: --setting <theme|light_theme|dark_theme|tmux_wrap>")
         print(read_settings()[args[1]])
         return
 

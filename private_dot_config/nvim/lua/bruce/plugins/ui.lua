@@ -20,7 +20,7 @@ return {
                 -- roles (core/theming.lua): segment backgrounds from the
                 -- statusline/surface roles, mode segments from the mode_*
                 -- roles -- so the statusline matches the terminal for any
-                -- theme picked in theme.toml.
+                -- theme picked in settings.toml.
                 theme = function()
                     local theming = require("bruce.core.theming")
                     local p = theming.palettes[vim.o.background == "light" and "light" or "dark"]

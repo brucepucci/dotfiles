@@ -81,7 +81,8 @@ is no junk drawer. Guards: pi runs **unwrapped** already inside a tmux
 session (a manual `work` session keeps its own bare pi), from `$HOME` (a
 directory name is not a project name), for one-shot runs (`pi -p`,
 `--help`, `list`, and the other management subcommands), when tmux is not
-installed, or with `PI_TMUX_WRAP=never`.
+installed, or with `tmux_wrap = "off"` in `settings.toml` (the
+machine-level env override `PI_TMUX_WRAP=never` matches it per shell).
 
 **Rejoining is always explicit** — `pi` never attaches to anything:
 
