@@ -30,6 +30,11 @@
 #  11. the tmux config renders with pi's requirements intact: extended
 #      keys (Shift+Enter survives the tmux layer), OSC 52 clipboard,
 #      truecolor passthrough — file-shape only; no tmux binary needed
+#  12. the pi wrapper: `pi` always CREATES a session (never attaches —
+#      rejoining is manual `tmux attach`), names it after the project dir
+#      (-2/-3 on collision) or the sanitized -n topic, and falls through
+#      to plain pi inside tmux / without the binary / from $HOME / for
+#      one-shot -p runs — exercised with fake tmux+pi shims
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -338,5 +343,95 @@ if [[ "$WITH_NVIM" == 1 ]]; then
     || die "plugins were not installed into the temp HOME"
   ok "plugins restored from lazy-lock.json into pristine HOME"
 fi
+
+step "pi wrapper: new sessions only, named after the project or topic"
+# The wrapper in .zshrc: `pi` always starts a NEW tmux session wrapped
+# around a new pi conversation -- rejoining is explicit `tmux attach -t`,
+# which lands straight inside the running pi. Fake tmux/pi shims stand in
+# for the real binaries; PI_TMUX_WRAP=force substitutes for the tty this
+# harness cannot provide (that one branch runs for real in manual use).
+wbin="$WORK/wbin"; mkdir -p "$wbin"
+SESS="$WORK/wrap-sessions"; TLOG="$WORK/wrap-tmux.log"; PLOG="$WORK/wrap-pi.log"
+: > "$SESS"; : > "$TLOG"; : > "$PLOG"
+cat > "$wbin/tmux" <<SH
+#!/usr/bin/env bash
+# fake tmux: has-session/list-sessions read \$FAKE_SESS (one name/line);
+# new-session records its argv in \$FAKE_LOG and mints the name.
+case "\$1" in
+  has-session)   grep -qxF "\${3#=}" "\$FAKE_SESS" && exit 0; exit 1 ;;
+  list-sessions) cat "\$FAKE_SESS" ;;
+  new-session)
+    printf '%s\n' "\$*" >> "\$FAKE_LOG"
+    while [[ \$# -gt 0 ]]; do
+      [[ \$1 == -s ]] && printf '%s\n' "\$2" >> "\$FAKE_SESS"
+      shift
+    done ;;
+esac
+SH
+cat > "$wbin/pi" <<SH
+#!/bin/sh
+echo "pi \$*" >> "\$FAKE_PI"
+SH
+chmod +x "$wbin/tmux" "$wbin/pi"
+wrap_zsh() {  # $1 = cwd, $2 = pi args (single-quoted inside the payload)
+  env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
+      PATH="$wbin:/usr/bin:/bin" FAKE_SESS="$SESS" FAKE_LOG="$TLOG" \
+      FAKE_PI="$PLOG" PI_TMUX_WRAP=force \
+      /bin/zsh -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$1' && pi $2" 2>&1
+}
+proj="$WORK/demoproj"; mkdir -p "$proj"
+# 1. topic-named session, args passed through, hint printed
+out="$(wrap_zsh "$proj" "-n 'Auth Refactor'")"
+grep -qF 'new-session -s auth-refactor command pi -n Auth\ Refactor' "$TLOG" \
+  || die "topic naming/passthrough wrong: $(tail -1 "$TLOG")"
+grep -qxF auth-refactor "$SESS" || die "topic session not minted"
+[[ "$(cat "$PLOG")" == "" ]] || die "fake pi must not run at wrapper time"
+[[ "$out" == *'detach Ctrl-b d'* ]] || die "creation hint missing: $out"
+# 2. default name from the project dir; numbered siblings on collision
+: > "$TLOG"; printf 'demoproj\ndemoproj-2\n' > "$SESS"
+wrap_zsh "$proj" "" >/dev/null
+grep -qF 'new-session -s demoproj-3 command pi' "$TLOG" \
+  || die "collision numbering wrong: $(tail -1 "$TLOG")"
+# 3. an explicitly taken topic refuses -- nothing silently renamed
+: > "$TLOG"; printf 'auth-refactor\n' > "$SESS"
+rc=0; out="$(wrap_zsh "$proj" '-n auth-refactor')" || rc=$?
+(( rc != 0 )) || die "taken topic should exit nonzero"
+[[ ! -s "$TLOG" ]] || die "taken topic must not create a session"
+[[ "$out" == *'tmux attach -t auth-refactor'* ]] || die "rejoin hint missing: $out"
+# 4. guards: all fall through to plain pi, never touching tmux
+guard_plain() {  # $1 = extra env, $2 = pi args
+  : > "$TLOG"; : > "$PLOG"
+  env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
+      PATH="$wbin:/usr/bin:/bin" FAKE_SESS="$SESS" FAKE_LOG="$TLOG" \
+      FAKE_PI="$PLOG" PI_TMUX_WRAP=force $1 \
+      /bin/zsh -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$proj' && pi $2" \
+      >/dev/null 2>&1
+  [[ -s "$PLOG" ]] || die "guard($1 $2): pi never ran"
+  [[ ! -s "$TLOG" ]] || die "guard($1 $2): wrapper must not touch tmux"
+}
+guard_plain "TMUX=yes" ""
+guard_plain "" "-p 'quick one'"
+guard_plain "" "--mode json 'hello'"
+guard_plain "PI_TMUX_WRAP=never" ""
+# from $HOME: plain pi even with everything else in place. HOME is
+# normalized to its physical path first: mktemp yields /var/folders/...
+# but cd resolves /var -> /private/var, and the guard compares strings.
+homep=$(cd "$NEWHOME" && /bin/pwd -P)
+: > "$TLOG"; : > "$PLOG"
+env -i HOME="$homep" TERM=xterm-256color SHELL=/bin/zsh \
+    PATH="$wbin:/usr/bin:/bin" FAKE_SESS="$SESS" FAKE_LOG="$TLOG" \
+    FAKE_PI="$PLOG" PI_TMUX_WRAP=force \
+    /bin/zsh -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$homep' && pi" \
+    >/dev/null 2>&1
+[[ -s "$PLOG" && ! -s "$TLOG" ]] || die "from \$HOME pi must run plain"
+# no tmux binary on PATH (pi shim only): plain pi, no crash
+nobin="$WORK/nobin"; mkdir -p "$nobin"
+cp "$wbin/pi" "$nobin/pi"; : > "$PLOG"
+env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
+    PATH="$nobin:/usr/bin:/bin" FAKE_PI="$PLOG" PI_TMUX_WRAP=force \
+    /bin/zsh -l -i -c "PATH=\"$nobin:/usr/bin:/bin\"; cd '$proj' && pi" \
+    >/dev/null 2>&1
+[[ -s "$PLOG" ]] || die "without tmux the wrapper must fall through to pi"
+ok "creates named sessions, never attaches; guards fall through to plain pi"
 
 printf '\nALL PASS\n'
