@@ -12,15 +12,18 @@
 #          AppleInterfaceStyle` prints "Dark" and exits 0 in dark mode; in
 #          light mode the key does not exist and it exits nonzero. Without
 #          `defaults` (Linux) stay dark -- the default look.
-#   themes the chosen Ghostty themes' bat syntax themes, when they have
-#          curated ones (see colors/<name>.toml in the dotfiles repo);
-#          otherwise "none", which disables bat syntax colors so delta
-#          falls back to the terminal's own 16-color palette -- still
-#          cohesive with the active Ghostty theme.
+#   themes each side's bat syntax theme when its colors/<name>.toml
+#          override curates one (see the dotfiles repo); otherwise "none",
+#          which disables bat syntax colors so delta falls back to the
+#          terminal's own 16-color palette -- still cohesive with the
+#          active Ghostty theme. Resolved from Ghostty's catalog at apply
+#          time by scripts/ghostty-theme.py.
 
+{{ $l := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") .palette.light_theme | trim | fromJson -}}
+{{ $d := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") .palette.dark_theme | trim | fromJson }}
 MODE='{{ .palette.theme }}'
-DARK_SYNTAX='{{ (index .colors .palette.dark_theme).apps.delta_syntax_theme }}'
-LIGHT_SYNTAX='{{ (index .colors .palette.light_theme).apps.delta_syntax_theme }}'
+DARK_SYNTAX='{{ $d.apps.delta_syntax_theme }}'
+LIGHT_SYNTAX='{{ $l.apps.delta_syntax_theme }}'
 
 case "$MODE" in
 light|dark) mode=$MODE ;;

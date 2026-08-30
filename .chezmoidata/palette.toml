@@ -19,10 +19,11 @@
 #                  (see colors/<name>.toml [apps.nvim]), else a colorscheme
 #                  generated from the 16 colors
 #
-# The per-theme data lives in colors/<name>.toml (imported from Ghostty's
-# own theme files by scripts/sync-ghostty-themes.py, which also derives the
-# semantic roles apps need). When a chosen theme is not in colors/ yet, run
-# that script once after changing the name here.
+# The per-theme data is resolved at apply time by scripts/ghostty-theme.py:
+# a curated override in colors/<name>.toml when one exists (the gruvbox
+# pair ships curated), otherwise parsed and derived straight from Ghostty's
+# own catalog -- so any theme `ghostty +list-themes` lists works, including
+# ones added by a Ghostty update, with nothing cached in this repo.
 
 [palette]
 theme = "system"

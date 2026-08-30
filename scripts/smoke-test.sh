@@ -23,9 +23,10 @@
 #      theme = "system", single when pinned), nvim's mode module, and the
 #      delta-theme wrapper (exercised with fake `defaults`/`delta` shims,
 #      so no GUI toggling is required)
-#  10. the color catalog: the chosen themes exist in colors/, the generated
-#      aggregate matches it, no rendered output carries a hex no theme file
-#      defines, and nvim's generated data module carries the chosen roles
+#  10. the color system: the chosen theme names resolve (curated override
+#      or Ghostty's own catalog, via the same script the templates call),
+#      no rendered output carries a hex the themes don't define, and nvim's
+#      generated data module carries the chosen roles verbatim
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -82,6 +83,8 @@ ok "no command=/env= lines"
 
 step "light-mode: the whole stack follows the appearance setting"
 palval() { chezmoi --source "$SOURCE" execute-template "$1"; }
+# theme lookup helper: same resolver the templates call at apply time
+themeget() { python3 "$SOURCE/scripts/ghostty-theme.py" --get "$@"; }
 MODE="$(palval '{{ .palette.theme }}')"
 LTHEME="$(palval '{{ .palette.light_theme }}')"
 DTHEME="$(palval '{{ .palette.dark_theme }}')"
@@ -137,8 +140,8 @@ for st in dark light; do
   else printf '#!/bin/sh\nexit 1\n' > "$wrap/$st/defaults"; fi
   chmod +x "$wrap/$st/defaults" "$wrap/$st/delta"
 done
-ddark="$(palval '{{ (index .colors .palette.dark_theme).apps.delta_syntax_theme }}')"
-dlight="$(palval '{{ (index .colors .palette.light_theme).apps.delta_syntax_theme }}')"
+ddark="$(themeget "$DTHEME" apps.delta_syntax_theme)"
+dlight="$(themeget "$LTHEME" apps.delta_syntax_theme)"
 run_case() { # $1 = expected wrapper state, $2 = simulated OS state
   out="$(env PATH="$wrap/$2:/usr/bin:/bin" \
         "$NEWHOME/.local/bin/delta-theme" extra </dev/null | tr '\n' ' ')"
@@ -156,27 +159,24 @@ else
 fi
 ok "ghostty theme line, nvim mode, delta wrapper, pi pair all match the settings"
 
-step "colors: every theme in the catalog, one aggregate, no orphan hexes"
-# The palette system: 3 settings (.chezmoidata/palette.toml), one file per
-# Ghostty theme (colors/), one generated aggregate (.chezmoidata/colors.toml)
-# that templates read as .colors. Guards, in order: the chosen themes exist
-# in the aggregate; the aggregate matches colors/ exactly (regenerate and
-# compare -- catches hand-edits to the aggregate and stale imports); every
-# hex in a rendered output is defined by some theme file; rendered surfaces
-# carry the chosen themes' values, not strays.
-chezmoi --source "$SOURCE" execute-template \
-  '{{ if (index .colors .palette.light_theme) }}ok{{ end }}' | grep -q ok \
-  || die "light_theme '$LTHEME' has no colors/<name>.toml (run scripts/sync-ghostty-themes.py)"
-chezmoi --source "$SOURCE" execute-template \
-  '{{ if (index .colors .palette.dark_theme) }}ok{{ end }}' | grep -q ok \
-  || die "dark_theme '$DTHEME' has no colors/<name>.toml (run scripts/sync-ghostty-themes.py)"
-python3 "$SOURCE/scripts/sync-ghostty-themes.py" --check \
-  || die ".chezmoidata/colors.toml is stale vs colors/ -- run the sync script"
-# Every hex in any color-carrying output must come from a theme file --
-# including files that should hold none today (ps1, ghostty config,
-# gitconfig, delta-theme, the static nvim files): a hardcoded color anywhere
-# defeats the whole single-source design.
-palhex="$(cat "$SOURCE"/colors/*.toml | grep -hoE '#[0-9a-fA-F]{6}' | sort -u)"
+step "colors: themes resolve on the fly, no orphan hexes"
+# The palette system: 3 settings (.chezmoidata/palette.toml) and NO cached
+# theme data -- templates resolve each name at apply time via
+# scripts/ghostty-theme.py: curated override in colors/<name>.toml if one
+# exists, otherwise Ghostty's own catalog. Guards, in order: both names
+# resolve (this is the same call the templates make); every hex in a
+# rendered output is one the resolved themes define (including files that
+# should hold none); rendered surfaces carry the chosen themes' roles
+# verbatim, not strays.
+themeget "$LTHEME" roles.bg >/dev/null \
+  || die "light_theme '$LTHEME' does not resolve (curate colors/<name>.toml or install Ghostty)"
+themeget "$DTHEME" roles.bg >/dev/null \
+  || die "dark_theme '$DTHEME' does not resolve (curate colors/<name>.toml or install Ghostty)"
+# Every hex in any color-carrying output must come from the resolved
+# themes -- including files that should hold none today (ps1, ghostty
+# config, gitconfig, delta-theme, the static nvim files): a hardcoded color
+# anywhere defeats the whole single-source design.
+palhex="$(python3 "$SOURCE/scripts/ghostty-theme.py" --hexes "$LTHEME" "$DTHEME")"
 for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
          "$NEWHOME/.pi/agent/themes/dotfiles-dark.json" \
          "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
@@ -189,19 +189,19 @@ for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
          "$NEWHOME/.local/bin/delta-theme"; do
   for h in $(grep -hoE '#[0-9a-fA-F]{6}' "$f" | sort -u); do
     grep -qxF "$h" <<<"$palhex" \
-      || die "$(basename "$f") carries hex $h, not defined by any colors/<theme>.toml"
+      || die "$(basename "$f") carries hex $h, not defined by the active themes"
   done
 done
 # The rendered nvim data module must carry the chosen themes' roles verbatim.
 for side in light dark; do
   t="$( [[ $side == light ]] && echo "$LTHEME" || echo "$DTHEME" )"
   for role in bg fg red blue; do
-    want="$(palval "{{ (index .colors .palette.${side}_theme).roles.$role }}")"
+    want="$(themeget "$t" "roles.$role")"
     grep -q "[[:space:]]$role = \"$want\"" "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
       || die "theming.lua $side.$role does not match the $t roles"
   done
 done
-ok "catalog fresh, settings resolve, no orphan hexes, roles verbatim"
+ok "themes resolve, no orphan hexes, roles verbatim"
 
 step "fresh login shell (new terminal window)"
 out="$(fresh_zsh '

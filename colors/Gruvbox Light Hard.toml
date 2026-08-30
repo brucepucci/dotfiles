@@ -1,8 +1,11 @@
 # Gruvbox Light Hard
-# [terminal] is synced verbatim from Ghostty (ghostty +list-themes).
-# [roles] map the 16 colors onto what our apps need; CURATED -- hand-tuned, never overwritten by the sync script.
-# [apps] carries optional per-app hints (delta syntax theme, nvim
-# colorscheme); templates fall back to derived/neutral values without them.
+# CURATED OVERRIDE -- scripts/ghostty-theme.py serves this file verbatim
+# (Ghostty is not consulted for it), so the exact colors below are pinned.
+# Delete this file to re-derive everything from Ghostty's current catalog.
+# [terminal] mirrors Ghostty's own theme file; [roles] map the 16 colors
+# onto what our apps need; [apps] carries per-app hints (delta syntax
+# theme, nvim colorscheme) -- without an override these are derived or
+# neutral.
 
 [meta]
 curated = true

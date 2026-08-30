@@ -76,7 +76,7 @@ if you install Neovim some other way.
 | `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
 | `~/.pi/agent/settings.json` | pi coding agent: appearance-following theme pair, `zai` provider, `glm-5.3` default |
 | `.chezmoidata/palette.toml` | The three settings that drive every color (repo-only — never applied) |
-| `colors/` | One palette file per Ghostty theme (repo-only); source for everything rendered |
+| `colors/` | Curated theme overrides only (repo-only); everything else resolves from Ghostty at apply time |
 
 **One shell everywhere.** Ghostty, Terminal.app, iTerm2, and anyone SSH-ing
 into this machine all get the same zsh: `~/.zprofile` sets the login PATH,
@@ -184,8 +184,8 @@ runs before big changes.
 #    shells, EDITOR fallback, secrets staying out, ghostty config hygiene,
 #    the light/dark mode wiring (ghostty theme line, nvim mode module,
 #    delta-theme wrapper exercised with fake `defaults`/`delta` shims),
-#    and the color-catalog checks (settings resolve into colors/, the
-#    aggregate is fresh, no orphan hexes, roles render verbatim).
+#    and the color-system checks (both theme names resolve, no orphan
+#    hexes, roles render verbatim).
 scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
 
 # 2. ~1 min. The same, inside a clean Debian 12 userland on the colima VM.
@@ -251,25 +251,28 @@ dark_theme = "Gruvbox Material Dark"
   detects per invocation; `light`/`dark` pin one look everywhere, always,
   regardless of what the OS says.
 
-The data behind a name lives in `colors/<name>.toml`: the terminal palette
-synced verbatim from Ghostty's own theme file, the `[roles]` that map the 16
-colors onto what the apps need (derived on import), and optional `[apps]`
-hints — the delta syntax theme and the nvim colorscheme with its options.
-Two rules:
+The data behind a name is resolved **at apply time, nothing cached**: for
+each of the two names, `scripts/ghostty-theme.py` serves a curated override
+from `colors/<name>.toml` when one exists — otherwise it parses the theme
+straight out of Ghostty's own catalog and derives everything from its
+16-color palette. That means new Ghostty themes work the moment you type
+their name, there is no catalog in this repo to keep fresh, and a curated
+override is the only file that pins values. Two rules:
 
-- A name you typed that has no file yet just needs one run of
-  `python3 scripts/sync-ghostty-themes.py` (imports anything new from
-  Ghostty's catalog, refreshes `[terminal]` on existing files, regenerates
-  the aggregate `.chezmoidata/colors.toml` the templates read).
-- Tune a theme by editing its file's `[roles]` — and add `curated = true`
-  under `[meta]` so the sync script never overwrites your tuning. The two
+- Want a theme to look exactly a certain way? Create `colors/<name>.toml`
+  (copy a Gruvbox one, adjust `[roles]`, keep `curated = true`). The two
   Gruvbox themes ship curated this way, preserving the colors this stack
-  has always rendered.
+  has always rendered. A curated override needs Ghostty for nothing —
+  which is also why CI (no Ghostty) and a fresh-machine bootstrap (Ghostty
+  not yet installed) work with the default pair.
+- A non-curated theme needs Ghostty installed on the machine you run
+  `chezmoi apply` from; otherwise the resolver fails loudly and tells you
+  to curate or install.
 
-Everything else — the aggregate, the pi themes, nvim's `core/theming.lua`,
-the ghostty/delta/gitconfig lines — is a build artifact; the smoke test
-fails if the aggregate goes stale, a rendered output carries a hex no theme
-file defines, or a surface stops matching the settings.
+Everything rendered — the pi themes, nvim's `core/theming.lua`, the
+ghostty/delta/gitconfig lines — is a build artifact; the smoke test fails
+if a name stops resolving, a rendered output carries a hex the active
+themes don't define, or a surface stops matching the settings.
 
 pi specifics: its theme files are named `dotfiles-{light,dark}.json`
 regardless of which themes are active (a theme swap never renames files),

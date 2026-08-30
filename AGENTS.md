@@ -30,14 +30,14 @@ private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
 .chezmoidata/palette.toml  # THE THREE SETTINGS users edit: theme (light|dark|
                             # system), light_theme, dark_theme -- Ghostty theme
                             # names, browsable with `ghostty +list-themes`
-colors/<theme name>.toml   # one file per Ghostty theme (463 imported): the
-                            # terminal palette verbatim + derived [roles] +
-                            # [apps] hints; curated files are hand-tuned
-.chezmoidata/colors.toml   # GENERATED aggregate of colors/ (build artifact),
-                            # read by templates as .colors."<theme name>";
-                            # regenerate with scripts/sync-ghostty-themes.py
-scripts/sync-ghostty-themes.py  # import/refresh from Ghostty's theme catalog;
-                            # derives roles from the 16 colors; --check = smoke
+colors/<theme name>.toml   # CURATED OVERRIDES ONLY (the two gruvbox themes;
+                            # everything else resolves from Ghostty live):
+                            # terminal palette + hand-tuned [roles] + [apps]
+                            # hints, served verbatim by the resolver
+scripts/ghostty-theme.py   # the resolver templates call at apply time (via
+                            # chezmoi's `output`): curated override if one
+                            # exists, else parse+derive from Ghostty's own
+                            # catalog -- nothing cached, nothing goes stale
 private_dot_config/nvim/
 ├── init.lua              # sets mapleader, syncs appearance, then requires
 │                         # core.* and bruce.lazy
@@ -82,18 +82,20 @@ was broken for months with no error shown. Let failures be loud.
 `pcall` is fine where failure is genuinely expected and not exceptional (e.g.
 `vim.treesitter.start` on a filetype with no parser).
 
-**Colors: three settings plus the theme catalog.** Users edit only
+**Colors: three settings, zero cached theme data.** Users edit only
 `.chezmoidata/palette.toml` (`theme`, `light_theme`, `dark_theme` — Ghostty
-theme names; `ghostty +list-themes` is the browser). Theme data lives in
-`colors/<name>.toml` (terminal palette + derived/hand-curated `[roles]` +
-`[apps]` hints); `.chezmoidata/colors.toml` is the generated aggregate.
-Never hardcode a hex or theme name in a managed file — render it from
-`.palette`/`.colors` or read it via `bruce.core.theming`. In nvim, only
-`core/theming.lua` is generated; the rest is static Lua. The smoke test's
-color-catalog step is the drift guard (stale aggregate, orphan hexes,
-settings-vs-surfaces mismatches). `chezmoi re-add` skips template-sourced
-files (e.g. pi's `settings.json.tmpl`): fold pi's self-bumps in by hand.
-See README "Changing how everything looks" for the runbook.
+theme names; `ghostty +list-themes` is the browser). Templates resolve each
+name at apply time via `scripts/ghostty-theme.py` (chezmoi `output`):
+curated override in `colors/<name>.toml` when present (only the gruvbox
+pair), else parsed + derived from Ghostty's own catalog. Never hardcode a
+hex or theme name in a managed file — render it from the resolver or read
+it via `bruce.core.theming`. In nvim, only `core/theming.lua` is generated;
+the rest is static Lua. The smoke test's color-system step is the drift
+guard (names resolve, no orphan hexes, roles verbatim). Non-curated themes
+need Ghostty where `chezmoi apply` runs. `chezmoi re-add` skips
+template-sourced files (e.g. pi's `settings.json.tmpl`): fold pi's
+self-bumps in by hand. See README "Changing how everything looks" for the
+runbook.
 
 **Servers come from Homebrew, not Mason.** Mason is deliberately not installed:
 one package manager, versions visible in `Brewfile`, no duplicate copies, no
