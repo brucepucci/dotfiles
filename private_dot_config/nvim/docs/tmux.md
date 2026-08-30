@@ -16,7 +16,7 @@ the manual path for everything that isn't pi.
 ## What this setup ships (and why so little)
 
 `tmux` comes from the Brewfile. The managed `~/.tmux.conf` is deliberately
-minimal — three settings, each load-bearing:
+minimal — five settings, each load-bearing:
 
 | Setting | Why it is there |
 |---|---|
@@ -24,6 +24,7 @@ minimal — three settings, each load-bearing:
 | `set-clipboard on` | OSC 52 clipboard: **copy-mode** yanks (and OSC 52-speaking apps) land on the clipboard of the **connecting** device — over SSH, the phone in your hand. (nvim on macOS keeps using pbcopy, so its yanks land on the Mac itself; copy-mode is the phone path.) |
 | `focus-events on` | Focus reporting through the tmux layer: nvim's `FocusGained` drives the light/dark appearance sync and the refocus `:checktime` reload — both silently dead under tmux without it. |
 | `terminal-overrides ',*:RGB'` | Truecolor passthrough. The nvim colorscheme is generated from the theme roles as exact hexes; without RGB advertised on the inner terminal, tmux silently downgrades them to 256-color approximations. |
+| `window-status-format` + `window-status-current-format` | The stock bar runs the session name straight into the window list: `[chezmoi-2] 0:node*` scans as session `chezmoi-20` when a numbered sibling's digit meets the window index. A leading `\|` on every window entry keeps them apart — `[chezmoi-2] \| 0:node*`. Text only; still no theming. |
 
 No prefix remap, no plugin ecosystem, no status-line theming. The division of
 labor is deliberate: **Ghostty manages local windows, splits, and tabs; tmux
@@ -66,6 +67,12 @@ tmux. Naming, no thinking required:
   `auth-refactor` **and** pi's own session display name
 - a topic that is already live is refused with the `tmux attach -t` command
   to rejoin it — nothing is silently renamed
+
+The bar at the bottom reads its fields out plainly:
+`[chezmoi-2] | 0:node*` is session `chezmoi-2`, then window `0` (tmux
+names windows after the running process — a pi conversation shows `node`,
+pi's runtime) with `*` marking the current window. The `|` separators are
+managed, not stock: without them `chezmoi-2` + `0` scans as `chezmoi-20`.
 
 Lifecycle is automatic too: the session exists to host pi, so when pi exits
 the session dies. `tmux ls` lists exactly the live conversations, and there
