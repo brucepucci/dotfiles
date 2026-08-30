@@ -25,8 +25,18 @@ GB_PURPLE=5
 GB_AQUA=6
 GB_ORANGE=3
 
-# Branch glyph. Replace with 'git:' or '⎇ ' if it renders as a box.
-GB_GIT_ICON=' '
+# Nerd Font glyphs. Ghostty's default face embeds the full set; Terminal.app
+# and iTerm2 need one installed (Brewfile) and selected by hand. Codepoints
+# are listed because private-use characters do not survive every editor or
+# copy/paste -- that is how the branch glyph was once lost. Restore or add
+# glyphs by inserting printf '\uXXXX' bytes, never by pasting. If a glyph
+# renders as a box, use its stand-in:
+#   branch U+E0A0 -> 'git:'      ssh host U+F233 -> 'ssh:'
+#   jobs   U+F013 -> '&'         elapsed U+F252 -> '' (bare seconds)
+GB_GIT_ICON=''
+GB_SERVER_ICON=''
+GB_GEAR_ICON=''
+GB_HOURGLASS_ICON=''
 
 # ---------------------------------------------------------------------------
 # Git state via vcs_info: branch, in-progress action, staged/unstaged markers
@@ -71,7 +81,7 @@ _gb_precmd() {
   if (( ${+_gb_start} )); then
     elapsed=$(( EPOCHREALTIME - _gb_start ))
     unset _gb_start
-    (( elapsed > GB_SLOW_THRESHOLD )) && _gb_elapsed=$(printf '%.1fs' $elapsed)
+    (( elapsed > GB_SLOW_THRESHOLD )) && _gb_elapsed="${GB_HOURGLASS_ICON}$(printf '%.1fs' $elapsed)"
   fi
   # One blank line between the previous command's output and this prompt --
   # but only when a command actually ran: not before the shell's first
@@ -96,16 +106,19 @@ alias clear='command clear; unset _gb_had_command'
 
 # ---------------------------------------------------------------------------
 # Prompt assembly
-#   [user@host ]path git-branch●○ [⚙jobs] ❯
+#   [ssh-host ]path git-branch●○ [jobs] ❯
 #                                        right side:  ✗exit  elapsed
+# ssh-host, jobs, and elapsed are glyph-prefixed segments (icons defined at
+# the top of this file). Icons only ever label data that appears
+# unpredictably; constant segments (path, prompt char) stay plain.
 # ---------------------------------------------------------------------------
 GB_HOST=''
-[[ -n $SSH_CONNECTION ]] && GB_HOST="%F{$GB_ORANGE}%n@%m%f "
+[[ -n $SSH_CONNECTION ]] && GB_HOST="%F{$GB_ORANGE}${GB_SERVER_ICON}%n@%m%f "
 
 # %(4~|…/%3~|%~) — full path until 4 components deep, then elide the front
 PROMPT="${GB_HOST}%B%F{$GB_BLUE}%(4~|…/%3~|%~)%f%b"
 PROMPT+='${vcs_info_msg_0_}'
-PROMPT+="%(1j. %F{$GB_PURPLE}⚙%j%f.)"
+PROMPT+="%(1j. %F{$GB_PURPLE}${GB_GEAR_ICON}%j%f.)"
 PROMPT+=" %(?.%F{$GB_GREEN}.%F{$GB_RED})%(!.#.❯)%f "
 
 RPROMPT="%(?..%F{$GB_RED}✗ %?%f )%F{$GB_GRAY}"'${_gb_elapsed}'"%f"
