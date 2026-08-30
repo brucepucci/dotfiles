@@ -345,9 +345,6 @@ if [[ "$WITH_NVIM" == 1 ]]; then
 fi
 
 step "pi wrapper: new sessions only, named after the project or topic"
-# Diagnose silent set -e deaths: name the failing command (remove once the
-# CI-only failure is understood).
-trap 'printf "  DIED rc=%s at: %s\n" "$?" "$BASH_COMMAND"' EXIT
 # The wrapper in .zshrc: `pi` always starts a NEW tmux session wrapped
 # around a new pi conversation -- rejoining is explicit `tmux attach -t`,
 # which lands straight inside the running pi. Fake tmux/pi shims stand in
@@ -429,18 +426,17 @@ env -i HOME="$homep" TERM=xterm-256color SHELL=/bin/zsh \
     /bin/zsh -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$homep' && pi" \
     >/dev/null 2>&1
 [[ -s "$PLOG" && ! -s "$TLOG" ]] || die "from \$HOME pi must run plain"
-# no tmux binary on PATH (pi shim only): plain pi, no crash. The inner
-# shell's exit code is irrelevant here -- the PLOG assertion below is the
-# verdict (CI-only quirk under investigation; the trap above still names
-# any other failing line).
+# no tmux binary on PATH: plain pi, no crash. The payload PATH drops
+# /usr/bin entirely -- GitHub's Ubuntu runners SHIP tmux there, which
+# would turn this case into a real (failing) attach; nothing in the
+# payload needs coreutils, so the shim dir alone is enough.
 nobin="$WORK/nobin"; mkdir -p "$nobin"
 cp "$wbin/pi" "$nobin/pi"; : > "$PLOG"
 env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
     PATH="$nobin:/usr/bin:/bin" FAKE_PI="$PLOG" PI_TMUX_WRAP=force \
-    /bin/zsh -l -i -c "PATH=\"$nobin:/usr/bin:/bin\"; cd '$proj' && pi" \
+    /bin/zsh -l -i -c "PATH='$nobin'; cd '$proj' && pi" \
     >/dev/null 2>&1 || true
 [[ -s "$PLOG" ]] || die "without tmux the wrapper must fall through to pi"
 ok "creates named sessions, never attaches; guards fall through to plain pi"
-trap - EXIT
 
 printf '\nALL PASS\n'
