@@ -23,9 +23,9 @@
 #      theme = "system", single when pinned), nvim's mode module, and the
 #      delta-theme wrapper (exercised with fake `defaults`/`delta` shims,
 #      so no GUI toggling is required)
-#  10. the color system: the chosen theme names resolve (curated override
-#      or Ghostty's own catalog, via the same script the templates call),
-#      no rendered output carries a hex the themes don't define, and nvim's
+#  10. the color system: the chosen theme names resolve from Ghostty's
+#      own catalog (via the same script the templates call), no rendered
+#      output carries a hex the themes don't define, and nvim's
 #      generated data module carries the chosen roles verbatim
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
@@ -162,16 +162,15 @@ ok "ghostty theme line, nvim mode, delta wrapper, pi pair all match the settings
 step "colors: themes resolve on the fly, no orphan hexes"
 # The palette system: 3 settings (.chezmoidata/palette.toml) and NO cached
 # theme data -- templates resolve each name at apply time via
-# scripts/ghostty-theme.py: curated override in colors/<name>.toml if one
-# exists, otherwise Ghostty's own catalog. Guards, in order: both names
+# scripts/ghostty-theme.py, straight from Ghostty's own catalog. Guards, in order: both names
 # resolve (this is the same call the templates make); every hex in a
 # rendered output is one the resolved themes define (including files that
 # should hold none); rendered surfaces carry the chosen themes' roles
 # verbatim, not strays.
 themeget "$LTHEME" roles.bg >/dev/null \
-  || die "light_theme '$LTHEME' does not resolve (curate colors/<name>.toml or install Ghostty)"
+  || die "light_theme '$LTHEME' does not resolve (is Ghostty installed?)"
 themeget "$DTHEME" roles.bg >/dev/null \
-  || die "dark_theme '$DTHEME' does not resolve (curate colors/<name>.toml or install Ghostty)"
+  || die "dark_theme '$DTHEME' does not resolve (is Ghostty installed?)"
 # Every hex in any color-carrying output must come from the resolved
 # themes -- including files that should hold none today (ps1, ghostty
 # config, gitconfig, delta-theme, the static nvim files): a hardcoded color

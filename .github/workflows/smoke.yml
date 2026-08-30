@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install zsh and chezmoi
+      - name: Install zsh, chezmoi, and Ghostty's theme catalog
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq zsh curl ca-certificates >/dev/null
@@ -24,6 +24,17 @@ jobs:
           curl -fsSL -o /tmp/chezmoi.deb \
             "https://github.com/twpayne/chezmoi/releases/download/v${ver}/chezmoi_${ver}_linux_amd64.deb"
           sudo dpkg -i /tmp/chezmoi.deb
+          # The palette resolver reads Ghostty's bundled theme files (the
+          # catalog behind `ghostty +list-themes`); the app itself is never
+          # run here, only its data is read.
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://apt.ghostty.org/ghostty.asc | sudo tee /etc/apt/keyrings/ghostty.asc >/dev/null
+          echo "deb [signed-by=/etc/apt/keyrings/ghostty.asc] https://apt.ghostty.org/apt stable main" \
+            | sudo tee /etc/apt/sources.list.d/ghostty.list >/dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq ghostty >/dev/null
+          ls /usr/share/ghostty/themes | wc -l
 
       - name: From-scratch smoke test
+        env:
+          DOTFILES_GHOSTTY_THEMES: /usr/share/ghostty/themes
         run: scripts/smoke-test.sh

@@ -5,28 +5,28 @@ Called by the chezmoi templates themselves (via the `output` template
 function) at apply time, so no theme data is ever cached in this repo:
 
   ghostty-theme.py <name>           # JSON: {terminal, roles, apps}
-  ghostty-theme.py --get <name> <path>   # one value, e.g. roles.bg or
-                                         # apps.nvim.colorscheme
+  ghostty-theme.py --get <name> <path>   # one value, e.g. roles.bg
   ghostty-theme.py --hexes <name>...     # every hex the theme(s) define
 
-Resolution order for a name:
-  1. colors/<name>.toml exists -- it is a CURATED OVERRIDE (hand-tuned,
-     self-contained: terminal palette + roles + app hints). Used verbatim;
-     Ghostty is not consulted. The two Gruvbox themes ship curated this way,
-     which is what keeps the applied tree (and CI, which has no Ghostty)
-     independent of a Ghostty install.
-  2. Otherwise the theme is parsed from Ghostty's own catalog (the files
-     behind `ghostty +list-themes`) and every derived value -- roles, app
-     fallbacks -- is computed from its 16-color palette. New Ghostty themes
-     work with zero repo changes; nothing here can go stale.
+A name is parsed from Ghostty's own catalog (the files behind
+`ghostty +list-themes`) and every derived value -- roles, app fallbacks --
+is computed from its 16-color palette. New Ghostty themes work with zero
+repo changes; nothing here can go stale. Ghostty is therefore a
+prerequisite for `chezmoi apply`.
 
 Roles derived from the 16 colors map the terminal palette onto what our
 apps need: surfaces (bg/surface/statusline), text (fg/fg_soft/fg_bright),
 greys, accents (red..purple + a blended orange), diff tints, and lualine's
-mode-segment colors. See colors/Gruvbox*.toml for the shape.
+mode-segment colors. Apps without a derivable equivalent get a neutral
+fallback: delta's syntax theme is "none" (terminal ANSI colors, cohesive
+with the theme), nvim's colorscheme hint is "" (the generated scheme from
+lua/bruce/colors/scheme.lua is used).
 
-Exits nonzero with a pointed message for unknown names (apply fails loudly)
-or when a non-curated theme is requested on a machine without Ghostty.
+Set DOTFILES_GHOSTTY_THEMES to point at a themes directory explicitly
+(custom installs, tests).
+
+Exits nonzero with a pointed message for unknown names (apply fails
+loudly) or when Ghostty is not installed.
 
 No third-party imports; python3 stdlib only.
 """
@@ -36,9 +36,6 @@ import json
 import os
 import re
 import sys
-
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-COLORS_DIR = os.path.join(REPO, "colors")
 
 GHOSTTY_THEME_DIRS = [
     "/Applications/Ghostty.app/Contents/Resources/ghostty/themes",  # macOS cask
@@ -99,7 +96,7 @@ def contrast(a, b):
 
 
 # ---------------------------------------------------------------------------
-# source 1: ghostty's own theme file
+# ghostty's own theme file
 # ---------------------------------------------------------------------------
 
 def find_ghostty_dir():
@@ -185,86 +182,38 @@ def derive_roles(term):
 
 
 # ---------------------------------------------------------------------------
-# source 2: our curated override (colors/<name>.toml)
+# cli
 # ---------------------------------------------------------------------------
-
-def parse_palette_file(path):
-    """Parse the controlled subset we write: flat `key = "value"` lines under
-    [section] headers; comments with #."""
-    data = {}
-    section = None
-    with open(path, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            m = re.fullmatch(r"\[([^\]]+)\]", line)
-            if m:
-                section = m.group(1)
-                data.setdefault(section, {})
-                continue
-            if section is None or "=" not in line:
-                continue
-            key, _, value = line.partition("=")
-            data[section][key.strip()] = value.strip().strip('"')
-    return data
-
-
-def resolve(name):
-    """-> {terminal, roles, apps}, or exits nonzero with a pointed message."""
-    override = os.path.join(COLORS_DIR, name + ".toml")
-    if os.path.exists(override):
-        data = parse_palette_file(override)
-        term = data.get("terminal", {})
-        roles = data.get("roles", {})
-        apps = data.get("apps", {})
-        nvim = data.get("apps.nvim", {})
-        if not term or not roles:
-            die("%s exists but lacks [terminal]/[roles] -- fix or remove it"
-                % os.path.relpath(override, REPO))
-        # normalize: every key the templates touch is always present
-        for i in range(16):
-            term.setdefault("palette_%d" % i, term["background"])
-        for key in TERMINAL_KEYS:
-            term.setdefault(key, term["background"])
-    else:
-        ghostty_dir = find_ghostty_dir()
-        if not ghostty_dir:
-            die("theme '%s' has no curated override in colors/ and Ghostty's "
-                "theme catalog was not found (is Ghostty installed?)" % name)
-        path = os.path.join(ghostty_dir, name)
-        if not os.path.isfile(path):
-            die("theme '%s' is neither curated in colors/ nor in Ghostty's "
-                "catalog (browse names with `ghostty +list-themes`)" % name)
-        term = parse_ghostty_theme(path)
-        if term is None:
-            die("Ghostty's '%s' theme file has no background/foreground" % name)
-        roles = derive_roles(term)
-        apps, nvim = {}, {}
-
-    return {
-        "terminal": {key: term[key] for key in TERMINAL_KEYS}
-        | {"palette_%d" % i: term["palette_%d" % i] for i in range(16)},
-        "roles": {key: roles[key] for key in ROLE_ORDER},
-        "apps": {
-            "delta_syntax_theme": apps.get("delta_syntax_theme", "none"),
-            "nvim": {
-                "colorscheme": nvim.get("colorscheme", ""),
-                "contrast": nvim.get("contrast", ""),
-                "foreground": nvim.get("foreground", ""),
-            },
-        },
-    }
-
 
 def die(msg):
     print("ghostty-theme: %s" % msg, file=sys.stderr)
     sys.exit(1)
 
 
-# ---------------------------------------------------------------------------
-# cli
-# ---------------------------------------------------------------------------
+def resolve(name):
+    """-> {terminal, roles, apps}, or exits nonzero with a pointed message."""
+    ghostty_dir = find_ghostty_dir()
+    if not ghostty_dir:
+        die("Ghostty's theme catalog was not found (is Ghostty installed?)")
+    path = os.path.join(ghostty_dir, name)
+    if not os.path.isfile(path):
+        die("theme '%s' is not in Ghostty's catalog (browse names with "
+            "`ghostty +list-themes`)" % name)
+    term = parse_ghostty_theme(path)
+    if term is None:
+        die("Ghostty's '%s' theme file has no background/foreground" % name)
+    return {
+        "terminal": {key: term[key] for key in TERMINAL_KEYS}
+        | {"palette_%d" % i: term["palette_%d" % i] for i in range(16)},
+        "roles": {key: derive_roles(term)[key] for key in ROLE_ORDER},
+        "apps": {
+            # no curated per-app themes: neutral fallbacks, so every app
+            # follows the terminal's own palette
+            "delta_syntax_theme": "none",
+            "nvim": {"colorscheme": "", "contrast": "", "foreground": ""},
+        },
+    }
+
 
 def main():
     args = sys.argv[1:]
@@ -286,7 +235,7 @@ def main():
 
     if args[0] == "--get":
         if len(args) != 3:
-            die("usage: --get <theme> <path>   (e.g. roles.bg, apps.nvim.colorscheme)")
+            die("usage: --get <theme> <path>   (e.g. roles.bg)")
         data = resolve(args[1])
         node = data
         for part in args[2].split("."):

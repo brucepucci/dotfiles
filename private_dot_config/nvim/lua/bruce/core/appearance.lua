@@ -7,10 +7,9 @@
 --     probe is unavailable, i.e. non-macOS hosts).
 --   theme = "light"/"dark" -- pin the whole stack, OS be damned.
 --
--- This module also owns applying the colorscheme when the active themes
--- have no curated nvim scheme: lua/bruce/colors/scheme.lua generates one
--- from the same theme roles. With a curated scheme the plugin applies
--- itself (it loads with priority 1001, just after this runs at startup).
+-- The colorscheme itself is generated from the active Ghostty themes' roles
+-- (lua/bruce/colors/scheme.lua), so the editor matches the terminal for any
+-- theme picked in the settings.
 --
 -- Called from init.lua before plugins load, so the first frame renders the
 -- right palette, and again from autocmds.lua on FocusGained.
@@ -50,17 +49,7 @@ function M.sync()
     end
     vim.o.background = detected
     applied = true
-    if theming.nvim_colorscheme ~= "" then
-        -- Curated plugin scheme: re-issuing :colorscheme re-renders it for
-        -- the new background (at startup the plugin's own config call right
-        -- after this does it; re-issuing then would be redundant but
-        -- harmless -- colors_name is unset until it loads).
-        if vim.g.colors_name then
-            vim.cmd.colorscheme(theming.nvim_colorscheme)
-        end
-    else
-        require("bruce.colors.scheme").apply(detected)
-    end
+    require("bruce.colors.scheme").apply(detected)
     -- Let listeners react (lualine needs no nudge -- it re-setups itself on
     -- OptionSet background -- but anything else can hook this).
     vim.api.nvim_exec_autocmds("User", { pattern = "AppearanceChanged", modeline = false })

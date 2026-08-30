@@ -1,14 +1,10 @@
--- scheme.lua -- the generated fallback colorscheme.
+-- scheme.lua -- the colorscheme, generated from the active Ghostty themes.
 --
--- Used when the active Ghostty themes name no curated nvim colorscheme
--- (no [apps.nvim] entry in their colors/<name>.toml): builds a colorscheme
--- from the themes' semantic roles (core/theming.lua), so the editor still
--- matches the terminal for ANY theme picked in .chezmoidata/palette.toml --
--- not just the curated ones. When a curated scheme exists, the plugin
--- (plugins/colorscheme.lua) renders instead and none of this runs.
---
--- Applied by core/appearance.lua: at startup (before plugins) and again
--- whenever 'background' changes, exactly like a shipped colorscheme.
+-- Built from the themes' semantic roles (core/theming.lua) at apply time,
+-- so the editor matches the terminal for ANY theme picked in
+-- .chezmoidata/palette.toml -- the same source Ghostty itself renders
+-- from. Applied by core/appearance.lua: at startup (before plugins) and
+-- again whenever 'background' changes, exactly like a shipped colorscheme.
 
 local theming = require("bruce.core.theming")
 

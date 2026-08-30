@@ -30,24 +30,21 @@ private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
 .chezmoidata/palette.toml  # THE THREE SETTINGS users edit: theme (light|dark|
                             # system), light_theme, dark_theme -- Ghostty theme
                             # names, browsable with `ghostty +list-themes`
-colors/<theme name>.toml   # CURATED OVERRIDES ONLY (the two gruvbox themes;
-                            # everything else resolves from Ghostty live):
-                            # terminal palette + hand-tuned [roles] + [apps]
-                            # hints, served verbatim by the resolver
 scripts/ghostty-theme.py   # the resolver templates call at apply time (via
-                            # chezmoi's `output`): curated override if one
-                            # exists, else parse+derive from Ghostty's own
-                            # catalog -- nothing cached, nothing goes stale
+                            # chezmoi's `output`): parse+derive each theme
+                            # from Ghostty's own catalog -- nothing cached,
+                            # nothing goes stale; Ghostty is a prerequisite
+                            # for `chezmoi apply` (CI installs it via apt)
 private_dot_config/nvim/
 ├── init.lua              # sets mapleader, syncs appearance, then requires
 │                         # core.* and bruce.lazy
 ├── lazy-lock.json        # committed; pins exact plugin revisions
 └── lua/bruce/
     ├── lazy.lua          # bootstrap + { import = "bruce.plugins" }
-    ├── core/theming.lua.tmpl  # GENERATED: mode, nvim scheme hint, both
-    │                     # themes' role tables -- nvim's ONLY rendered file
+    ├── core/theming.lua.tmpl  # GENERATED: mode + both themes' role tables
+    │                     # -- nvim's ONLY rendered file
     ├── core/appearance.lua    # mode-aware background + scheme application
-    ├── colors/scheme.lua      # generated fallback colorscheme (no hint)
+    ├── colors/scheme.lua      # the colorscheme, generated from the roles
     └── plugins/          # one spec file per concern, auto-imported
 private_dot_config/zsh/ps1.zsh.tmpl   # the prompt (git state, duration, exit
                             # code); fully indexed colors 0-15
@@ -85,14 +82,16 @@ was broken for months with no error shown. Let failures be loud.
 **Colors: three settings, zero cached theme data.** Users edit only
 `.chezmoidata/palette.toml` (`theme`, `light_theme`, `dark_theme` — Ghostty
 theme names; `ghostty +list-themes` is the browser). Templates resolve each
-name at apply time via `scripts/ghostty-theme.py` (chezmoi `output`):
-curated override in `colors/<name>.toml` when present (only the gruvbox
-pair), else parsed + derived from Ghostty's own catalog. Never hardcode a
-hex or theme name in a managed file — render it from the resolver or read
-it via `bruce.core.theming`. In nvim, only `core/theming.lua` is generated;
-the rest is static Lua. The smoke test's color-system step is the drift
-guard (names resolve, no orphan hexes, roles verbatim). Non-curated themes
-need Ghostty where `chezmoi apply` runs. `chezmoi re-add` skips
+name at apply time via `scripts/ghostty-theme.py` (chezmoi `output`),
+parsed + derived from Ghostty's own catalog — no overrides, nothing pinned:
+what Ghostty ships is what every surface renders (delta falls back to the
+terminal's own palette; nvim/lualine use a scheme generated from the roles).
+Never hardcode a hex or theme name in a managed file — render it from the
+resolver or read it via `bruce.core.theming`. In nvim, only
+`core/theming.lua` is generated; the rest is static Lua. The smoke test's
+color-system step is the drift guard (names resolve, no orphan hexes, roles
+verbatim). Ghostty must be installed where `chezmoi apply` runs. `chezmoi
+re-add` skips
 template-sourced files (e.g. pi's `settings.json.tmpl`): fold pi's
 self-bumps in by hand. See README "Changing how everything looks" for the
 runbook.

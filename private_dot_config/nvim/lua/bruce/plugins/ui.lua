@@ -16,11 +16,6 @@ return {
         event = "VeryLazy",
         opts = {
             options = {
-                -- Follows 'background', which core/appearance.lua derives from
-                -- the palette settings (theme = "system" follows the OS).
-                -- lualine re-runs setup() on OptionSet background, and a
-                -- function theme re-evaluates then.
-                --
                 -- The statusline colors come from the active Ghostty themes'
                 -- roles (core/theming.lua): segment backgrounds from the
                 -- statusline/surface roles, mode segments from the mode_*
@@ -28,13 +23,7 @@ return {
                 -- theme picked in .chezmoidata/palette.toml.
                 theme = function()
                     local theming = require("bruce.core.theming")
-                    local light = vim.o.background == "light"
-                    if not light and theming.nvim_colorscheme ~= "" then
-                        -- curated dark side: lualine ships a theme matching
-                        -- the gruvbox-material plugin scheme
-                        return "gruvbox-material"
-                    end
-                    local p = theming.palettes[light and "light" or "dark"]
+                    local p = theming.palettes[vim.o.background == "light" and "light" or "dark"]
                     return {
                         normal = {
                             a = { fg = p.on_accent, bg = p.grey_dim, gui = "bold" },

@@ -19,11 +19,11 @@
 #                  (see colors/<name>.toml [apps.nvim]), else a colorscheme
 #                  generated from the 16 colors
 #
-# The per-theme data is resolved at apply time by scripts/ghostty-theme.py:
-# a curated override in colors/<name>.toml when one exists (the gruvbox
-# pair ships curated), otherwise parsed and derived straight from Ghostty's
-# own catalog -- so any theme `ghostty +list-themes` lists works, including
-# ones added by a Ghostty update, with nothing cached in this repo.
+# The per-theme data is resolved at apply time by scripts/ghostty-theme.py,
+# parsed and derived straight from Ghostty's own catalog -- so any theme
+# `ghostty +list-themes` lists works, including ones added by a Ghostty
+# update, with nothing cached in this repo. Ghostty must be installed where
+# `chezmoi apply` runs.
 
 [palette]
 theme = "system"
