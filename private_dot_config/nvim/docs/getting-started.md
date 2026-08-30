@@ -21,9 +21,9 @@ Ghostty, split in two:
 | `⌘⇧D` | Split down |
 | `⌘[` / `⌘]` | Move between splits |
 
-pi on one side, `nvim` on the other. That's the whole arrangement — no tmux
-needed for this loop. Wrap the day's work in a tmux session when it should
-survive leaving the desk: [tmux.md](tmux.md).
+pi on one side, `nvim` on the other. That's the whole arrangement — and the
+pi side is already detachable: every pi conversation runs in its own tmux
+session automatically, rejoinable from any device ([tmux.md](tmux.md)).
 
 **You do not need to reload files.** When the agent rewrites something you have
 open, Neovim notices and reloads it. If you happened to have unsaved edits in

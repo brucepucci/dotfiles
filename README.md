@@ -134,6 +134,10 @@ upgrade — harmless, like a lazy-lock drift. The file is a chezmoi template
 skips template-sourced files — so after changing model defaults via `/model`,
 fold them into `dot_pi/agent/settings.json.tmpl` by hand:
 
+`pi` itself is wrapped by `~/.zshrc`: every new conversation gets its own
+tmux session so it survives disconnects and rejoins from any device — see
+"Picking up from another device".
+
 ```bash
 chezmoi cd
 $EDITOR dot_pi/agent/settings.json.tmpl   # port defaultModel etc.
@@ -142,14 +146,31 @@ chezmoi diff && chezmoi apply
 
 ## Picking up from another device
 
-Sessions started under [tmux](https://github.com/tmux/tmux) survive
-disconnection — close Ghostty, walk away, reattach from the phone and the
-shell, the nvim splits, and a pi run in flight are exactly where they were.
+**pi handles tmux itself.** Every `pi` started in a project directory runs
+inside its own tmux session — typing `pi` is the whole interface, and it
+always starts a **new** conversation, never a stray attach:
 
 ```bash
-tmux new -s work     # start the day's session (the only habit to adopt)
-# ... work: shells, nvim, pi ...
-# leave: Ctrl-b d detaches — or just close the terminal; the session lives on
+cd code/chezmoi
+pi                   # new tmux session "chezmoi" (hint printed), pi inside
+# ... work; leave by closing the terminal or Ctrl-b d — the session lives on
+tmux a -t chezmoi    # rejoin from ANY terminal: desk, laptop, phone over SSH
+```
+
+Naming: the project directory's basename, numbered siblings on collision
+(`chezmoi`, `chezmoi-2`, …), or a topic — `pi -n "auth refactor"` names the
+session `auth-refactor` *and* pi's own session display name. A session dies
+when pi exits, so `tmux ls` lists exactly the live conversations — nothing
+dangles. pi runs unwrapped from `$HOME`, for one-shot `pi -p` runs, or with
+`PI_TMUX_WRAP=never` — and the wrapper is guarded like everything else: no
+tmux installed means plain pi.
+
+For anything that isn't pi — nvim, a dev server, plain shells — start it
+under tmux by hand:
+
+```bash
+tmux new -s work     # manual session (same survival properties)
+# ... work: shells, nvim ...
 tmux attach -t work  # reattach, from any terminal, local or over SSH
 ```
 
@@ -175,8 +196,9 @@ Two things to know:
 - Forgot to start under tmux? pi conversations still carry over: every one
   is saved under `~/.pi/agent/sessions/`, so from the phone
   `cd <project> && pi -c` resumes the latest (`pi -r` to pick from a list,
-  `/export` for a read-only HTML dump). That restores the conversation, not
-  live state — an in-flight tool run or open splits don't come along.
+  `/export` for a read-only HTML dump) — in a new wrapped session. That
+  restores the conversation, not live state — an in-flight tool run or open
+  splits don't come along.
 
 The managed `~/.tmux.conf` is deliberately minimal: pi's documented
 `extended-keys` settings (without them `Shift+Enter` collapses to plain
@@ -193,11 +215,14 @@ troubleshooting) is in
 
 | Action | Keys / command |
 |---|---|
+| New pi conversation (auto-wrapped, named) | `pi` (in the project dir) |
+| Named topic conversation | `pi -n "auth refactor"` |
 | Detach | `Ctrl-b` `d` |
+| Rejoin — lands straight inside the running pi | `tmux a -t <name>` |
 | Scroll / copy mode | `Ctrl-b` `[` (exit: `q`) |
-| List / attach | `tmux ls` / `tmux a -t work` |
-| Take over from another client | `tmux attach -d -t work` |
-| Retire a session for good | `tmux kill-session -t work` |
+| List live conversations | `tmux ls` |
+| Take over from another client | `tmux attach -d -t <name>` |
+| Retire a session for good | `tmux kill-session -t <name>` |
 
 ## Linux / WSL
 
@@ -252,8 +277,10 @@ runs before big changes.
 #    the light/dark mode wiring (ghostty theme line, nvim mode module,
 #    delta-theme wrapper exercised with fake `defaults`/`delta` shims),
 #    the color-system checks (both theme names resolve, no orphan
-#    hexes, roles render verbatim), and the tmux config's shape
-#    (extended keys, clipboard, truecolor — no tmux binary needed).
+#    hexes, roles render verbatim), the tmux config's shape
+#    (extended keys, clipboard, truecolor — no tmux binary needed),
+#    and the pi->tmux wrapper (creates named sessions, never
+#    attaches; guards fall through to plain pi).
 scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
 
 # 2. ~1 min. The same, inside a clean Debian 12 userland on the colima VM.

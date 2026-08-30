@@ -6,9 +6,10 @@ the state is gone. tmux moves those processes into a server that runs
 independently of any terminal, so any terminal can plug back into exactly what
 was running — including a phone, over SSH, from bed.
 
-If you read nothing else: **start the day under `tmux new -s work`, detach with
-`Ctrl-b d`, reattach from anywhere with `tmux attach -t work`.** The rest of
-this page teaches that sentence properly.
+If you read nothing else: **`pi` wraps itself — every new conversation gets
+its own tmux session automatically; rejoin from any device with
+`tmux attach -t <name>`.** The rest of this page teaches that properly, plus
+the manual path for everything that isn't pi.
 
 ---
 
@@ -42,12 +43,52 @@ Three words carry the whole idea:
   press the command key. Two presses, not a chord. It feels odd for a day and
   then disappears into muscle memory.
 
-## The daily habit
+## The daily habit — pi does it for you
 
-Practice this once at the desk before you ever need it:
+For pi conversations there is nothing to remember. Typing `pi` in a project
+directory **always starts a new conversation**, wrapped in its own tmux
+session:
 
-1. **Start the day under tmux** — make it as automatic as opening the
-   terminal:
+```bash
+cd code/chezmoi
+pi      # -> pi: tmux session "chezmoi"
+        #    (detach Ctrl-b d; rejoin: tmux attach -t chezmoi)
+```
+
+That one printed line is the entire ceremony. pi behaves exactly as always —
+the thin status bar at the bottom of the window is the only visible trace of
+tmux. Naming, no thinking required:
+
+- the project directory's basename — `chezmoi`
+- a collision mints a numbered sibling — `chezmoi-2`, `chezmoi-3`, …
+- a topic, when you want one — `pi -n "auth refactor"` names the session
+  `auth-refactor` **and** pi's own session display name
+- a topic that is already live is refused with the `tmux attach -t` command
+  to rejoin it — nothing is silently renamed
+
+Lifecycle is automatic too: the session exists to host pi, so when pi exits
+the session dies. `tmux ls` lists exactly the live conversations, and there
+is no junk drawer. Guards: pi runs **unwrapped** from `$HOME` (a home
+directory is not a project name), for one-shot `pi -p`/`--mode` runs, when
+tmux is not installed, or with `PI_TMUX_WRAP=never`.
+
+**Rejoining is always explicit** — `pi` never attaches to anything:
+
+```bash
+tmux ls               # which conversations are live
+tmux attach -t chezmoi # straight back inside the running pi — no pi command
+```
+
+Attaching *is* rejoining: the session's contents are the running pi process,
+so you land mid-conversation, cursor in the input box, from the desk or from
+the phone alike.
+
+## The manual path (everything that isn't pi)
+
+For nvim, a dev server, plain shells — wrap them by hand, same survival
+properties:
+
+1. **Start a session:**
    ```bash
    tmux new -s work
    ```
@@ -55,8 +96,7 @@ Practice this once at the desk before you ever need it:
    are *inside*. The name (`work`) is arbitrary; use whatever describes the
    day.
 
-2. **Work normally.** `cd` to the project, start pi, open nvim. Nothing about
-   the workflow changes.
+2. **Work normally.** nvim, shells, whatever the task needs.
 
 3. **Detach** with `Ctrl-b` then `d`. You are dropped back into the plain
    shell — no status bar. Close the tab, close Ghostty entirely, whatever:
@@ -138,28 +178,32 @@ The complete set of keys and commands this setup needs:
 
 | Action | Keys / command |
 |---|---|
+| New pi conversation (auto-wrapped, named) | `pi` (in the project dir) |
+| Named topic conversation | `pi -n "auth refactor"` |
 | Detach | `Ctrl-b` `d` |
+| List live conversations | `tmux ls` |
+| Rejoin — lands straight inside the running pi | `tmux a -t <name>` |
 | Scroll / copy mode | `Ctrl-b` `[` (exit: `q`) |
-| List sessions | `tmux ls` |
-| Attach | `tmux a -t work` |
-| Take over from another client | `tmux attach -d -t work` |
+| Take over from another client | `tmux attach -d -t <name>` |
 | New window — useful only on the phone, where you cannot open another Ghostty tab | `Ctrl-b` `c` (next `n`, previous `p`) |
-| Retire a session for good | `tmux kill-session -t work` |
+| Retire a session for good | `tmux kill-session -t <name>` |
 
-## Forgot to start under tmux?
+## No live session to rejoin?
 
-No pi conversation is lost — every one auto-saves under
-`~/.pi/agent/sessions/`. From any SSH session:
+`pi` cannot rejoin because every run starts a new conversation — and if the
+machine rebooted, or you exited pi, there is nothing live to rejoin anyway.
+No conversation is lost, though: every one auto-saves under
+`~/.pi/agent/sessions/`:
 
 ```bash
-cd <project> && pi -c      # resume the most recent conversation there
+cd <project> && pi -c      # new wrapped session, most recent conversation loaded
 pi -r                      # or pick one from a list
 ```
 
 What comes back is the conversation and its context — not live process state.
-An in-flight tool run or your open nvim splits do not come along. That is why
-the habit is *always* start under tmux, and `pi -c` is the fallback, not the
-plan.
+An in-flight tool run or your open nvim splits do not come along. For pi the
+wrapper makes this the exception, not the plan; for manual sessions the
+habit — start under tmux before the work matters — still applies.
 
 ## Troubleshooting
 
@@ -167,7 +211,7 @@ plan.
 |---|---|
 | SSH times out; nothing responds | The Mac is asleep. Connect from somewhere it can wake (Tailscale + Wake-on-LAN), or prevent sleep next time with `caffeinate -dims`. |
 | One screen shows the session shrunk into a corner | Another client attached after it and set the size for everyone (`window-size latest`, the default). `tmux attach -d -t work` from the device that should be full-size — it kicks the other off. |
-| `no server running on /tmp/tmux-.../default` | No sessions exist — they were killed or the machine rebooted. `tmux new -s work` and start fresh. |
+| `no server running on /tmp/tmux-.../default` | No sessions exist — they were killed or the machine rebooted. `pi` (in a project dir) starts a new wrapped conversation; `pi -c` reloads the last one. |
 | Closed Ghostty mid-pi-run — is it lost? | No. Only `tmux kill-session`, a reboot, or killing the process ends a detached session. Closing a terminal never does. |
 | `Shift+Enter` submits instead of newline (from the phone) | That client does not speak extended keys. Blink and Termius do; otherwise keep prompts single-line. |
 
