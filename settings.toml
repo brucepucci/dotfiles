@@ -1,7 +1,9 @@
-# theme.toml -- the only file you edit to change how everything looks.
+# settings.toml -- the only file you edit: how everything looks, plus the
+# one behavior knob (the tmux wrapper).
 #
-# THREE SETTINGS, no hex, no per-app themes:
+# FOUR SETTINGS, no hex, no per-app themes:
 #
+# APPEARANCE
 #   theme        "system" -- follow the OS light/dark appearance, live
 #                (the default; flips mid-day when the OS does)
 #                "light"  -- light everywhere, always
@@ -9,7 +11,17 @@
 #   light_theme  a Ghostty theme name -- browse with `ghostty +list-themes`
 #   dark_theme   (highlighting a theme there shows its 16-color mapping)
 #
-# Every surface this repo manages renders from these two names:
+# BEHAVIOR
+#   tmux_wrap    "on"  -- every new pi conversation gets its own detachable
+#                tmux session (the default; detach Ctrl-b d, rejoin from
+#                any device with `tmux attach -t <name>`)
+#                "off" -- pi runs bare: no sessions, nothing to reattach
+#                from the phone (`pi -c` still resumes a conversation from
+#                any machine). The env override still wins per machine:
+#                PI_TMUX_WRAP=never for one shell, =force to wrap for one
+#                run despite the setting.
+#
+# Every surface this repo manages renders from the two theme names:
 #   Ghostty        the theme itself (light:/dark: pair when theme=system)
 #   zsh prompt     indexed colors 0-15, inherited from the terminal palette
 #   delta/git      diffs in the theme's own ANSI palette (no bat themes)
@@ -24,3 +36,7 @@
 theme = "system"
 light_theme = "Gruvbox Light Hard"
 dark_theme = "Gruvbox Material Dark"
+
+# pi conversations in tmux? on = detachable sessions (the feature), off =
+# bare pi. Rendered into ~/.zshrc at apply time; see the header above.
+tmux_wrap = "on"

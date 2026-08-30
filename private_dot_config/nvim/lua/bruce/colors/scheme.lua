@@ -2,7 +2,7 @@
 --
 -- Built from the themes' semantic roles (core/theming.lua) at apply time,
 -- so the editor matches the terminal for ANY theme picked in
--- theme.toml -- the same source Ghostty itself renders
+-- settings.toml -- the same source Ghostty itself renders
 -- from. Applied by core/appearance.lua: at startup (before plugins) and
 -- again whenever 'background' changes, exactly like a shipped colorscheme.
 

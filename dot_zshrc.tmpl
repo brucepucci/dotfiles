@@ -1,8 +1,12 @@
+{{- $piWrap := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--setting" "tmux_wrap" | trim -}}
 # ~/.zshrc — the interactive shell config, read by EVERY terminal on this
 # machine: Ghostty, Terminal.app, iTerm2, and SSH sessions alike. Managed by
-# chezmoi (dot_zshrc in the dotfiles repo) — edit it there, not here.
-# Login-shell PATH lives in ~/.zprofile; this file is the interactive half:
-# options, history, completion, keybindings, aliases, secrets, prompt.
+# chezmoi (dot_zshrc.tmpl in the dotfiles repo) — edit it there, not here.
+# The one rendered line: the tmux_wrap setting from settings.toml becomes a
+# PI_TMUX_WRAP default in the pi section when set to "off". Everything else
+# is static. Login-shell PATH lives in ~/.zprofile; this file is the
+# interactive half: options, history, completion, keybindings, aliases,
+# secrets, prompt.
 
 # --- PATH -------------------------------------------------------------------
 # Login shells get Homebrew from ~/.zprofile; this re-establishes it for
@@ -120,6 +124,14 @@ alias grep='grep --color=auto'
 #
 # PI_TMUX_WRAP=never disables the wrapper (automation, debugging); =force
 # bypasses the tty check (used by scripts/smoke-test.sh, which has no tty).
+# The default comes from settings.toml at the repo root: tmux_wrap = "off"
+# renders a PI_TMUX_WRAP=never default just below, so the machine-level
+# env override still wins either way.
+{{ if eq $piWrap "off" -}}
+# settings.toml says tmux_wrap = "off": pi runs bare on this machine unless
+# the environment says otherwise (PI_TMUX_WRAP=force wraps for one run).
+: ${PI_TMUX_WRAP:=never}
+{{ end -}}
 # Sanitize a tmux session name: lowercase, dashes for spaces/underscores,
 # [a-z0-9-] only (tmux forbids ':' and '.'; keep it shell- and
 # human-friendly). Prints the result; may be empty for hostile input.

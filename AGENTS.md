@@ -21,9 +21,11 @@ pi coding agent (Z.ai/GLM models).
 ## Architecture
 
 ```
-dot_zshrc                  # interactive shell: options, history, aliases, prompt;
+dot_zshrc.tmpl              # interactive shell: options, history, aliases, prompt;
                             # the pi() wrapper -- every new conversation gets
-                            # its own named tmux session (never attaches)
+                            # its own named tmux session (never attaches).
+                            # Template for ONE rendered line: tmux_wrap=off
+                            # defaults PI_TMUX_WRAP to never
 dot_zprofile               # login-shell PATH (Homebrew, ~/.local/bin)
 dot_local/bin/executable_delta-theme.tmpl   # ~/.local/bin: delta, colored for the
                             # configured mode/theme; git + lazygit call it
@@ -34,10 +36,11 @@ dot_tmux.conf              # tmux, minimal on purpose: pi's extended-keys
                             # scrollback. Detach/reattach only --
                             # local window management stays Ghostty's job
 private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
-theme.toml                 # THE THREE SETTINGS users edit, visible at the
-                            # repo root: theme (light|dark|system), light_theme,
+settings.toml              # THE SETTINGS users edit, visible at the repo
+                            # root: theme (light|dark|system), light_theme,
                             # dark_theme -- Ghostty theme names, browsable with
-                            # `ghostty +list-themes`
+                            # `ghostty +list-themes` -- and tmux_wrap (on|off):
+                            # whether pi conversations get tmux sessions
 scripts/ghostty-theme.py   # the resolver templates call at apply time (via
                             # chezmoi's `output`): parse+derive each theme
                             # from Ghostty's own catalog -- nothing cached,
@@ -89,8 +92,9 @@ was broken for months with no error shown. Let failures be loud.
 `pcall` is fine where failure is genuinely expected and not exceptional (e.g.
 `vim.treesitter.start` on a filetype with no parser).
 
-**Colors: three settings, zero cached theme data.** Users edit only
-`theme.toml` at the repo root (`theme`, `light_theme`, `dark_theme` — Ghostty
+**Colors: three appearance settings, zero cached theme data.** Appearance
+is edited only via `settings.toml` at the repo root (`theme`,
+`light_theme`, `dark_theme` — Ghostty
 theme names; `ghostty +list-themes` is the browser). Templates resolve each
 name at apply time via `scripts/ghostty-theme.py` (chezmoi `output`),
 parsed + derived from Ghostty's own catalog — no overrides, nothing pinned:
@@ -103,7 +107,7 @@ color-system step is the drift guard (names resolve, no orphan hexes, roles
 verbatim). Ghostty must be installed where `chezmoi apply` runs. `chezmoi
 re-add` skips
 template-sourced files (e.g. pi's `settings.json.tmpl`): fold pi's
-self-bumps in by hand. See README "Changing how everything looks" for the
+self-bumps in by hand. See README "Changing the settings" for the
 runbook.
 
 **Servers come from Homebrew, not Mason.** Mason is deliberately not installed:
