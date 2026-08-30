@@ -29,8 +29,8 @@
 #      generated data module carries the chosen roles verbatim
 #  11. the tmux config renders with pi's requirements intact: extended
 #      keys (Shift+Enter survives the tmux layer), OSC 52 clipboard,
-#      truecolor passthrough, status-bar window separator — file-shape
-#      only; no tmux binary needed
+#      truecolor passthrough, mouse-wheel copy-mode scrollback, status-bar
+#      window separator — file-shape only; no tmux binary needed
 #  12. the pi wrapper: `pi` always CREATES a session (never attaches —
 #      rejoining is manual `tmux attach`), names it after the project dir
 #      (-2/-3 on collision) or the sanitized -n topic, and falls through
@@ -95,6 +95,10 @@ grep -qF "set -ga terminal-overrides ',*:RGB'" "$NEWHOME/.tmux.conf" \
   || die "~/.tmux.conf: no truecolor passthrough -- nvim colors downgrade under tmux"
 grep -q '^set -g focus-events on$' "$NEWHOME/.tmux.conf" \
   || die "~/.tmux.conf: focus-events off -- nvim appearance sync and checktime never fire under tmux"
+grep -q '^set -g mouse on$' "$NEWHOME/.tmux.conf" \
+  || die "~/.tmux.conf: mouse off -- the wheel arrives as arrow keys; no scrollback under tmux"
+grep -q '^set -g history-limit 10000$' "$NEWHOME/.tmux.conf" \
+  || die "~/.tmux.conf: history-limit not 10000 -- the 2000 default truncates pi sessions"
 grep -qF "set -g window-status-format ' | #I:#W#{?window_flags,#{window_flags}, }'" \
   "$NEWHOME/.tmux.conf" \
   || die "~/.tmux.conf: window list blends into the session name -- chezmoi-2 + 0 scans as chezmoi-20"
