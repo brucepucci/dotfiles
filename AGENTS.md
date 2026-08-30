@@ -34,7 +34,8 @@ scripts/ghostty-theme.py   # the resolver templates call at apply time (via
                             # chezmoi's `output`): parse+derive each theme
                             # from Ghostty's own catalog -- nothing cached,
                             # nothing goes stale; Ghostty is a prerequisite
-                            # for `chezmoi apply` (CI installs it via apt)
+                            # for `chezmoi apply` (CI fetches the catalog
+                            # from its upstream, iTerm2-Color-Schemes)
 private_dot_config/nvim/
 ├── init.lua              # sets mapleader, syncs appearance, then requires
 │                         # core.* and bruce.lazy
