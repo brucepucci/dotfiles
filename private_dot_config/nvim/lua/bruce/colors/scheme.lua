@@ -10,15 +10,12 @@ local theming = require("bruce.core.theming")
 
 local M = {}
 
--- The 16 ANSI colors, from the roles, so :terminal and any ANSI-emitting
--- tool inside nvim match the active theme.
-local function terminal_colors(p)
-    local ansi = {
-        p.bg, p.red, p.green, p.yellow, p.blue, p.purple, p.aqua, p.fg,
-        p.grey_dim, p.red, p.green, p.yellow, p.blue, p.purple, p.aqua,
-        p.fg_bright,
-    }
-    for i, color in ipairs(ansi) do
+-- The 16 ANSI colors, verbatim from the theme's own palette, so :terminal
+-- and any ANSI-emitting tool inside nvim renders exactly what the terminal
+-- does -- including the bright variants, which many themes differentiate
+-- (e.g. Gruvbox Dark's bright red vs its normal red).
+local function terminal_colors(pal)
+    for i, color in ipairs(pal.terminal) do
         vim.g["terminal_color_" .. (i - 1)] = color
     end
 end

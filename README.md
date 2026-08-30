@@ -270,8 +270,9 @@ construction.
 
 The one prerequisite: **Ghostty must be installed wherever you run
 `chezmoi apply`** — without it the resolver fails loudly. That is why the
-new-machine steps install Ghostty (brew bundle) before applying, and why
-CI installs Ghostty's apt package before the smoke test.
+new-machine steps install Ghostty (brew bundle) before applying, and CI
+fetches the theme catalog (pinned commit of its upstream,
+iTerm2-Color-Schemes) before the smoke test.
 
 Everything rendered — the pi themes, nvim's `core/theming.lua`, the
 delta/gitconfig lines — is a build artifact; the smoke test fails

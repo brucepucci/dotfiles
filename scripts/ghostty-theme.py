@@ -202,10 +202,11 @@ def resolve(name):
     term = parse_ghostty_theme(path)
     if term is None:
         die("Ghostty's '%s' theme file has no background/foreground" % name)
+    roles = derive_roles(term)
     return {
         "terminal": {key: term[key] for key in TERMINAL_KEYS}
         | {"palette_%d" % i: term["palette_%d" % i] for i in range(16)},
-        "roles": {key: derive_roles(term)[key] for key in ROLE_ORDER},
+        "roles": {key: roles[key] for key in ROLE_ORDER},
         "apps": {
             # no curated per-app themes: neutral fallbacks, so every app
             # follows the terminal's own palette

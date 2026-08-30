@@ -181,11 +181,11 @@ for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
          "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
          "$NEWHOME/.config/zsh/ps1.zsh" \
          "$NEWHOME/.config/nvim/lua/bruce/plugins/ui.lua" \
-         "$NEWHOME/.config/nvim/lua/bruce/plugins/colorscheme.lua" \
          "$NEWHOME/.config/nvim/lua/bruce/colors/scheme.lua" \
          "$NEWHOME/.config/ghostty/config" \
          "$NEWHOME/.gitconfig" \
          "$NEWHOME/.local/bin/delta-theme"; do
+  [[ -f "$f" ]] || die "expected rendered output missing: $f"
   for h in $(grep -hoE '#[0-9a-fA-F]{6}' "$f" | sort -u); do
     grep -qxF "$h" <<<"$palhex" \
       || die "$(basename "$f") carries hex $h, not defined by the active themes"

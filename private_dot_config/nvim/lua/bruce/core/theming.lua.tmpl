@@ -15,9 +15,20 @@
 --   plugins/ui (lualine)  statusline tables from the role palettes
 return {
     mode = "{{ .palette.theme }}", -- "system" | "light" | "dark"
-    -- both themes' semantic roles, keyed by the 'background' value
+    -- both themes' semantic roles and raw 16-color terminal palettes,
+    -- keyed by the 'background' value
     palettes = {
         light = {
+            terminal = { -- the theme's own palette 0-15, verbatim
+                "{{ $l.terminal.palette_0 }}", "{{ $l.terminal.palette_1 }}",
+                "{{ $l.terminal.palette_2 }}", "{{ $l.terminal.palette_3 }}",
+                "{{ $l.terminal.palette_4 }}", "{{ $l.terminal.palette_5 }}",
+                "{{ $l.terminal.palette_6 }}", "{{ $l.terminal.palette_7 }}",
+                "{{ $l.terminal.palette_8 }}", "{{ $l.terminal.palette_9 }}",
+                "{{ $l.terminal.palette_10 }}", "{{ $l.terminal.palette_11 }}",
+                "{{ $l.terminal.palette_12 }}", "{{ $l.terminal.palette_13 }}",
+                "{{ $l.terminal.palette_14 }}", "{{ $l.terminal.palette_15 }}",
+            },
             bg = "{{ $l.roles.bg }}", bg_deep = "{{ $l.roles.bg_deep }}",
             surface = "{{ $l.roles.surface }}", fg = "{{ $l.roles.fg }}",
             fg_soft = "{{ $l.roles.fg_soft }}", fg_bright = "{{ $l.roles.fg_bright }}",
@@ -37,6 +48,16 @@ return {
             mode_purple = "{{ $l.roles.mode_purple }}",
         },
         dark = {
+            terminal = { -- the theme's own palette 0-15, verbatim
+                "{{ $d.terminal.palette_0 }}", "{{ $d.terminal.palette_1 }}",
+                "{{ $d.terminal.palette_2 }}", "{{ $d.terminal.palette_3 }}",
+                "{{ $d.terminal.palette_4 }}", "{{ $d.terminal.palette_5 }}",
+                "{{ $d.terminal.palette_6 }}", "{{ $d.terminal.palette_7 }}",
+                "{{ $d.terminal.palette_8 }}", "{{ $d.terminal.palette_9 }}",
+                "{{ $d.terminal.palette_10 }}", "{{ $d.terminal.palette_11 }}",
+                "{{ $d.terminal.palette_12 }}", "{{ $d.terminal.palette_13 }}",
+                "{{ $d.terminal.palette_14 }}", "{{ $d.terminal.palette_15 }}",
+            },
             bg = "{{ $d.roles.bg }}", bg_deep = "{{ $d.roles.bg_deep }}",
             surface = "{{ $d.roles.surface }}", fg = "{{ $d.roles.fg }}",
             fg_soft = "{{ $d.roles.fg_soft }}", fg_bright = "{{ $d.roles.fg_bright }}",

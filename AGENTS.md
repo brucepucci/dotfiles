@@ -35,7 +35,7 @@ scripts/ghostty-theme.py   # the resolver templates call at apply time (via
                             # from Ghostty's own catalog -- nothing cached,
                             # nothing goes stale; Ghostty is a prerequisite
                             # for `chezmoi apply` (CI fetches the catalog
-                            # from its upstream, iTerm2-Color-Schemes)
+                            # from its upstream, iTerm2-Color-Schemes, pinned)
 private_dot_config/nvim/
 ├── init.lua              # sets mapleader, syncs appearance, then requires
 │                         # core.* and bruce.lazy
@@ -47,8 +47,9 @@ private_dot_config/nvim/
     ├── core/appearance.lua    # mode-aware background + scheme application
     ├── colors/scheme.lua      # the colorscheme, generated from the roles
     └── plugins/          # one spec file per concern, auto-imported
-private_dot_config/zsh/ps1.zsh.tmpl   # the prompt (git state, duration, exit
-                            # code); fully indexed colors 0-15
+private_dot_config/zsh/ps1.zsh       # the prompt (git state, duration, exit
+                            # code); fully indexed colors 0-15 -- static, follows
+                            # whatever theme the terminal runs
 private_dot_config/ghostty/config.tmpl # terminal appearance only — no shell settings;
                             # theme line from the settings (pair or single)
 dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
