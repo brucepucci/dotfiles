@@ -21,7 +21,8 @@ minimal — three settings, each load-bearing:
 | Setting | Why it is there |
 |---|---|
 | `extended-keys on` + `extended-keys-format csi-u` | pi's documented tmux requirements. Without them tmux strips modifier information, and `Shift+Enter` collapses to plain `Enter` — pi's newline binding dies under tmux. Needs tmux ≥ 3.5. |
-| `set-clipboard on` | OSC 52 clipboard: yanks (nvim, tmux copy mode) land on the clipboard of the **connecting** device — over SSH, the phone in your hand. Locally, the normal clipboard path is untouched. |
+| `set-clipboard on` | OSC 52 clipboard: **copy-mode** yanks (and OSC 52-speaking apps) land on the clipboard of the **connecting** device — over SSH, the phone in your hand. (nvim on macOS keeps using pbcopy, so its yanks land on the Mac itself; copy-mode is the phone path.) |
+| `focus-events on` | Focus reporting through the tmux layer: nvim's `FocusGained` drives the light/dark appearance sync and the refocus `:checktime` reload — both silently dead under tmux without it. |
 | `terminal-overrides ',*:RGB'` | Truecolor passthrough. The nvim colorscheme is generated from the theme roles as exact hexes; without RGB advertised on the inner terminal, tmux silently downgrades them to 256-color approximations. |
 
 No prefix remap, no plugin ecosystem, no status-line theming. The division of
@@ -68,9 +69,11 @@ tmux. Naming, no thinking required:
 
 Lifecycle is automatic too: the session exists to host pi, so when pi exits
 the session dies. `tmux ls` lists exactly the live conversations, and there
-is no junk drawer. Guards: pi runs **unwrapped** from `$HOME` (a home
-directory is not a project name), for one-shot `pi -p`/`--mode` runs, when
-tmux is not installed, or with `PI_TMUX_WRAP=never`.
+is no junk drawer. Guards: pi runs **unwrapped** already inside a tmux
+session (a manual `work` session keeps its own bare pi), from `$HOME` (a
+directory name is not a project name), for one-shot runs (`pi -p`,
+`--help`, `list`, and the other management subcommands), when tmux is not
+installed, or with `PI_TMUX_WRAP=never`.
 
 **Rejoining is always explicit** — `pi` never attaches to anything:
 
@@ -129,7 +132,8 @@ properties:
    refuses SSH. Sessions freeze and resume fine across sleep, but you cannot
    *connect* to a sleeping machine. Before walking away:
    ```bash
-   caffeinate -dims -t 28800 &     # keep the Mac awake for 8 hours
+   caffeinate -dims -t 28800 &!    # keep the Mac awake for 8 hours; &! disowns
+                                  # it, so closing the terminal cannot HUP it
    ```
 
 **On the phone:**
@@ -137,8 +141,10 @@ properties:
 5. Install a client: **Blink Shell** (iOS — mosh-aware, the best over
    cellular) or **Termius** (iOS/Android, free tier). On Android, **Termux**
    works too.
-6. Add an SSH host `user@machinename` (or the Tailscale hostname) and connect
-   once while sitting at the desk, to test.
+6. Add an SSH host `user@machinename.local` — the Bonjour name that
+   `scutil --get LocalHostName` advertises; the bare name does not resolve
+   on its own (or use the Tailscale hostname/IP) — and connect once while
+   sitting at the desk, to test.
 7. The prompt you get is your normal one, plus the `user@host` segment it
    adds over SSH. Same shell, same history — by design, every terminal and
    every SSH session reads the same `~/.zshrc`.
@@ -213,6 +219,7 @@ habit — start under tmux before the work matters — still applies.
 | One screen shows the session shrunk into a corner | Another client attached after it and set the size for everyone (`window-size latest`, the default). `tmux attach -d -t work` from the device that should be full-size — it kicks the other off. |
 | `no server running on /tmp/tmux-.../default` | No sessions exist — they were killed or the machine rebooted. `pi` (in a project dir) starts a new wrapped conversation; `pi -c` reloads the last one. |
 | Closed Ghostty mid-pi-run — is it lost? | No. Only `tmux kill-session`, a reboot, or killing the process ends a detached session. Closing a terminal never does. |
+| New pi session fails auth after rotating keys in `~/.zsh/secrets.zsh` | Panes inherit the tmux **server's** environment, snapshotted when the server started. `tmux kill-server` (ends live conversations), then start fresh — the new server picks up the new keys. |
 | `Shift+Enter` submits instead of newline (from the phone) | That client does not speak extended keys. Blink and Termius do; otherwise keep prompts single-line. |
 
 ---

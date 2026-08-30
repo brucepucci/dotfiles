@@ -92,6 +92,8 @@ grep -q '^set -g set-clipboard on$' "$NEWHOME/.tmux.conf" \
   || die "~/.tmux.conf: OSC 52 clipboard off -- yanks never reach remote clients"
 grep -qF "set -ga terminal-overrides ',*:RGB'" "$NEWHOME/.tmux.conf" \
   || die "~/.tmux.conf: no truecolor passthrough -- nvim colors downgrade under tmux"
+grep -q '^set -g focus-events on$' "$NEWHOME/.tmux.conf" \
+  || die "~/.tmux.conf: focus-events off -- nvim appearance sync and checktime never fire under tmux"
 [[ ! -e "$NEWHOME/.zsh/secrets.zsh" ]] || die "~/.zsh/secrets.zsh was applied"
 ok "full tree rendered, diff empty, no secrets applied"
 
@@ -390,8 +392,8 @@ grep -qxF auth-refactor "$SESS" || die "topic session not minted"
 [[ "$out" == *'detach Ctrl-b d'* ]] || die "creation hint missing: $out"
 # 2. default name from the project dir; numbered siblings on collision
 : > "$TLOG"; printf 'demoproj\ndemoproj-2\n' > "$SESS"
-wrap_zsh "$proj" "" >/dev/null \
-  || die "case-2 inner zsh exited -- output: $(tail -1 "$TLOG")"
+rc=0; out2="$(wrap_zsh "$proj" "")" \
+  || { rc=$?; die "case-2 inner zsh exited $rc -- output: $out2"; }
 grep -qF 'new-session -s demoproj-3 command pi' "$TLOG" \
   || die "collision numbering wrong: $(tail -1 "$TLOG")"
 # 3. an explicitly taken topic refuses -- nothing silently renamed
@@ -414,6 +416,8 @@ guard_plain() {  # $1 = extra env, $2 = pi args
 guard_plain "TMUX=yes" ""
 guard_plain "" "-p 'quick one'"
 guard_plain "" "--mode json 'hello'"
+guard_plain "" "--help"
+guard_plain "" "list"
 guard_plain "PI_TMUX_WRAP=never" ""
 # from $HOME: plain pi even with everything else in place. HOME is
 # normalized to its physical path first: mktemp yields /var/folders/...

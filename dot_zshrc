@@ -120,34 +120,54 @@ alias grep='grep --color=auto'
 #
 # PI_TMUX_WRAP=never disables the wrapper (automation, debugging); =force
 # bypasses the tty check (used by scripts/smoke-test.sh, which has no tty).
+# Sanitize a tmux session name: lowercase, dashes for spaces/underscores,
+# [a-z0-9-] only (tmux forbids ':' and '.'; keep it shell- and
+# human-friendly). Prints the result; may be empty for hostile input.
+__pi_tmux_name() {
+  local s="${1:l}"
+  s="${s//[_[:space:]]/-}"
+  s="${s//[^a-z0-9-]/}"
+  while [[ $s == *--* ]]; do s="${s//--/-}"; done
+  printf '%s' "${${s#-}%-}"
+}
+
 pi() {
   emulate -L zsh
-  local arg i name="" explicit=0
+  local arg i name=""
   local -a a=("$@") quoted=()
   if [[ ${PI_TMUX_WRAP:-} == never ]]; then command pi "$@"; return; fi
-  # One-shot / automation modes must never spawn a tmux server; pick up the
-  # -n/--name topic in the same pass (it is passed through to pi verbatim).
+  # One-shot invocations must never spawn a tmux server: the session would
+  # flash the alternate screen and swallow the output when it dies. Flags
+  # anywhere in argv, and pi's management subcommands, mean "just run it".
+  # The -n/--name topic rides along in the same pass (passed to pi verbatim).
   for (( i=1; i<=${#a}; i++ )); do
     case "${a[i]}" in
-      -p|--print|--mode|--mode=*) command pi "$@"; return ;;
-      -n|--name)    name="${a[i+1]:-}"; explicit=1 ;;
-      --name=*)     name="${${a[i]}#--name=}"; explicit=1 ;;
+      -h|--help|-v|--version|-p|--print|--mode|--mode=*|--list-models)
+        command pi "$@"; return ;;
+      -n|--name)    name="${a[i+1]:-}" ;;
+      --name=*)     name="${${a[i]}#--name=}" ;;
     esac
   done
+  case "${a[1]:-}" in
+    install|remove|uninstall|update|list|config|auth) command pi "$@"; return ;;
+  esac
   # No wrapping inside tmux, without the binary, off a tty, or from $HOME.
   if [[ -n ${TMUX:-} ]] || ! command -v tmux >/dev/null 2>&1 \
      || [[ $PWD == "$HOME" ]] \
      || { [[ ${PI_TMUX_WRAP:-} != force ]] && ( [[ ! -t 0 || ! -t 1 ]] ) }; then
     command pi "$@"; return
   fi
-  # Sanitize: tmux session names must not contain ':' or '.'; keep them
-  # lowercase, dash-separated, alphanumeric.
-  local base="${${name:-${PWD:t}}:l}"
-  base="${base//[_[:space:]]/-}"
-  base="${base//[^a-z0-9-]/}"
-  while [[ $base == *--* ]]; do base="${base//--/-}"; done
-  base="${base#-}"; base="${base%-}"
-  if [[ -z $base ]]; then command pi "$@"; return; fi   # pathological dirname
+  # Session name: the sanitized topic, else the sanitized project dirname.
+  # Only a topic that survives sanitization earns the explicit behavior
+  # (refuse when already live); a missing/empty/non-ASCII topic is simply
+  # not a topic, and the project name is used.
+  local base="$(__pi_tmux_name "${name:-${PWD:t}}")" explicit=0
+  if [[ -n $name && -n $base ]]; then
+    explicit=1
+  else
+    base="$(__pi_tmux_name "${PWD:t}")"
+    [[ -z $base ]] && { command pi "$@"; return; }   # pathological dirname
+  fi
   # An explicitly requested topic that is already live is a mistake, not a
   # collision -- say how to rejoin instead of silently minting "topic-2".
   local sess="$base" n=2
@@ -160,7 +180,7 @@ pi() {
   done
   for arg in "$@"; do quoted+=("${(q)arg}"); done
   print -r -- "pi: tmux session \"$sess\" (detach Ctrl-b d; rejoin: tmux attach -t $sess)"
-  command tmux new-session -s "$sess" "command pi ${quoted[*]}"
+  command tmux new-session -s "$sess" "command pi ${(j: :)quoted}"
 }
 
 # --- Secrets ----------------------------------------------------------------

@@ -134,15 +134,15 @@ upgrade — harmless, like a lazy-lock drift. The file is a chezmoi template
 skips template-sourced files — so after changing model defaults via `/model`,
 fold them into `dot_pi/agent/settings.json.tmpl` by hand:
 
-`pi` itself is wrapped by `~/.zshrc`: every new conversation gets its own
-tmux session so it survives disconnects and rejoins from any device — see
-"Picking up from another device".
-
 ```bash
 chezmoi cd
 $EDITOR dot_pi/agent/settings.json.tmpl   # port defaultModel etc.
 chezmoi diff && chezmoi apply
 ```
+
+`pi` itself is wrapped by `~/.zshrc`: every new conversation gets its own
+tmux session so it survives disconnects and rejoins from any device — see
+"Picking up from another device".
 
 ## Picking up from another device
 
@@ -161,9 +161,10 @@ Naming: the project directory's basename, numbered siblings on collision
 (`chezmoi`, `chezmoi-2`, …), or a topic — `pi -n "auth refactor"` names the
 session `auth-refactor` *and* pi's own session display name. A session dies
 when pi exits, so `tmux ls` lists exactly the live conversations — nothing
-dangles. pi runs unwrapped from `$HOME`, for one-shot `pi -p` runs, or with
-`PI_TMUX_WRAP=never` — and the wrapper is guarded like everything else: no
-tmux installed means plain pi.
+dangles. pi runs unwrapped already inside a tmux session (a manual session
+keeps its own bare pi), from `$HOME`, for one-shot runs (`pi -p`, `--help`,
+management subcommands), or with `PI_TMUX_WRAP=never` — and the wrapper is
+guarded like everything else: no tmux installed means plain pi.
 
 For anything that isn't pi — nvim, a dev server, plain shells — start it
 under tmux by hand:
