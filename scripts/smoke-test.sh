@@ -82,14 +82,15 @@ fi
 ok "no command=/env= lines"
 
 step "light-mode: the whole stack follows the appearance setting"
-palval() { chezmoi --source "$SOURCE" execute-template "$1"; }
-# theme lookup helper: same resolver the templates call at apply time
+# theme lookup helpers: the same resolver the templates call at apply time.
+# Settings come from theme.toml (the user-facing file at the repo root).
+themeset() { python3 "$SOURCE/scripts/ghostty-theme.py" --setting "$1"; }
 themeget() { python3 "$SOURCE/scripts/ghostty-theme.py" --get "$@"; }
-MODE="$(palval '{{ .palette.theme }}')"
-LTHEME="$(palval '{{ .palette.light_theme }}')"
-DTHEME="$(palval '{{ .palette.dark_theme }}')"
+MODE="$(themeset theme)"
+LTHEME="$(themeset light_theme)"
+DTHEME="$(themeset dark_theme)"
 [[ "$MODE" == system || "$MODE" == light || "$MODE" == dark ]] \
-  || die "palette.toml theme must be system|light|dark, got: $MODE"
+  || die "theme.toml: theme must be system|light|dark, got: $MODE"
 # Ghostty is the anchor: one theme line, pair when following the OS, single
 # theme when pinned.
 if [[ "$MODE" == system ]]; then
@@ -140,8 +141,8 @@ for st in dark light; do
   else printf '#!/bin/sh\nexit 1\n' > "$wrap/$st/defaults"; fi
   chmod +x "$wrap/$st/defaults" "$wrap/$st/delta"
 done
-ddark="$(themeget "$DTHEME" apps.delta_syntax_theme)"
-dlight="$(themeget "$LTHEME" apps.delta_syntax_theme)"
+ddark="none"; dlight="none"   # delta's syntax theme: always none -- diffs
+                            # render in the terminal's own palette
 run_case() { # $1 = expected wrapper state, $2 = simulated OS state
   out="$(env PATH="$wrap/$2:/usr/bin:/bin" \
         "$NEWHOME/.local/bin/delta-theme" extra </dev/null | tr '\n' ' ')"
@@ -160,7 +161,7 @@ fi
 ok "ghostty theme line, nvim mode, delta wrapper, pi pair all match the settings"
 
 step "colors: themes resolve on the fly, no orphan hexes"
-# The palette system: 3 settings (.chezmoidata/palette.toml) and NO cached
+# The palette system: 3 settings (theme.toml, repo root) and NO cached
 # theme data -- templates resolve each name at apply time via
 # scripts/ghostty-theme.py, straight from Ghostty's own catalog. Guards, in order: both names
 # resolve (this is the same call the templates make); every hex in a

@@ -27,9 +27,10 @@ dot_local/bin/executable_delta-theme.tmpl   # ~/.local/bin: delta, colored for t
                             # configured mode/theme; git + lazygit call it
 dot_gitconfig.tmpl         # delta fallback syntax-theme from the theme files
 private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
-.chezmoidata/palette.toml  # THE THREE SETTINGS users edit: theme (light|dark|
-                            # system), light_theme, dark_theme -- Ghostty theme
-                            # names, browsable with `ghostty +list-themes`
+theme.toml                 # THE THREE SETTINGS users edit, visible at the
+                            # repo root: theme (light|dark|system), light_theme,
+                            # dark_theme -- Ghostty theme names, browsable with
+                            # `ghostty +list-themes`
 scripts/ghostty-theme.py   # the resolver templates call at apply time (via
                             # chezmoi's `output`): parse+derive each theme
                             # from Ghostty's own catalog -- nothing cached,
@@ -82,7 +83,7 @@ was broken for months with no error shown. Let failures be loud.
 `vim.treesitter.start` on a filetype with no parser).
 
 **Colors: three settings, zero cached theme data.** Users edit only
-`.chezmoidata/palette.toml` (`theme`, `light_theme`, `dark_theme` — Ghostty
+`theme.toml` at the repo root (`theme`, `light_theme`, `dark_theme` — Ghostty
 theme names; `ghostty +list-themes` is the browser). Templates resolve each
 name at apply time via `scripts/ghostty-theme.py` (chezmoi `output`),
 parsed + derived from Ghostty's own catalog — no overrides, nothing pinned:

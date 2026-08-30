@@ -1,12 +1,12 @@
 {
   "$schema": "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
-{{- /* GENERATED from the palette settings (.chezmoidata/palette.toml) and
-     the dark theme's roles, resolved live from Ghostty's catalog by
-     scripts/ghostty-theme.py -- do not hand-edit; change the theme name in
-     the settings and `chezmoi apply`. The file name
-     is stable across theme changes; entries referencing the theme's own
-     vars stay literal (that mapping is Layer 3, decided per surface). */ -}}
-{{ $t := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") .palette.dark_theme | trim | fromJson }}
+{{- /* GENERATED from theme.toml (the repo root) and the dark theme's
+     roles, resolved live from Ghostty's catalog by scripts/ghostty-theme.py
+     -- do not hand-edit; change the theme name in theme.toml and
+     `chezmoi apply`. The file name is stable across theme changes;
+     entries referencing the theme's own vars stay literal (that mapping
+     is Layer 3, decided per surface). */ -}}
+{{ $t := (output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "appearance" | trim | fromJson).dark }}
   "name": "dotfiles-dark",
   "vars": {
     "bg": "{{ $t.roles.bg }}",

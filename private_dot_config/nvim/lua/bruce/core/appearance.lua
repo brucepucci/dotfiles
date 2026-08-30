@@ -1,6 +1,6 @@
 -- appearance.lua -- the light/dark mode, from the palette settings.
 --
--- The mode is rendered into core/theming.lua from .chezmoidata/palette.toml:
+-- The mode is rendered into core/theming.lua from theme.toml (the repo root):
 --   theme = "system" -- follow the macOS interface style live, the way
 --     Ghostty's theme pair and the prompt's indexed colors do; flipping the
 --     OS mid-session needs no restart (Dark stays the default where the
