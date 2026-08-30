@@ -185,6 +185,18 @@ Ghostty's job, and tmux shells are just more zsh reading the same
 `~/.zshrc`: one shell everywhere, history shared, prompt following whatever
 palette the connecting terminal runs.
 
+Quick reference — the full walkthrough (mental model, phone-client setup,
+troubleshooting) is in
+[tmux.md](private_dot_config/nvim/docs/tmux.md):
+
+| Action | Keys / command |
+|---|---|
+| Detach | `Ctrl-b` `d` |
+| Scroll / copy mode | `Ctrl-b` `[` (exit: `q`) |
+| List / attach | `tmux ls` / `tmux a -t work` |
+| Take over from another client | `tmux attach -d -t work` |
+| Retire a session for good | `tmux kill-session -t work` |
+
 ## Linux / WSL
 
 Homebrew is the supported install path on every OS. Debian 12 and Ubuntu 22.04
@@ -384,7 +396,8 @@ The pre-migration history lives in the archived
 
 - [keymaps.md](private_dot_config/nvim/docs/keymaps.md) — cheatsheet, grouped by task
 - [tools.md](private_dot_config/nvim/docs/tools.md) — what each tool is and why it is installed
+- [tmux.md](private_dot_config/nvim/docs/tmux.md) — full walkthrough: the detach/reattach habit, phone setup, troubleshooting
 
-Both are installed to `~/.config/nvim/docs/`. In Neovim, `<leader>?` opens the
+All are installed to `~/.config/nvim/docs/`. In Neovim, `<leader>?` opens the
 cheatsheet and `<leader>fk` fuzzy-searches every live mapping. Press `<Space>`
 and pause for which-key.

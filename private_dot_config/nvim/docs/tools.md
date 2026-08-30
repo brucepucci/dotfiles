@@ -236,8 +236,9 @@ with `tmux attach -t work`. The managed `~/.tmux.conf` stays minimal on
 purpose: pi's `extended-keys` requirements (so `Shift+Enter` keeps working
 through the tmux layer), OSC 52 clipboard (yanks reach the connecting
 device), truecolor passthrough. Local window management stays Ghostty's
-job. See the repo README's "Picking up from another device" for the full
-workflow, phone clients included.
+job. The full walkthrough — the daily habit, phone-client setup,
+troubleshooting — is in [tmux.md](tmux.md); the repo README's "Picking up
+from another device" section is the condensed version.
 
 ### tree-sitter CLI, node *(CLI)*
 `tree-sitter` builds the parsers nvim-treesitter installs (needs ≥ 0.26.1).
