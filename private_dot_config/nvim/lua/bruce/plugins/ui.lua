@@ -16,35 +16,26 @@ return {
         event = "VeryLazy",
         opts = {
             options = {
-                -- Follows 'background', which core/appearance.lua sets from the
-                -- OS: lualine re-runs setup() on OptionSet background, and a
-                -- function theme re-evaluates then. Dark side is lualine's
-                -- built-in gruvbox-material; light side is a hand-rolled table
-                -- because lualine ships no material-light theme (its
-                -- "gruvbox_light" is plain Gruvbox, off-palette next to
-                -- gruvbox-material's light rendering). Colors are Gruvbox
-                -- Material Light Hard, taken verbatim from the colorscheme's
-                -- own palette (autoload/gruvbox_material.vim), mirroring the
-                -- segment shape of lualine's gruvbox-material (dark) theme.
+                -- The statusline colors come from the active Ghostty themes'
+                -- roles (core/theming.lua): segment backgrounds from the
+                -- statusline/surface roles, mode segments from the mode_*
+                -- roles -- so the statusline matches the terminal for any
+                -- theme picked in .chezmoidata/palette.toml.
                 theme = function()
-                    if vim.o.background ~= "light" then
-                        return "gruvbox-material"
-                    end
-                    local fg = "#654735" -- fg0
-                    local surface1, surface2 = "#f5edca", "#eee0b7" -- bg1/bg_statusline3
-                    local on_accent = "#f9f5d7" -- bg0
+                    local theming = require("bruce.core.theming")
+                    local p = theming.palettes[vim.o.background == "light" and "light" or "dark"]
                     return {
                         normal = {
-                            a = { fg = on_accent, bg = "#a89984", gui = "bold" },
-                            b = { fg = fg, bg = surface2 },
-                            c = { fg = fg, bg = surface1 },
+                            a = { fg = p.on_accent, bg = p.grey_dim, gui = "bold" },
+                            b = { fg = p.statusline_fg, bg = p.statusline_accent },
+                            c = { fg = p.statusline_fg, bg = p.statusline },
                         },
-                        command = { a = { fg = on_accent, bg = "#45707a", gui = "bold" } }, -- blue
-                        inactive = { a = { fg = fg, bg = surface2 } },
-                        insert = { a = { fg = on_accent, bg = "#6c782e", gui = "bold" } }, -- green
-                        replace = { a = { fg = on_accent, bg = "#b47109", gui = "bold" } }, -- yellow
-                        terminal = { a = { fg = on_accent, bg = "#945e80", gui = "bold" } }, -- purple
-                        visual = { a = { fg = on_accent, bg = "#c14a4a", gui = "bold" } }, -- red
+                        command = { a = { fg = p.on_accent, bg = p.mode_blue, gui = "bold" } },
+                        inactive = { a = { fg = p.statusline_fg, bg = p.statusline_accent } },
+                        insert = { a = { fg = p.on_accent, bg = p.mode_green, gui = "bold" } },
+                        replace = { a = { fg = p.on_accent, bg = p.mode_yellow, gui = "bold" } },
+                        terminal = { a = { fg = p.on_accent, bg = p.mode_purple, gui = "bold" } },
+                        visual = { a = { fg = p.on_accent, bg = p.mode_red, gui = "bold" } },
                     }
                 end,
             },

@@ -8,11 +8,13 @@ setopt PROMPT_SUBST
 
 # ---------------------------------------------------------------------------
 # Palette — indexed colors (0-15), so the prompt follows whatever theme the
-# terminal emulator has set rather than pinning hex. Currently Gruvbox
-# Material Dark in Ghostty; switching themes there recolors the prompt
-# automatically, no edit here required. Terminals without theme support just
-# render the indexed colors of their own palette.
-# Orange has no slot in the 16-color palette, so it stays hex.
+# terminal emulator has set rather than pinning hex. The active theme pair
+# lives in .chezmoidata/palette.toml (browse names with `ghostty
+# +list-themes`); switching it there recolors this prompt automatically, no
+# edit here required. Terminals without theme support just render the
+# indexed colors of their own palette. ANSI has no orange slot, so the
+# "orange" accents borrow yellow (3): still warm, still distinct from the
+# aqua branch and the green/red exit markers.
 # ---------------------------------------------------------------------------
 GB_GRAY=8
 GB_RED=1
@@ -21,7 +23,7 @@ GB_YELLOW=3
 GB_BLUE=4
 GB_PURPLE=5
 GB_AQUA=6
-GB_ORANGE='#e78a4e'
+GB_ORANGE=3
 
 # Branch glyph. Replace with 'git:' or '⎇ ' if it renders as a box.
 GB_GIT_ICON=' '

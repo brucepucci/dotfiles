@@ -18,18 +18,22 @@ brew install chezmoi gh
 gh auth login            # choose HTTPS
 gh auth setup-git        # installs the git credential helper
 
-# 2. Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty
-chezmoi init --apply brucepucci
+# 2. Clone the repo (do NOT apply yet -- the color system reads Ghostty's
+#    own theme catalog at apply time, so Ghostty must land first)
+chezmoi init brucepucci
 
 # 3. Everything the config needs: Neovim, language servers, ripgrep, fd,
 #    lazygit, delta, ipython, tree-sitter, the Nerd Font, Ghostty itself,
 #    and the pi coding agent (installed from npm)
 brew bundle --file="$(chezmoi source-path)/Brewfile"
 
-# 4. Plugins, at the exact revisions pinned in lazy-lock.json
+# 4. Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty
+chezmoi apply
+
+# 5. Plugins, at the exact revisions pinned in lazy-lock.json
 nvim --headless "+Lazy! restore" +qa
 
-# 5. The one manual step: secrets never go in git. Create
+# 6. The one manual step: secrets never go in git. Create
 #    ~/.zsh/secrets.zsh from the installed template and fill in your keys:
 cp ~/.zsh/secrets.example.zsh ~/.zsh/secrets.zsh
 chmod 600 ~/.zsh/secrets.zsh
@@ -39,7 +43,7 @@ $EDITOR ~/.zsh/secrets.zsh   # ZAI_API_KEY (https://z.ai), GITHUB_TOKEN, ...
 #    ~/.pi/agent/auth.json, which then takes precedence over the variable.)
 ```
 
-Then open Ghostty and run `nvim` — or `pi`, once step 5 is done. That is the
+Then open Ghostty and run `nvim` — or `pi`, once step 6 is done. That is the
 whole thing: nothing is left to configure or install by hand — editor,
 terminal, shell, git tooling, and coding agent are all in place. From here on,
 every change is an edit in this repo plus `chezmoi apply`.
@@ -49,9 +53,13 @@ every change is an edit in this repo plus `chezmoi apply`.
 > `Authentication failed`. No SSH key is registered on this account either, so
 > `--ssh` is not a fallback.
 
-> **Do step 3 before step 4.** Language servers come from Homebrew, not Mason.
-> Launching Neovim earlier is not fatal — it warns and names what is missing —
-> but `Lazy! restore` also needs `tree-sitter` to build parsers.
+> **Do step 3 before step 4.** Ghostty must be installed before
+> `chezmoi apply` — the palette resolver reads Ghostty's bundled theme
+> files (the catalog behind `ghostty +list-themes`) to derive every
+> surface's colors, and apply fails loudly without it. Language servers
+> come from Homebrew too, not Mason: launching Neovim earlier is not fatal
+> — it warns and names what is missing — but `Lazy! restore` also needs
+> `tree-sitter` to build parsers.
 
 > **Not using Ghostty?** The Nerd Font is installed by step 3, but only Ghostty
 > picks it up automatically. In Terminal.app or iTerm2, set the font to
@@ -74,7 +82,8 @@ if you install Neovim some other way.
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts |
 | `~/.config/lazygit/config.yml` | delta as lazygit's pager |
 | `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
-| `~/.pi/agent/settings.json` | pi coding agent: terminal-following Gruvbox theme pair, `zai` provider, `glm-5.3` default |
+| `~/.pi/agent/settings.json` | pi coding agent: appearance-following theme pair, `zai` provider, `glm-5.3` default |
+| `.chezmoidata/palette.toml` | The three settings that drive every color (repo-only — never applied; themes resolve from Ghostty at apply time) |
 
 **One shell everywhere.** Ghostty, Terminal.app, iTerm2, and anyone SSH-ing
 into this machine all get the same zsh: `~/.zprofile` sets the login PATH,
@@ -119,11 +128,15 @@ Plan. `zai` is a **built-in** pi provider, so the whole setup is three pieces:
 
 `settings.json` also carries `lastChangelogVersion`, which pi bumps by itself
 on updates, so `chezmoi diff` will show that one field drifting after an
-upgrade — harmless, like a lazy-lock drift. If you change model defaults via
-`/model`, fold them back in:
+upgrade — harmless, like a lazy-lock drift. The file is a chezmoi template
+(its `theme` pair renders from the palette, below), and `chezmoi re-add`
+skips template-sourced files — so after changing model defaults via `/model`,
+fold them into `dot_pi/agent/settings.json.tmpl` by hand:
 
 ```bash
-chezmoi re-add ~/.pi/agent/settings.json
+chezmoi cd
+$EDITOR dot_pi/agent/settings.json.tmpl   # port defaultModel etc.
+chezmoi diff && chezmoi apply
 ```
 
 ## Linux / WSL
@@ -176,9 +189,10 @@ runs before big changes.
 #    exercises the result the way real sessions do: fresh-window shell,
 #    the legacy ZDOTDIR guard, SSH prompt segment, history shared across
 #    shells, EDITOR fallback, secrets staying out, ghostty config hygiene,
-#    and the light-mode wiring (ghostty theme pair, nvim OS-appearance
-#    sync, delta-theme wrapper exercised with fake `defaults`/`delta`
-#    shims -- no GUI toggling required).
+#    the light/dark mode wiring (ghostty theme line, nvim mode module,
+#    delta-theme wrapper exercised with fake `defaults`/`delta` shims),
+#    and the color-system checks (both theme names resolve, no orphan
+#    hexes, roles render verbatim).
 scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
 
 # 2. ~1 min. The same, inside a clean Debian 12 userland on the colima VM.
@@ -217,6 +231,58 @@ chezmoi apply               # install
 Adding a plugin means dropping a file into
 `private_dot_config/nvim/lua/bruce/plugins/` — they are auto-imported, so no
 `init.lua` edit is needed.
+
+## Changing how everything looks
+
+Three settings in [.chezmoidata/palette.toml](.chezmoidata/palette.toml) — no
+hex, no per-app themes:
+
+```toml
+[palette]
+theme = "system"                   # "system" | "light" | "dark"
+light_theme = "Gruvbox Light Hard"
+dark_theme = "Gruvbox Material Dark"
+```
+
+- **`light_theme` / `dark_theme`** are Ghostty theme names — browse with
+  `ghostty +list-themes` (highlighting one there previews its 16-color
+  mapping). Type the name exactly as shown, `chezmoi diff && chezmoi apply`,
+  and every surface follows: Ghostty runs the theme itself; the zsh prompt
+  renders in indexed colors it inherits from the terminal; pi's TUI themes
+  are generated from the theme's palette; delta disables bat syntax colors
+  so diffs render in the theme's own ANSI palette; nvim and lualine use a
+  colorscheme generated from the theme's own palette.
+- **`theme`** picks the mode: `system` follows the OS light/dark appearance
+  live — Ghostty auto-switches its pair, nvim re-syncs on focus, delta
+  detects per invocation; `light`/`dark` pin one look everywhere, always,
+  regardless of what the OS says.
+
+The data behind a name is resolved **at apply time, nothing cached**:
+`scripts/ghostty-theme.py` parses each theme straight out of Ghostty's own
+catalog — the files behind `ghostty +list-themes` — and derives everything
+from its 16-color palette. New Ghostty themes work the moment you type
+their name, there is no catalog in this repo to keep fresh, and the only
+thing that pins values is Ghostty itself. Apps without a derivable
+equivalent follow the terminal instead: delta disables bat syntax colors
+(so diffs render in the theme's own ANSI palette) and nvim/lualine use a
+colorscheme generated from the theme's roles — one look, everywhere, by
+construction.
+
+The one prerequisite: **Ghostty must be installed wherever you run
+`chezmoi apply`** — without it the resolver fails loudly. That is why the
+new-machine steps install Ghostty (brew bundle) before applying, and CI
+fetches the theme catalog (pinned commit of its upstream,
+iTerm2-Color-Schemes) before the smoke test.
+
+Everything rendered — the pi themes, nvim's `core/theming.lua`, the
+delta/gitconfig lines — is a build artifact; the smoke test fails
+if a name stops resolving, a rendered output carries a hex the active
+themes don't define, or a surface stops matching the settings.
+
+pi specifics: its theme files are named `dotfiles-{light,dark}.json`
+regardless of which themes are active (a theme swap never renames files),
+and `settings.json` picks the pair — or a single theme when the mode is
+pinned.
 
 ## Updating plugins
 

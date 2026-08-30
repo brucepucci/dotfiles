@@ -23,20 +23,38 @@ pi coding agent (Z.ai/GLM models).
 ```
 dot_zshrc                  # interactive shell: options, history, aliases, prompt
 dot_zprofile               # login-shell PATH (Homebrew, ~/.local/bin)
-dot_local/bin/executable_delta-theme   # ~/.local/bin: delta, colored for the
-                            # current OS appearance; git + lazygit call it
+dot_local/bin/executable_delta-theme.tmpl   # ~/.local/bin: delta, colored for the
+                            # configured mode/theme; git + lazygit call it
+dot_gitconfig.tmpl         # delta fallback syntax-theme from the theme files
 private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
+.chezmoidata/palette.toml  # THE THREE SETTINGS users edit: theme (light|dark|
+                            # system), light_theme, dark_theme -- Ghostty theme
+                            # names, browsable with `ghostty +list-themes`
+scripts/ghostty-theme.py   # the resolver templates call at apply time (via
+                            # chezmoi's `output`): parse+derive each theme
+                            # from Ghostty's own catalog -- nothing cached,
+                            # nothing goes stale; Ghostty is a prerequisite
+                            # for `chezmoi apply` (CI fetches the catalog
+                            # from its upstream, iTerm2-Color-Schemes, pinned)
 private_dot_config/nvim/
-├── init.lua              # sets mapleader, syncs OS appearance, then requires
+├── init.lua              # sets mapleader, syncs appearance, then requires
 │                         # core.* and bruce.lazy
 ├── lazy-lock.json        # committed; pins exact plugin revisions
 └── lua/bruce/
     ├── lazy.lua          # bootstrap + { import = "bruce.plugins" }
-    ├── core/             # options, keymaps, autocmds, appearance, maximize
+    ├── core/theming.lua.tmpl  # GENERATED: mode + both themes' role tables
+    │                     # -- nvim's ONLY rendered file
+    ├── core/appearance.lua    # mode-aware background + scheme application
+    ├── colors/scheme.lua      # the colorscheme, generated from the roles
     └── plugins/          # one spec file per concern, auto-imported
-private_dot_config/zsh/ps1.zsh   # the prompt (git state, duration, exit code)
-private_dot_config/ghostty/config # terminal appearance only — no shell settings;
-                            # theme follows the OS: light:…,dark:…
+private_dot_config/zsh/ps1.zsh       # the prompt (git state, duration, exit
+                            # code); fully indexed colors 0-15 -- static, follows
+                            # whatever theme the terminal runs
+private_dot_config/ghostty/config.tmpl # terminal appearance only — no shell settings;
+                            # theme line from the settings (pair or single)
+dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
+                            # .json.tmpl — the pi TUI's themes, generated from
+                            # the active themes' roles (stable file names)
 ```
 
 Adding a plugin = drop a file in `lua/bruce/plugins/` returning a lazy.nvim
@@ -62,6 +80,23 @@ was broken for months with no error shown. Let failures be loud.
 
 `pcall` is fine where failure is genuinely expected and not exceptional (e.g.
 `vim.treesitter.start` on a filetype with no parser).
+
+**Colors: three settings, zero cached theme data.** Users edit only
+`.chezmoidata/palette.toml` (`theme`, `light_theme`, `dark_theme` — Ghostty
+theme names; `ghostty +list-themes` is the browser). Templates resolve each
+name at apply time via `scripts/ghostty-theme.py` (chezmoi `output`),
+parsed + derived from Ghostty's own catalog — no overrides, nothing pinned:
+what Ghostty ships is what every surface renders (delta falls back to the
+terminal's own palette; nvim/lualine use a scheme generated from the roles).
+Never hardcode a hex or theme name in a managed file — render it from the
+resolver or read it via `bruce.core.theming`. In nvim, only
+`core/theming.lua` is generated; the rest is static Lua. The smoke test's
+color-system step is the drift guard (names resolve, no orphan hexes, roles
+verbatim). Ghostty must be installed where `chezmoi apply` runs. `chezmoi
+re-add` skips
+template-sourced files (e.g. pi's `settings.json.tmpl`): fold pi's
+self-bumps in by hand. See README "Changing how everything looks" for the
+runbook.
 
 **Servers come from Homebrew, not Mason.** Mason is deliberately not installed:
 one package manager, versions visible in `Brewfile`, no duplicate copies, no

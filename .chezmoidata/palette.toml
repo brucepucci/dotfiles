@@ -1,0 +1,31 @@
+# palette.toml -- the only file you edit to change how everything looks.
+#
+# THREE SETTINGS, no hex, no per-app themes:
+#
+#   theme        "system" -- follow the OS light/dark appearance, live
+#                (the default; flips mid-day when the OS does)
+#                "light"  -- light everywhere, always
+#                "dark"   -- dark everywhere, always
+#   light_theme  a Ghostty theme name -- browse with `ghostty +list-themes`
+#   dark_theme   (highlighting a theme there shows its 16-color mapping)
+#
+# Every surface this repo manages renders from these two names:
+#   Ghostty        the theme itself (light:/dark: pair when theme=system)
+#   zsh prompt     indexed colors 0-15, inherited from the terminal palette
+#   delta/git      the theme's bat syntax theme if it has one, else none
+#                  (terminal ANSI colors -- still follows the theme)
+#   pi TUI         themes generated from the palette's 16 colors
+#   nvim + lualine the theme's curated colorscheme if it has one
+#                  (see colors/<name>.toml [apps.nvim]), else a colorscheme
+#                  generated from the 16 colors
+#
+# The per-theme data is resolved at apply time by scripts/ghostty-theme.py,
+# parsed and derived straight from Ghostty's own catalog -- so any theme
+# `ghostty +list-themes` lists works, including ones added by a Ghostty
+# update, with nothing cached in this repo. Ghostty must be installed where
+# `chezmoi apply` runs.
+
+[palette]
+theme = "system"
+light_theme = "Gruvbox Light Hard"
+dark_theme = "Gruvbox Material Dark"

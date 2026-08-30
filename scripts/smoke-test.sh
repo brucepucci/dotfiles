@@ -19,9 +19,14 @@
 #   8. exactly one blank line lands between command output and the next
 #      prompt -- and none before the first prompt, on empty prompts, or
 #      after `clear`
-#   9. light-mode wiring is in place: ghostty's light/dark theme pair, nvim's
-#      OS-appearance sync, and the delta-theme wrapper (exercised with fake
-#      `defaults`/`delta` shims, so no GUI toggling is required)
+#   9. the light/dark mode wiring: ghostty's theme line (pair when
+#      theme = "system", single when pinned), nvim's mode module, and the
+#      delta-theme wrapper (exercised with fake `defaults`/`delta` shims,
+#      so no GUI toggling is required)
+#  10. the color system: the chosen theme names resolve from Ghostty's
+#      own catalog (via the same script the templates call), no rendered
+#      output carries a hex the themes don't define, and nvim's
+#      generated data module carries the chosen roles verbatim
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -76,14 +81,30 @@ if grep -E '^[[:space:]]*(command|env)[[:space:]]*=' "$NEWHOME/.config/ghostty/c
 fi
 ok "no command=/env= lines"
 
-step "light-mode: the whole stack follows the OS appearance"
-# Ghostty is the anchor: one theme line, both variants.
-[[ "$(grep '^theme = ' "$NEWHOME/.config/ghostty/config")" \
-   == "theme = light:Gruvbox Light Hard,dark:Gruvbox Material Dark" ]] \
-  || die "ghostty theme line does not carry the light/dark pair"
-# Neovim: 'background' comes from the OS at startup, re-checked on focus.
+step "light-mode: the whole stack follows the appearance setting"
+palval() { chezmoi --source "$SOURCE" execute-template "$1"; }
+# theme lookup helper: same resolver the templates call at apply time
+themeget() { python3 "$SOURCE/scripts/ghostty-theme.py" --get "$@"; }
+MODE="$(palval '{{ .palette.theme }}')"
+LTHEME="$(palval '{{ .palette.light_theme }}')"
+DTHEME="$(palval '{{ .palette.dark_theme }}')"
+[[ "$MODE" == system || "$MODE" == light || "$MODE" == dark ]] \
+  || die "palette.toml theme must be system|light|dark, got: $MODE"
+# Ghostty is the anchor: one theme line, pair when following the OS, single
+# theme when pinned.
+if [[ "$MODE" == system ]]; then
+  want_theme="theme = light:$LTHEME,dark:$DTHEME"
+else
+  want_theme="theme = $([[ $MODE == light ]] && echo "$LTHEME" || echo "$DTHEME")"
+fi
+[[ "$(grep '^theme = ' "$NEWHOME/.config/ghostty/config")" == "$want_theme" ]] \
+  || die "ghostty theme line does not match the palette settings"
+# Neovim: 'background' comes from the mode (OS when system) at startup,
+# re-checked on focus.
 [[ -f "$NEWHOME/.config/nvim/lua/bruce/core/appearance.lua" ]] \
   || die "nvim core/appearance.lua missing"
+grep -q "mode = \"$MODE\"" "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
+  || die "nvim theming.lua mode does not match the palette setting"
 grep -q 'bruce.core.appearance' "$NEWHOME/.config/nvim/init.lua" \
   || die "init.lua does not sync the OS appearance"
 grep -q 'FocusGained' "$NEWHOME/.config/nvim/lua/bruce/core/autocmds.lua" \
@@ -95,9 +116,14 @@ grep -q $'^\tpager = delta-theme$' "$NEWHOME/.gitconfig" \
   || die "git core.pager is not delta-theme"
 grep -q 'command: delta-theme --paging=never' "$NEWHOME/.config/lazygit/config.yml" \
   || die "lazygit does not render through delta-theme"
-grep -q '"theme": "gruvbox-light/gruvbox-dark"' "$NEWHOME/.pi/agent/settings.json" \
-  || die "pi TUI theme is not the terminal-following gruvbox pair"
-for t in gruvbox-light gruvbox-dark; do
+# pi: the pair when following the OS, one theme when pinned; files are
+# named dotfiles-{light,dark} regardless of which themes are active.
+if [[ "$MODE" == system ]]; then want_pi="dotfiles-light/dotfiles-dark"
+elif [[ "$MODE" == light ]]; then want_pi="dotfiles-light"
+else want_pi="dotfiles-dark"; fi
+[[ "$(sed -n 's/.*"theme": "\([^"]*\)".*/\1/p' "$NEWHOME/.pi/agent/settings.json")" == "$want_pi" ]] \
+  || die "pi TUI theme setting does not match the mode"
+for t in dotfiles-light dotfiles-dark; do
   [[ -f "$NEWHOME/.pi/agent/themes/$t.json" ]] \
     || die "pi theme $t.json missing from ~/.pi/agent/themes"
 done
@@ -105,6 +131,7 @@ out="$(fresh_zsh '[[ $path[(r)$HOME/.local/bin] ]] && echo lbin=yes')"
 [[ "$out" == *lbin=yes* ]] || die "login PATH does not include ~/.local/bin"
 # The wrapper itself, hermetically: fake `defaults` + fake `delta`, both
 # shadowed per state so the real OS appearance cannot leak into the result.
+# In system mode both states are exercised; pinned modes must ignore the OS.
 wrap="$WORK/wrap"
 for st in dark light; do
   mkdir -p "$wrap/$st"
@@ -113,15 +140,67 @@ for st in dark light; do
   else printf '#!/bin/sh\nexit 1\n' > "$wrap/$st/defaults"; fi
   chmod +x "$wrap/$st/defaults" "$wrap/$st/delta"
 done
-out="$(env PATH="$wrap/dark:/usr/bin:/bin" \
-      "$NEWHOME/.local/bin/delta-theme" extra </dev/null | tr '\n' ' ')"
-[[ "$out" == "ARGV:--dark ARGV:--syntax-theme ARGV:gruvbox-dark ARGV:extra " ]] \
-  || die "delta-theme dark state wrong: $out"
-out="$(env PATH="$wrap/light:/usr/bin:/bin" \
-      "$NEWHOME/.local/bin/delta-theme" extra </dev/null | tr '\n' ' ')"
-[[ "$out" == "ARGV:--light ARGV:--syntax-theme ARGV:gruvbox-light ARGV:extra " ]] \
-  || die "delta-theme light state wrong: $out"
-ok "ghostty pair, nvim sync, delta wrapper, PATH all in place"
+ddark="$(themeget "$DTHEME" apps.delta_syntax_theme)"
+dlight="$(themeget "$LTHEME" apps.delta_syntax_theme)"
+run_case() { # $1 = expected wrapper state, $2 = simulated OS state
+  out="$(env PATH="$wrap/$2:/usr/bin:/bin" \
+        "$NEWHOME/.local/bin/delta-theme" extra </dev/null | tr '\n' ' ')"
+  local syn; [[ $1 == dark ]] && syn="$ddark" || syn="$dlight"
+  [[ "$out" == "ARGV:--$1 ARGV:--syntax-theme ARGV:$syn ARGV:extra " ]] \
+    || die "delta-theme: mode=$MODE wanted=$1 os=$2 rendered: $out"
+}
+if [[ "$MODE" == system ]]; then
+  run_case dark dark
+  run_case light light
+elif [[ "$MODE" == light ]]; then
+  run_case light dark; run_case light light   # pinned: OS must not matter
+else
+  run_case dark dark; run_case dark light
+fi
+ok "ghostty theme line, nvim mode, delta wrapper, pi pair all match the settings"
+
+step "colors: themes resolve on the fly, no orphan hexes"
+# The palette system: 3 settings (.chezmoidata/palette.toml) and NO cached
+# theme data -- templates resolve each name at apply time via
+# scripts/ghostty-theme.py, straight from Ghostty's own catalog. Guards, in order: both names
+# resolve (this is the same call the templates make); every hex in a
+# rendered output is one the resolved themes define (including files that
+# should hold none); rendered surfaces carry the chosen themes' roles
+# verbatim, not strays.
+themeget "$LTHEME" roles.bg >/dev/null \
+  || die "light_theme '$LTHEME' does not resolve (is Ghostty installed?)"
+themeget "$DTHEME" roles.bg >/dev/null \
+  || die "dark_theme '$DTHEME' does not resolve (is Ghostty installed?)"
+# Every hex in any color-carrying output must come from the resolved
+# themes -- including files that should hold none today (ps1, ghostty
+# config, gitconfig, delta-theme, the static nvim files): a hardcoded color
+# anywhere defeats the whole single-source design.
+palhex="$(python3 "$SOURCE/scripts/ghostty-theme.py" --hexes "$LTHEME" "$DTHEME")"
+for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
+         "$NEWHOME/.pi/agent/themes/dotfiles-dark.json" \
+         "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
+         "$NEWHOME/.config/zsh/ps1.zsh" \
+         "$NEWHOME/.config/nvim/lua/bruce/plugins/ui.lua" \
+         "$NEWHOME/.config/nvim/lua/bruce/colors/scheme.lua" \
+         "$NEWHOME/.config/ghostty/config" \
+         "$NEWHOME/.gitconfig" \
+         "$NEWHOME/.local/bin/delta-theme"; do
+  [[ -f "$f" ]] || die "expected rendered output missing: $f"
+  for h in $(grep -hoE '#[0-9a-fA-F]{6}' "$f" | sort -u); do
+    grep -qxF "$h" <<<"$palhex" \
+      || die "$(basename "$f") carries hex $h, not defined by the active themes"
+  done
+done
+# The rendered nvim data module must carry the chosen themes' roles verbatim.
+for side in light dark; do
+  t="$( [[ $side == light ]] && echo "$LTHEME" || echo "$DTHEME" )"
+  for role in bg fg red blue; do
+    want="$(themeget "$t" "roles.$role")"
+    grep -q "[[:space:]]$role = \"$want\"" "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
+      || die "theming.lua $side.$role does not match the $t roles"
+  done
+done
+ok "themes resolve, no orphan hexes, roles verbatim"
 
 step "fresh login shell (new terminal window)"
 out="$(fresh_zsh '

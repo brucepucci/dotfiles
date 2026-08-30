@@ -39,8 +39,10 @@ require("lazy").setup({
     -- bootstrap and its :checkhealth complaint.
     rocks = { enabled = false },
 
-    -- lazy appends its own "habamax" fallback, so listing it is redundant.
-    install = { colorscheme = { "gruvbox-material" } },
+    -- No install-time colorscheme is listed: ours is generated from the
+    -- active Ghostty themes (core/appearance + colors/scheme), applied
+    -- before lazy even loads, so there is nothing to wait for. lazy's own
+    -- "habamax" fallback covers the bootstrap window anyway.
 
     performance = {
         rtp = {

@@ -1,21 +1,29 @@
 {
   "$schema": "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
-  "name": "gruvbox-dark",
+{{- /* GENERATED from the palette settings (.chezmoidata/palette.toml) and
+     the dark theme's roles, resolved live from Ghostty's catalog by
+     scripts/ghostty-theme.py -- do not hand-edit; change the theme name in
+     the settings and `chezmoi apply`. The file name
+     is stable across theme changes; entries referencing the theme's own
+     vars stay literal (that mapping is Layer 3, decided per surface). */ -}}
+{{ $t := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") .palette.dark_theme | trim | fromJson }}
+  "name": "dotfiles-dark",
   "vars": {
-    "bg": "#32302f",
-    "bgDeep": "#282828",
-    "surface": "#45403d",
-    "fg": "#d4be98",
-    "fgBright": "#ebdbb2",
-    "grey": "#928374",
-    "greyDim": "#7c6f64",
-    "red": "#ea6962",
-    "orange": "#e78a4e",
-    "yellow": "#d8a657",
-    "green": "#a9b665",
-    "aqua": "#89b482",
-    "blue": "#7daea3",
-    "purple": "#d3869b"
+    "bg": "{{ $t.roles.bg }}",
+    "bgDeep": "{{ $t.roles.bg_deep }}",
+    "surface": "{{ $t.roles.surface }}",
+    "fg": "{{ $t.roles.fg }}",
+    "fgSoft": "{{ $t.roles.fg_soft }}",
+    "fgBright": "{{ $t.roles.fg_bright }}",
+    "grey": "{{ $t.roles.grey }}",
+    "greyDim": "{{ $t.roles.grey_dim }}",
+    "red": "{{ $t.roles.red }}",
+    "orange": "{{ $t.roles.orange }}",
+    "yellow": "{{ $t.roles.yellow }}",
+    "green": "{{ $t.roles.green }}",
+    "aqua": "{{ $t.roles.aqua }}",
+    "blue": "{{ $t.roles.blue }}",
+    "purple": "{{ $t.roles.purple }}"
   },
   "colors": {
     "accent": "blue",
@@ -39,8 +47,8 @@
     "customMessageText": "",
     "customMessageLabel": "blue",
     "toolPendingBg": "bg",
-    "toolSuccessBg": "#2d3325",
-    "toolErrorBg": "#3a2c2c",
+    "toolSuccessBg": "{{ $t.roles.tint_green }}",
+    "toolErrorBg": "{{ $t.roles.tint_red }}",
     "toolTitle": "fgBright",
     "toolOutput": "",
     "mdHeading": "yellow",
@@ -56,7 +64,7 @@
     "toolDiffAdded": "green",
     "toolDiffRemoved": "red",
     "toolDiffContext": "grey",
-    "syntaxComment": "grey",
+    "syntaxComment": "{{ $t.roles.grey_neutral }}",
     "syntaxKeyword": "red",
     "syntaxFunction": "blue",
     "syntaxVariable": "orange",
@@ -65,7 +73,7 @@
     "syntaxType": "yellow",
     "syntaxOperator": "blue",
     "syntaxPunctuation": "fg",
-    "thinkingOff": "surface",
+    "thinkingOff": "{{ $t.roles.grey_soft }}",
     "thinkingMinimal": "greyDim",
     "thinkingLow": "grey",
     "thinkingMedium": "green",

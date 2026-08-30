@@ -25,5 +25,26 @@ jobs:
             "https://github.com/twpayne/chezmoi/releases/download/v${ver}/chezmoi_${ver}_linux_amd64.deb"
           sudo dpkg -i /tmp/chezmoi.deb
 
+      - name: Fetch Ghostty's theme catalog
+        # The palette resolver reads Ghostty's bundled theme files (the
+        # catalog behind `ghostty +list-themes`). Ghostty itself has no
+        # headless Linux package, but its catalog is generated weekly from
+        # mbadolato/iTerm2-Color-Schemes -- same files, same names, same
+        # format -- so fetch just that directory. PINNED so CI is
+        # deterministic (an unpinned HEAD could change under us and make a
+        # green run meaningless or a red one spurious); bump the pin
+        # deliberately when local machines move to a newer Ghostty.
+        env:
+          ICS_SHA: 752a9c079396cc9939b86e893578ed81e80c140f
+        run: |
+          git clone -q --depth 1 --filter=blob:none --sparse \
+            https://github.com/mbadolato/iTerm2-Color-Schemes /tmp/ics
+          git -C /tmp/ics checkout -q --detach "$ICS_SHA"
+          git -C /tmp/ics sparse-checkout set ghostty
+          mv /tmp/ics/ghostty /tmp/ghostty-themes
+          ls /tmp/ghostty-themes | wc -l
+
       - name: From-scratch smoke test
+        env:
+          DOTFILES_GHOSTTY_THEMES: /tmp/ghostty-themes
         run: scripts/smoke-test.sh
