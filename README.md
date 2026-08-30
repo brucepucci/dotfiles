@@ -23,8 +23,8 @@ gh auth setup-git        # installs the git credential helper
 chezmoi init brucepucci
 
 # 3. Everything the config needs: Neovim, language servers, ripgrep, fd,
-#    lazygit, delta, ipython, tree-sitter, the Nerd Font, Ghostty itself,
-#    and the pi coding agent (installed from npm)
+#    lazygit, delta, tmux, ipython, tree-sitter, the Nerd Font, Ghostty
+#    itself, and the pi coding agent (installed from npm)
 brew bundle --file="$(chezmoi source-path)/Brewfile"
 
 # 4. Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty
@@ -82,6 +82,7 @@ if you install Neovim some other way.
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts |
 | `~/.config/lazygit/config.yml` | delta as lazygit's pager |
 | `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
+| `~/.tmux.conf` | tmux, kept minimal: pi's extended-keys, OSC 52 clipboard, truecolor passthrough — detachable sessions only |
 | `~/.pi/agent/settings.json` | pi coding agent: appearance-following theme pair, `zai` provider, `glm-5.3` default |
 | `theme.toml` | The three settings that drive every color — visible at the repo root (never applied; themes resolve from Ghostty at apply time) |
 
@@ -139,6 +140,91 @@ $EDITOR dot_pi/agent/settings.json.tmpl   # port defaultModel etc.
 chezmoi diff && chezmoi apply
 ```
 
+`pi` itself is wrapped by `~/.zshrc`: every new conversation gets its own
+tmux session so it survives disconnects and rejoins from any device — see
+"Picking up from another device".
+
+## Picking up from another device
+
+**pi handles tmux itself.** Every `pi` started in a project directory runs
+inside its own tmux session — typing `pi` is the whole interface, and it
+always starts a **new** conversation, never a stray attach:
+
+```bash
+cd code/chezmoi
+pi                   # new tmux session "chezmoi" (hint printed), pi inside
+# ... work; leave by closing the terminal or Ctrl-b d — the session lives on
+tmux a -t chezmoi    # rejoin from ANY terminal: desk, laptop, phone over SSH
+```
+
+Naming: the project directory's basename, numbered siblings on collision
+(`chezmoi`, `chezmoi-2`, …), or a topic — `pi -n "auth refactor"` names the
+session `auth-refactor` *and* pi's own session display name. A session dies
+when pi exits, so `tmux ls` lists exactly the live conversations — nothing
+dangles. pi runs unwrapped already inside a tmux session (a manual session
+keeps its own bare pi), from `$HOME`, for one-shot runs (`pi -p`, `--help`,
+management subcommands), or with `PI_TMUX_WRAP=never` — and the wrapper is
+guarded like everything else: no tmux installed means plain pi.
+
+For anything that isn't pi — nvim, a dev server, plain shells — start it
+under tmux by hand:
+
+```bash
+tmux new -s work     # manual session (same survival properties)
+# ... work: shells, nvim ...
+tmux attach -t work  # reattach, from any terminal, local or over SSH
+```
+
+Getting in from elsewhere:
+
+- **Enable SSH**: System Settings → General → Sharing → Remote Login.
+- **Phone clients**: Blink Shell (mosh-aware — the best option over cellular)
+  or Termius on iOS; Termius or Termux on Android.
+- **Away from home**: put the machines on
+  [Tailscale](https://tailscale.com) and SSH over it. Never expose port 22
+  to the internet.
+- **Flaky cellular**: `mosh` survives phone sleep and IP changes where SSH
+  drops; pair it with tmux (mosh deliberately has no scrollback — tmux
+  provides it). Not in the Brewfile; install server-side if you want it.
+
+Two things to know:
+
+- With two clients attached, the **most recent** one sets the size for
+  everyone (`window-size latest`, the default on tmux 3.7). Detach the
+  desktop side when you leave (`Ctrl-b d`), or reattach with
+  `tmux attach -d` to take over from a lingering connection. The view
+  itself mirrors to every attached client, live.
+- Forgot to start under tmux? pi conversations still carry over: every one
+  is saved under `~/.pi/agent/sessions/`, so from the phone
+  `cd <project> && pi -c` resumes the latest (`pi -r` to pick from a list,
+  `/export` for a read-only HTML dump) — in a new wrapped session. That
+  restores the conversation, not live state — an in-flight tool run or open
+  splits don't come along.
+
+The managed `~/.tmux.conf` is deliberately minimal: pi's documented
+`extended-keys` settings (without them `Shift+Enter` collapses to plain
+Enter under tmux), OSC 52 clipboard (yanks reach the connecting device),
+and truecolor passthrough (nvim's generated colorscheme keeps its exact
+colors). No prefix remap, no plugins — local window management stays
+Ghostty's job, and tmux shells are just more zsh reading the same
+`~/.zshrc`: one shell everywhere, history shared, prompt following whatever
+palette the connecting terminal runs.
+
+Quick reference — the full walkthrough (mental model, phone-client setup,
+troubleshooting) is in
+[tmux.md](private_dot_config/nvim/docs/tmux.md):
+
+| Action | Keys / command |
+|---|---|
+| New pi conversation (auto-wrapped, named) | `pi` (in the project dir) |
+| Named topic conversation | `pi -n "auth refactor"` |
+| Detach | `Ctrl-b` `d` |
+| Rejoin — lands straight inside the running pi | `tmux a -t <name>` |
+| Scroll / copy mode | `Ctrl-b` `[` (exit: `q`) |
+| List live conversations | `tmux ls` |
+| Take over from another client | `tmux attach -d -t <name>` |
+| Retire a session for good | `tmux kill-session -t <name>` |
+
 ## Linux / WSL
 
 Homebrew is the supported install path on every OS. Debian 12 and Ubuntu 22.04
@@ -191,8 +277,11 @@ runs before big changes.
 #    shells, EDITOR fallback, secrets staying out, ghostty config hygiene,
 #    the light/dark mode wiring (ghostty theme line, nvim mode module,
 #    delta-theme wrapper exercised with fake `defaults`/`delta` shims),
-#    and the color-system checks (both theme names resolve, no orphan
-#    hexes, roles render verbatim).
+#    the color-system checks (both theme names resolve, no orphan
+#    hexes, roles render verbatim), the tmux config's shape
+#    (extended keys, clipboard, truecolor — no tmux binary needed),
+#    and the pi->tmux wrapper (creates named sessions, never
+#    attaches; guards fall through to plain pi).
 scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
 
 # 2. ~1 min. The same, inside a clean Debian 12 userland on the colima VM.
@@ -337,7 +426,8 @@ The pre-migration history lives in the archived
 
 - [keymaps.md](private_dot_config/nvim/docs/keymaps.md) — cheatsheet, grouped by task
 - [tools.md](private_dot_config/nvim/docs/tools.md) — what each tool is and why it is installed
+- [tmux.md](private_dot_config/nvim/docs/tmux.md) — full walkthrough: the detach/reattach habit, phone setup, troubleshooting
 
-Both are installed to `~/.config/nvim/docs/`. In Neovim, `<leader>?` opens the
+All are installed to `~/.config/nvim/docs/`. In Neovim, `<leader>?` opens the
 cheatsheet and `<leader>fk` fuzzy-searches every live mapping. Press `<Space>`
 and pause for which-key.

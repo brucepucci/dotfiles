@@ -3,5 +3,13 @@
   "lastChangelogVersion": "0.84.4",
   "theme": "{{ if eq $mode "system" }}dotfiles-light/dotfiles-dark{{ else if eq $mode "light" }}dotfiles-light{{ else }}dotfiles-dark{{ end }}",
   "defaultProvider": "zai",
-  "defaultModel": "glm-5.3"
+  "defaultModel": "glm-5.3",
+  "enabledModels": [
+    "anthropic/claude-fable-5",
+    "anthropic/claude-opus-5",
+    "anthropic/claude-sonnet-5",
+    "zai/glm-5.3",
+    "zai/glm-5.3-flash",
+    "zai/glm-5.3-highspeed"
+  ]
 }

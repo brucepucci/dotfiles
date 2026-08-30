@@ -47,6 +47,13 @@ brew "fastfetch"            # banner in ~/.zshrc (guarded, optional)
 # new-machine step 5.
 system "npm", "install", "-g", "@earendil-works/pi-coding-agent"
 
+# --- remote session continuity --------------------------------------------
+# tmux keeps sessions alive across disconnects: leave the desk, reattach
+# from a phone over SSH (README "Picking up from another device"). 3.5+ is
+# needed for extended-keys-format csi-u in ~/.tmux.conf; without those
+# settings pi's Shift+Enter collapses to plain Enter under tmux.
+brew "tmux"
+
 # --- macOS only -----------------------------------------------------------
 # The config and the zsh prompt render Nerd Font glyphs (diagnostics,
 # markdown icons, the prompt's git branch mark). Ghostty ships one as its

@@ -21,11 +21,17 @@ pi coding agent (Z.ai/GLM models).
 ## Architecture
 
 ```
-dot_zshrc                  # interactive shell: options, history, aliases, prompt
+dot_zshrc                  # interactive shell: options, history, aliases, prompt;
+                            # the pi() wrapper -- every new conversation gets
+                            # its own named tmux session (never attaches)
 dot_zprofile               # login-shell PATH (Homebrew, ~/.local/bin)
 dot_local/bin/executable_delta-theme.tmpl   # ~/.local/bin: delta, colored for the
                             # configured mode/theme; git + lazygit call it
 dot_gitconfig.tmpl         # delta fallback syntax-theme from the theme files
+dot_tmux.conf              # tmux, minimal on purpose: pi's extended-keys
+                            # (Shift+Enter survives the tmux layer) + OSC52
+                            # clipboard + truecolor. Detach/reattach only --
+                            # local window management stays Ghostty's job
 private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
 theme.toml                 # THE THREE SETTINGS users edit, visible at the
                             # repo root: theme (light|dark|system), light_theme,
@@ -110,7 +116,8 @@ plugins for these.
 
 **Keymaps are load-bearing.** Everything in `core/keymaps.lua` is long-standing
 muscle memory. Do not "tidy" them. Two intentional quirks:
-- `<C-h>` is the file explorer, not focus-left. Focus-left is built-in `<C-w>h`.
+- The file explorer is `<leader>.` (a leader chord, like every other action);
+  `<C-h>`/`<C-j>`/`<C-k>`/`<C-l>` are uniformly window movement, never actions.
 - Terminal mode has `<C-k>`/`<C-h>`/`<C-l>` but no `<C-j>`, because the REPL is
   the bottom split.
 

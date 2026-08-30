@@ -103,6 +103,86 @@ alias la="ls -lhA $_ls_color"
 unset _ls_color
 alias grep='grep --color=auto'
 
+# --- pi ---------------------------------------------------------------------
+# `pi` always starts a NEW conversation, wrapped in its own tmux session so
+# it survives closing the terminal and can be rejoined from any device
+# (a phone over SSH included). Rejoining is deliberately manual:
+#
+#   tmux attach -t <name>     # lands straight inside the running pi
+#
+# The session dies when pi exits, so `tmux ls` is exactly the live
+# conversations -- nothing dangles. Naming: the project directory's
+# basename ("chezmoi"), numbered siblings on collision ("chezmoi-2"), or
+# the sanitized topic from `pi -n "auth refactor"` (which pi also keeps as
+# its own session display name). From $HOME pi runs unwrapped -- a home
+# directory is not a project name, and pi organizes its session store by
+# cwd anyway.
+#
+# PI_TMUX_WRAP=never disables the wrapper (automation, debugging); =force
+# bypasses the tty check (used by scripts/smoke-test.sh, which has no tty).
+# Sanitize a tmux session name: lowercase, dashes for spaces/underscores,
+# [a-z0-9-] only (tmux forbids ':' and '.'; keep it shell- and
+# human-friendly). Prints the result; may be empty for hostile input.
+__pi_tmux_name() {
+  local s="${1:l}"
+  s="${s//[_[:space:]]/-}"
+  s="${s//[^a-z0-9-]/}"
+  while [[ $s == *--* ]]; do s="${s//--/-}"; done
+  printf '%s' "${${s#-}%-}"
+}
+
+pi() {
+  emulate -L zsh
+  local arg i name=""
+  local -a a=("$@") quoted=()
+  if [[ ${PI_TMUX_WRAP:-} == never ]]; then command pi "$@"; return; fi
+  # One-shot invocations must never spawn a tmux server: the session would
+  # flash the alternate screen and swallow the output when it dies. Flags
+  # anywhere in argv, and pi's management subcommands, mean "just run it".
+  # The -n/--name topic rides along in the same pass (passed to pi verbatim).
+  for (( i=1; i<=${#a}; i++ )); do
+    case "${a[i]}" in
+      -h|--help|-v|--version|-p|--print|--mode|--mode=*|--list-models)
+        command pi "$@"; return ;;
+      -n|--name)    name="${a[i+1]:-}" ;;
+      --name=*)     name="${${a[i]}#--name=}" ;;
+    esac
+  done
+  case "${a[1]:-}" in
+    install|remove|uninstall|update|list|config|auth) command pi "$@"; return ;;
+  esac
+  # No wrapping inside tmux, without the binary, off a tty, or from $HOME.
+  if [[ -n ${TMUX:-} ]] || ! command -v tmux >/dev/null 2>&1 \
+     || [[ $PWD == "$HOME" ]] \
+     || { [[ ${PI_TMUX_WRAP:-} != force ]] && ( [[ ! -t 0 || ! -t 1 ]] ) }; then
+    command pi "$@"; return
+  fi
+  # Session name: the sanitized topic, else the sanitized project dirname.
+  # Only a topic that survives sanitization earns the explicit behavior
+  # (refuse when already live); a missing/empty/non-ASCII topic is simply
+  # not a topic, and the project name is used.
+  local base="$(__pi_tmux_name "${name:-${PWD:t}}")" explicit=0
+  if [[ -n $name && -n $base ]]; then
+    explicit=1
+  else
+    base="$(__pi_tmux_name "${PWD:t}")"
+    [[ -z $base ]] && { command pi "$@"; return; }   # pathological dirname
+  fi
+  # An explicitly requested topic that is already live is a mistake, not a
+  # collision -- say how to rejoin instead of silently minting "topic-2".
+  local sess="$base" n=2
+  if (( explicit )) && command tmux has-session -t "=$base" 2>/dev/null; then
+    print -u2 "pi: tmux session \"$base\" is already live -- rejoin: tmux attach -t $base"
+    return 1
+  fi
+  while command tmux has-session -t "=$sess" 2>/dev/null; do
+    sess="${base}-${n}"; (( n++ ))
+  done
+  for arg in "$@"; do quoted+=("${(q)arg}"); done
+  print -r -- "pi: tmux session \"$sess\" (detach Ctrl-b d; rejoin: tmux attach -t $sess)"
+  command tmux new-session -s "$sess" "command pi ${(j: :)quoted}"
+}
+
 # --- Secrets ----------------------------------------------------------------
 # API keys and tokens (GitHub, Anthropic, ...) live in ~/.zsh/secrets.zsh —
 # outside this repo on purpose; see .chezmoiignore. Optional file: machines
