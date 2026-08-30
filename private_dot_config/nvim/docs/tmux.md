@@ -16,12 +16,13 @@ the manual path for everything that isn't pi.
 ## What this setup ships (and why so little)
 
 `tmux` comes from the Brewfile. The managed `~/.tmux.conf` is deliberately
-minimal — five settings, each load-bearing:
+minimal — six settings, each load-bearing:
 
 | Setting | Why it is there |
 |---|---|
 | `extended-keys on` + `extended-keys-format csi-u` | pi's documented tmux requirements. Without them tmux strips modifier information, and `Shift+Enter` collapses to plain `Enter` — pi's newline binding dies under tmux. Needs tmux ≥ 3.5. |
 | `set-clipboard on` | OSC 52 clipboard: **copy-mode** yanks (and OSC 52-speaking apps) land on the clipboard of the **connecting** device — over SSH, the phone in your hand. (nvim on macOS keeps using pbcopy, so its yanks land on the Mac itself; copy-mode is the phone path.) |
+| `mouse on` + `history-limit 10000` | The wheel scrolls pane history — copy-mode in, auto-exit at the bottom — from any client, phone included. Without it the wheel over tmux's alternate screen arrives as Up/Down arrow keys, and pi's input box reads them as message history. pi's regular TUI mode never captures the mouse, so tmux owns it; copy-mode drag selection yanks via OSC 52, and native selection still works with Shift held. 10000 lines because pi conversations outgrow the 2000 default. |
 | `focus-events on` | Focus reporting through the tmux layer: nvim's `FocusGained` drives the light/dark appearance sync and the refocus `:checktime` reload — both silently dead under tmux without it. |
 | `terminal-overrides ',*:RGB'` | Truecolor passthrough. The nvim colorscheme is generated from the theme roles as exact hexes; without RGB advertised on the inner terminal, tmux silently downgrades them to 256-color approximations. |
 | `window-status-format` + `window-status-current-format` | The stock bar runs the session name straight into the window list: `[chezmoi-2] 0:node*` scans as session `chezmoi-20` when a numbered sibling's digit meets the window index. A leading `\|` on every window entry keeps them apart — `[chezmoi-2] \| 0:node*`. Text only; still no theming. |

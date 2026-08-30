@@ -201,14 +201,17 @@ Two things to know:
   restores the conversation, not live state — an in-flight tool run or open
   splits don't come along.
 
-The managed `~/.tmux.conf` is deliberately minimal: pi's documented
-`extended-keys` settings (without them `Shift+Enter` collapses to plain
-Enter under tmux), OSC 52 clipboard (yanks reach the connecting device),
-and truecolor passthrough (nvim's generated colorscheme keeps its exact
-colors). No prefix remap, no plugins — local window management stays
-Ghostty's job, and tmux shells are just more zsh reading the same
-`~/.zshrc`: one shell everywhere, history shared, prompt following whatever
-palette the connecting terminal runs.
+The managed `~/.tmux.conf` is deliberately minimal, every setting
+load-bearing: pi's documented `extended-keys` (without them `Shift+Enter`
+collapses to plain Enter under tmux), focus reporting (nvim's appearance
+sync), OSC 52 clipboard (yanks reach the connecting device), `mouse on`
+(the wheel scrolls pane history in copy-mode — without it the wheel
+arrives as arrow keys and pi's input box eats them as message history),
+truecolor passthrough (nvim's generated colorscheme keeps its exact
+colors), and a status-bar window separator. No prefix remap, no plugins —
+local window management stays Ghostty's job, and tmux shells are just more
+zsh reading the same `~/.zshrc`: one shell everywhere, history shared,
+prompt following whatever palette the connecting terminal runs.
 
 Quick reference — the full walkthrough (mental model, phone-client setup,
 troubleshooting) is in
@@ -220,7 +223,7 @@ troubleshooting) is in
 | Named topic conversation | `pi -n "auth refactor"` |
 | Detach | `Ctrl-b` `d` |
 | Rejoin — lands straight inside the running pi | `tmux a -t <name>` |
-| Scroll / copy mode | `Ctrl-b` `[` (exit: `q`) |
+| Scroll / copy mode | mouse wheel, or `Ctrl-b` `[` (exit: `q`) |
 | List live conversations | `tmux ls` |
 | Take over from another client | `tmux attach -d -t <name>` |
 | Retire a session for good | `tmux kill-session -t <name>` |

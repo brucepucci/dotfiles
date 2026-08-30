@@ -30,7 +30,8 @@ dot_local/bin/executable_delta-theme.tmpl   # ~/.local/bin: delta, colored for t
 dot_gitconfig.tmpl         # delta fallback syntax-theme from the theme files
 dot_tmux.conf              # tmux, minimal on purpose: pi's extended-keys
                             # (Shift+Enter survives the tmux layer) + OSC52
-                            # clipboard + truecolor. Detach/reattach only --
+                            # clipboard + truecolor + mouse-wheel copy-mode
+                            # scrollback. Detach/reattach only --
                             # local window management stays Ghostty's job
 private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
 theme.toml                 # THE THREE SETTINGS users edit, visible at the
