@@ -345,6 +345,9 @@ if [[ "$WITH_NVIM" == 1 ]]; then
 fi
 
 step "pi wrapper: new sessions only, named after the project or topic"
+# Diagnose silent set -e deaths: name the failing command (remove once the
+# CI-only failure is understood).
+trap 'printf "  DIED rc=%s at: %s\n" "$?" "$BASH_COMMAND"' EXIT
 # The wrapper in .zshrc: `pi` always starts a NEW tmux session wrapped
 # around a new pi conversation -- rejoining is explicit `tmux attach -t`,
 # which lands straight inside the running pi. Fake tmux/pi shims stand in
@@ -435,5 +438,6 @@ env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
     >/dev/null 2>&1
 [[ -s "$PLOG" ]] || die "without tmux the wrapper must fall through to pi"
 ok "creates named sessions, never attaches; guards fall through to plain pi"
+trap - EXIT
 
 printf '\nALL PASS\n'
