@@ -83,7 +83,7 @@ if you install Neovim some other way.
 | `~/.config/lazygit/config.yml` | delta as lazygit's pager |
 | `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
 | `~/.pi/agent/settings.json` | pi coding agent: appearance-following theme pair, `zai` provider, `glm-5.3` default |
-| `.chezmoidata/palette.toml` | The three settings that drive every color (repo-only — never applied; themes resolve from Ghostty at apply time) |
+| `theme.toml` | The three settings that drive every color — visible at the repo root (never applied; themes resolve from Ghostty at apply time) |
 
 **One shell everywhere.** Ghostty, Terminal.app, iTerm2, and anyone SSH-ing
 into this machine all get the same zsh: `~/.zprofile` sets the login PATH,
@@ -234,11 +234,10 @@ Adding a plugin means dropping a file into
 
 ## Changing how everything looks
 
-Three settings in [.chezmoidata/palette.toml](.chezmoidata/palette.toml) — no
+Three settings in [theme.toml](theme.toml), right at the repo root — no
 hex, no per-app themes:
 
 ```toml
-[palette]
 theme = "system"                   # "system" | "light" | "dark"
 light_theme = "Gruvbox Light Hard"
 dark_theme = "Gruvbox Material Dark"

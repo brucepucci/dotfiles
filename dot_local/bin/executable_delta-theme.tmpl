@@ -2,27 +2,21 @@
 # delta-theme -- delta with syntax colors matching the configured look.
 #
 # Used as git's pager and lazygit's diff renderer; every flag is passed
-# through. The mode and the syntax theme names are baked in by chezmoi from
-# .chezmoidata/palette.toml at apply time:
+# through. The light/dark mode is baked in by chezmoi from theme.toml (the
+# repo root) at apply time:
 #
 #   mode   theme = "light" or "dark" pins the appearance; "system" follows
-#          the OS, like Ghostty's light:/dark: pair and Neovim's
-#          OS-following 'background' (dark syntax on a light terminal and
-#          vice versa are unreadable). Detection: `defaults read -g
+#          the OS, like Ghostty's theme line and Neovim's OS-following
+#          'background' (dark syntax on a light terminal and vice versa
+#          are unreadable). Detection: `defaults read -g
 #          AppleInterfaceStyle` prints "Dark" and exits 0 in dark mode; in
 #          light mode the key does not exist and it exits nonzero. Without
 #          `defaults` (Linux) stay dark -- the default look.
-#   themes the syntax theme is always "none": bat syntax colors are
-#          disabled, so delta renders diffs in the terminal's own 16-color
-#          palette -- cohesive with whatever Ghostty theme is active.
-#          Resolved from Ghostty's catalog at apply time by
-#          scripts/ghostty-theme.py.
+#   theme  always "none": bat syntax colors are disabled, so diffs render
+#          in the terminal's own 16-color palette -- cohesive with
+#          whatever Ghostty theme is active, by construction.
 
-{{ $l := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") .palette.light_theme | trim | fromJson -}}
-{{ $d := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") .palette.dark_theme | trim | fromJson }}
-MODE='{{ .palette.theme }}'
-DARK_SYNTAX='{{ $d.apps.delta_syntax_theme }}'
-LIGHT_SYNTAX='{{ $l.apps.delta_syntax_theme }}'
+MODE='{{ output (joinPath .chezmoi.sourceDir "scripts/ghostty-theme.py") "--setting" "theme" | trim }}'
 
 case "$MODE" in
 light|dark) mode=$MODE ;;
@@ -35,7 +29,7 @@ light|dark) mode=$MODE ;;
 esac
 
 if [ "$mode" = dark ]; then
-    exec delta --dark --syntax-theme "$DARK_SYNTAX" "$@"
+    exec delta --dark --syntax-theme none "$@"
 else
-    exec delta --light --syntax-theme "$LIGHT_SYNTAX" "$@"
+    exec delta --light --syntax-theme none "$@"
 fi

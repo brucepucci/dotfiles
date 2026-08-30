@@ -11,9 +11,10 @@
 	navigate = true
 	side-by-side = true
 	line-numbers = true
-	syntax-theme = {{ $d := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") .palette.dark_theme | trim | fromJson }}{{ $d.apps.delta_syntax_theme }}
-	{{- /* bare `delta` keeps the dark syntax theme; the name comes from
-	   .chezmoidata/palette.toml, like every other color in this repo */}}
+	syntax-theme = none
+	{{- /* diffs follow the terminal's own palette; the delta-theme wrapper
+	   decides light/dark per invocation; this covers a bare `delta` typed
+	   by hand, which stays dark -- the default look */}}
 	# Appearance (light/dark + syntax theme) is decided per invocation by the
 	# delta-theme wrapper in ~/.local/bin; the line above only covers a bare
 	# `delta` typed by hand, which stays dark -- the default look.

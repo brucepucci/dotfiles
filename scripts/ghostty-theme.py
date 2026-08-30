@@ -1,32 +1,35 @@
 #!/usr/bin/env python3
-"""ghostty-theme.py -- resolve a Ghostty theme into the data our templates need.
+"""ghostty-theme.py -- the palette system: settings + Ghostty's catalog.
 
 Called by the chezmoi templates themselves (via the `output` template
-function) at apply time, so no theme data is ever cached in this repo:
+function) at apply time, so neither the three settings nor any theme data
+is served through chezmoi's hidden .chezmoidata machinery:
 
-  ghostty-theme.py <name>           # JSON: {terminal, roles, apps}
-  ghostty-theme.py --get <name> <path>   # one value, e.g. roles.bg
-  ghostty-theme.py --hexes <name>...     # every hex the theme(s) define
+  ghostty-theme.py appearance     # JSON: mode, both theme names, both
+                                  # themes' full resolved palettes -- what
+                                  # every template renders from
+  ghostty-theme.py --setting <k>  # one of: theme, light_theme, dark_theme
+  ghostty-theme.py <name>         # JSON: {terminal, roles} for one theme
+  ghostty-theme.py --get <name> <path>  # one value, e.g. roles.bg
+  ghostty-theme.py --hexes <name>...    # every hex the theme(s) define
 
-A name is parsed from Ghostty's own catalog (the files behind
-`ghostty +list-themes`) and every derived value -- roles, app fallbacks --
-is computed from its 16-color palette. New Ghostty themes work with zero
-repo changes; nothing here can go stale. Ghostty is therefore a
-prerequisite for `chezmoi apply`.
+The settings live in theme.toml at the repo root (the user-facing file);
+names are parsed from Ghostty's own catalog (the files behind
+`ghostty +list-themes`) and every derived value is computed from the
+theme's 16-color palette. New Ghostty themes work with zero repo changes;
+nothing here can go stale. Ghostty is therefore a prerequisite for
+`chezmoi apply`.
 
 Roles derived from the 16 colors map the terminal palette onto what our
 apps need: surfaces (bg/surface/statusline), text (fg/fg_soft/fg_bright),
 greys, accents (red..purple + a blended orange), diff tints, and lualine's
-mode-segment colors. Apps without a derivable equivalent get a neutral
-fallback: delta's syntax theme is "none" (terminal ANSI colors, cohesive
-with the theme), nvim's colorscheme hint is "" (the generated scheme from
-lua/bruce/colors/scheme.lua is used).
+mode-segment colors.
 
 Set DOTFILES_GHOSTTY_THEMES to point at a themes directory explicitly
 (custom installs, tests).
 
-Exits nonzero with a pointed message for unknown names (apply fails
-loudly) or when Ghostty is not installed.
+Exits nonzero with a pointed message for unknown names, invalid settings,
+or a missing Ghostty install (apply fails loudly).
 
 No third-party imports; python3 stdlib only.
 """
@@ -36,6 +39,8 @@ import json
 import os
 import re
 import sys
+
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 GHOSTTY_THEME_DIRS = [
     "/Applications/Ghostty.app/Contents/Resources/ghostty/themes",  # macOS cask
@@ -182,6 +187,34 @@ def derive_roles(term):
 
 
 # ---------------------------------------------------------------------------
+# the user-facing settings (theme.toml at the repo root)
+# ---------------------------------------------------------------------------
+
+SETTING_KEYS = ("theme", "light_theme", "dark_theme")
+SETTINGS_FILE = os.path.join(REPO, "theme.toml")
+
+
+def read_settings():
+    if not os.path.isfile(SETTINGS_FILE):
+        die("theme.toml is missing from the repo root -- it holds the three "
+            "appearance settings (theme, light_theme, dark_theme)")
+    settings = {}
+    for line in open(SETTINGS_FILE, encoding="utf-8"):
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        settings[key.strip()] = value.strip().strip('"')
+    for key in SETTING_KEYS:
+        if not settings.get(key):
+            die("theme.toml: '%s' is missing or empty" % key)
+    if settings["theme"] not in ("system", "light", "dark"):
+        die("theme.toml: theme must be system, light, or dark -- got '%s'"
+            % settings["theme"])
+    return settings
+
+
+# ---------------------------------------------------------------------------
 # cli
 # ---------------------------------------------------------------------------
 
@@ -221,6 +254,21 @@ def main():
     if not args:
         print(__doc__.split("\n", 2)[2], file=sys.stderr)
         sys.exit(2)
+
+    if args[0] == "--setting":
+        if len(args) != 2 or args[1] not in SETTING_KEYS:
+            die("usage: --setting <theme|light_theme|dark_theme>")
+        print(read_settings()[args[1]])
+        return
+
+    if args[0] == "appearance":
+        settings = read_settings()
+        out = dict(settings)
+        out["mode"] = settings["theme"]  # templates read .mode
+        for side in ("light", "dark"):
+            out[side] = resolve(settings[side + "_theme"])
+        print(json.dumps(out, sort_keys=True))
+        return
 
     if args[0] == "--hexes":
         if len(args) < 2:

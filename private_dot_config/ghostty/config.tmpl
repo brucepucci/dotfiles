@@ -10,18 +10,19 @@
 # ~/.zshrc and ~/.zprofile. Nothing shell-related is set here, so there is
 # exactly one obvious place to change the shell: the dotfiles repo's dot_zshrc.
 #
+{{ $a := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "appearance" | trim | fromJson -}}
 # The theme names and the light/dark mode are not set here at all: they come
-# from .chezmoidata/palette.toml (three settings -- browse the names with
+# from theme.toml at the repo root (three settings -- browse the names with
 # `ghostty +list-themes`). theme = "system" renders the light:/dark: pair
 # Ghostty auto-switches with the OS; "light"/"dark" pin one theme for the
 # whole stack. The rest of the stack follows the same signal: the zsh prompt
 # uses indexed colors 0-15, Neovim sets 'background' via
 # lua/bruce/core/appearance.lua, and delta-theme (~/.local/bin, wired into
 # git and lazygit) picks the matching syntax theme.
-theme = {{ if eq .palette.theme "system" -}}
-light:{{ .palette.light_theme }},dark:{{ .palette.dark_theme }}
-{{- else if eq .palette.theme "light" -}}
-{{ .palette.light_theme }}
+theme = {{ if eq $a.mode "system" -}}
+light:{{ $a.light_theme }},dark:{{ $a.dark_theme }}
+{{- else if eq $a.mode "light" -}}
+{{ $a.light_theme }}
 {{- else -}}
-{{ .palette.dark_theme }}
+{{ $a.dark_theme }}
 {{- end }}
