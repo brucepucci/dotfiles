@@ -25,8 +25,8 @@ GB_PURPLE=5
 GB_AQUA=6
 GB_ORANGE=3
 
-# Branch glyph. Replace with 'git:' or '⎇ ' if it renders as a box.
-GB_GIT_ICON=' '
+# Branch glyph (U+E0A0). Replace with 'git:' or '⎇ ' if it renders as a box.
+GB_GIT_ICON=''
 
 # ---------------------------------------------------------------------------
 # Git state via vcs_info: branch, in-progress action, staged/unstaged markers
