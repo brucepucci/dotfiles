@@ -27,6 +27,9 @@
 #      own catalog (via the same script the templates call), no rendered
 #      output carries a hex the themes don't define, and nvim's
 #      generated data module carries the chosen roles verbatim
+#  11. the tmux config renders with pi's requirements intact: extended
+#      keys (Shift+Enter survives the tmux layer), OSC 52 clipboard,
+#      truecolor passthrough — file-shape only; no tmux binary needed
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -69,9 +72,21 @@ chezmoi --source "$SOURCE" --destination "$NEWHOME" apply
   || die "chezmoi diff is not empty after apply"
 for f in .zshrc .zprofile .config/zsh/ps1.zsh \
          .config/zsh-ghostty/.zshenv .config/ghostty/config \
-         .config/nvim/init.lua .zsh/secrets.example.zsh; do
+         .config/nvim/init.lua .zsh/secrets.example.zsh \
+         .tmux.conf; do
   [[ -f "$NEWHOME/$f" ]] || die "missing $f"
 done
+# tmux.conf carries pi's documented requirements (docs/tmux.md bundled with
+# the agent) plus the passthrough settings the color system needs under
+# tmux. Checked by shape so CI needs no tmux binary.
+grep -q '^set -g extended-keys on$' "$NEWHOME/.tmux.conf" \
+  || die "~/.tmux.conf: extended-keys off -- pi Shift+Enter breaks under tmux"
+grep -q '^set -g extended-keys-format csi-u$' "$NEWHOME/.tmux.conf" \
+  || die "~/.tmux.conf: extended-keys-format must be csi-u (tmux >= 3.5)"
+grep -q '^set -g set-clipboard on$' "$NEWHOME/.tmux.conf" \
+  || die "~/.tmux.conf: OSC 52 clipboard off -- yanks never reach remote clients"
+grep -qF "set -ga terminal-overrides ',*:RGB'" "$NEWHOME/.tmux.conf" \
+  || die "~/.tmux.conf: no truecolor passthrough -- nvim colors downgrade under tmux"
 [[ ! -e "$NEWHOME/.zsh/secrets.zsh" ]] || die "~/.zsh/secrets.zsh was applied"
 ok "full tree rendered, diff empty, no secrets applied"
 
@@ -185,6 +200,7 @@ for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
          "$NEWHOME/.config/nvim/lua/bruce/colors/scheme.lua" \
          "$NEWHOME/.config/ghostty/config" \
          "$NEWHOME/.gitconfig" \
+         "$NEWHOME/.tmux.conf" \
          "$NEWHOME/.local/bin/delta-theme"; do
   [[ -f "$f" ]] || die "expected rendered output missing: $f"
   for h in $(grep -hoE '#[0-9a-fA-F]{6}' "$f" | sort -u); do

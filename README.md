@@ -23,8 +23,8 @@ gh auth setup-git        # installs the git credential helper
 chezmoi init brucepucci
 
 # 3. Everything the config needs: Neovim, language servers, ripgrep, fd,
-#    lazygit, delta, ipython, tree-sitter, the Nerd Font, Ghostty itself,
-#    and the pi coding agent (installed from npm)
+#    lazygit, delta, tmux, ipython, tree-sitter, the Nerd Font, Ghostty
+#    itself, and the pi coding agent (installed from npm)
 brew bundle --file="$(chezmoi source-path)/Brewfile"
 
 # 4. Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty
@@ -82,6 +82,7 @@ if you install Neovim some other way.
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts |
 | `~/.config/lazygit/config.yml` | delta as lazygit's pager |
 | `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
+| `~/.tmux.conf` | tmux, kept minimal: pi's extended-keys, OSC 52 clipboard, truecolor passthrough — detachable sessions only |
 | `~/.pi/agent/settings.json` | pi coding agent: appearance-following theme pair, `zai` provider, `glm-5.3` default |
 | `theme.toml` | The three settings that drive every color — visible at the repo root (never applied; themes resolve from Ghostty at apply time) |
 
@@ -139,6 +140,51 @@ $EDITOR dot_pi/agent/settings.json.tmpl   # port defaultModel etc.
 chezmoi diff && chezmoi apply
 ```
 
+## Picking up from another device
+
+Sessions started under [tmux](https://github.com/tmux/tmux) survive
+disconnection — close Ghostty, walk away, reattach from the phone and the
+shell, the nvim splits, and a pi run in flight are exactly where they were.
+
+```bash
+tmux new -s work     # start the day's session (the only habit to adopt)
+# ... work: shells, nvim, pi ...
+# leave: Ctrl-b d detaches — or just close the terminal; the session lives on
+tmux attach -t work  # reattach, from any terminal, local or over SSH
+```
+
+Getting in from elsewhere:
+
+- **Enable SSH**: System Settings → General → Sharing → Remote Login.
+- **Phone clients**: Blink Shell (mosh-aware — the best option over cellular)
+  or Termius on iOS; Termius or Termux on Android.
+- **Away from home**: put the machines on
+  [Tailscale](https://tailscale.com) and SSH over it. Never expose port 22
+  to the internet.
+- **Flaky cellular**: `mosh` survives phone sleep and IP changes where SSH
+  drops; pair it with tmux (mosh deliberately has no scrollback — tmux
+  provides it). Not in the Brewfile; install server-side if you want it.
+
+Two things to know:
+
+- tmux sizes the session to the **smallest attached client**. Detach the
+  desktop side when you leave (`Ctrl-b d`), or reattach with
+  `tmux attach -d` to take over from a lingering connection.
+- Forgot to start under tmux? pi conversations still carry over: every one
+  is saved under `~/.pi/agent/sessions/`, so from the phone
+  `cd <project> && pi -c` resumes the latest (`pi -r` to pick from a list,
+  `/export` for a read-only HTML dump). That restores the conversation, not
+  live state — an in-flight tool run or open splits don't come along.
+
+The managed `~/.tmux.conf` is deliberately minimal: pi's documented
+`extended-keys` settings (without them `Shift+Enter` collapses to plain
+Enter under tmux), OSC 52 clipboard (yanks reach the connecting device),
+and truecolor passthrough (nvim's generated colorscheme keeps its exact
+colors). No prefix remap, no plugins — local window management stays
+Ghostty's job, and tmux shells are just more zsh reading the same
+`~/.zshrc`: one shell everywhere, history shared, prompt following whatever
+palette the connecting terminal runs.
+
 ## Linux / WSL
 
 Homebrew is the supported install path on every OS. Debian 12 and Ubuntu 22.04
@@ -191,8 +237,9 @@ runs before big changes.
 #    shells, EDITOR fallback, secrets staying out, ghostty config hygiene,
 #    the light/dark mode wiring (ghostty theme line, nvim mode module,
 #    delta-theme wrapper exercised with fake `defaults`/`delta` shims),
-#    and the color-system checks (both theme names resolve, no orphan
-#    hexes, roles render verbatim).
+#    the color-system checks (both theme names resolve, no orphan
+#    hexes, roles render verbatim), and the tmux config's shape
+#    (extended keys, clipboard, truecolor — no tmux binary needed).
 scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
 
 # 2. ~1 min. The same, inside a clean Debian 12 userland on the colima VM.

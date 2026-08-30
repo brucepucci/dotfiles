@@ -228,6 +228,17 @@ Manages this config as dotfiles. The source of truth is
 `~/.local/share/chezmoi`; `~/.config/nvim` is a build artifact. Edit the source,
 then `chezmoi apply`.
 
+### tmux *(CLI)*
+Detachable terminal sessions — the "leave the desk, continue from the phone"
+tool. Start work under `tmux new -s work`, detach with `Ctrl-b d` (or just
+close the terminal — the session lives on), reattach from anywhere over SSH
+with `tmux attach -t work`. The managed `~/.tmux.conf` stays minimal on
+purpose: pi's `extended-keys` requirements (so `Shift+Enter` keeps working
+through the tmux layer), OSC 52 clipboard (yanks reach the connecting
+device), truecolor passthrough. Local window management stays Ghostty's
+job. See the repo README's "Picking up from another device" for the full
+workflow, phone clients included.
+
 ### tree-sitter CLI, node *(CLI)*
 `tree-sitter` builds the parsers nvim-treesitter installs (needs ≥ 0.26.1).
 `node` is a hard dependency of pi, which installs from npm — see below. It

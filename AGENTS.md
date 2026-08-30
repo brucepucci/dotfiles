@@ -26,6 +26,10 @@ dot_zprofile               # login-shell PATH (Homebrew, ~/.local/bin)
 dot_local/bin/executable_delta-theme.tmpl   # ~/.local/bin: delta, colored for the
                             # configured mode/theme; git + lazygit call it
 dot_gitconfig.tmpl         # delta fallback syntax-theme from the theme files
+dot_tmux.conf              # tmux, minimal on purpose: pi's extended-keys
+                            # (Shift+Enter survives the tmux layer) + OSC52
+                            # clipboard + truecolor. Detach/reattach only --
+                            # local window management stays Ghostty's job
 private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
 theme.toml                 # THE THREE SETTINGS users edit, visible at the
                             # repo root: theme (light|dark|system), light_theme,
