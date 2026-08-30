@@ -24,7 +24,8 @@ chezmoi init brucepucci
 
 # 3. Everything the config needs: Neovim, language servers, ripgrep, fd,
 #    lazygit, delta, tmux, ipython, tree-sitter, the Nerd Font, Ghostty
-#    itself, and the pi coding agent (installed from npm)
+#    itself, the shell QoL trio (fzf, zsh-autosuggestions,
+#    zsh-syntax-highlighting), and the pi coding agent (from npm)
 brew bundle --file="$(chezmoi source-path)/Brewfile"
 
 # 4. Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty
@@ -91,7 +92,15 @@ into this machine all get the same zsh: `~/.zprofile` sets the login PATH,
 `~/.zshrc` carries options, aliases, completion and keybindings, and
 `~/.config/zsh/ps1.zsh` renders the prompt. History is a single shared file
 (`~/.zsh_history` with `SHARE_HISTORY`), so a command typed in one terminal is
-immediately searchable from another. oh-my-zsh and powerlevel10k are gone —
+immediately searchable from another. On top of that sit the three big
+shell quality-of-life integrations, each a guarded block so a machine
+without the Homebrew formula just skips it: fzf's keybindings (fuzzy
+Ctrl-R history, Ctrl-T files, Alt-C directories), zsh-autosuggestions
+(fish-style ghost text, in indexed color 8 so it follows the terminal
+palette like the prompt does), and zsh-syntax-highlighting (invalid
+commands color red before Enter — sourced last in `~/.zshrc`, where it
+must stay, because it wraps every ZLE widget at load time).
+oh-my-zsh and powerlevel10k are gone —
 the Ghostty setup they were replaced by is now the default everywhere, and the
 Ghostty config itself sets nothing shell-related.
 
@@ -285,8 +294,11 @@ runs before big changes.
 #    the color-system checks (both theme names resolve, no orphan
 #    hexes, roles render verbatim), the tmux config's shape
 #    (extended keys, clipboard, truecolor — no tmux binary needed),
-#    and the pi->tmux wrapper (creates named sessions, never
-#    attaches; guards fall through to plain pi).
+#    the pi->tmux wrapper (creates named sessions, never
+#    attaches; guards fall through to plain pi), and the shell
+#    integrations' shape (fzf/autosuggestions/syntax-highlighting
+#    source after compinit, ghost text is indexed color, and
+#    zsh-syntax-highlighting is the last source in ~/.zshrc).
 scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
 
 # 2. ~1 min. The same, inside a clean Debian 12 userland on the colima VM.

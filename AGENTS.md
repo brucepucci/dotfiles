@@ -25,7 +25,10 @@ dot_zshrc.tmpl              # interactive shell: options, history, aliases, prom
                             # the pi() wrapper -- every new conversation gets
                             # its own named tmux session (never attaches).
                             # Template for ONE rendered line: tmux_wrap=off
-                            # defaults PI_TMUX_WRAP to never
+                            # defaults PI_TMUX_WRAP to never. Guarded fzf /
+                            # zsh-autosuggestions / zsh-syntax-highlighting
+                            # blocks after compinit; syntax-highlighting is
+                            # sourced LAST (it wraps ZLE widgets at load)
 dot_zprofile               # login-shell PATH (Homebrew, ~/.local/bin)
 dot_local/bin/executable_delta-theme.tmpl   # ~/.local/bin: delta, colored for the
                             # configured mode/theme; git + lazygit call it
