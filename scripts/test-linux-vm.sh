@@ -6,8 +6,9 @@
 # read-only. This exercises the "Linux" column of the README.
 #
 #   fast (default): scripts/smoke-test.sh against the pristine container
-#                   userland — chezmoi apply + all shell behavior checks.
-#                   ~1 min plus image pull on first run.
+#                   userland — chezmoi apply (Ghostty's theme catalog
+#                   fetched, pinned, exactly as CI does) + all shell
+#                   behavior checks. ~1 min plus image pull on first run.
 #
 #   --full:         the actual new-machine bootstrap: Homebrew-on-Linux,
 #                   brew bundle (neovim, language servers, wl-clipboard,
@@ -48,7 +49,7 @@ docker run --rm -i -v "$SOURCE":/src:ro debian:12 \
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get install -y -qq zsh curl ca-certificates sudo >/dev/null
+apt-get install -y -qq zsh curl ca-certificates sudo git python3 >/dev/null
 
 # chezmoi from GitHub releases via the official .deb. Note: arm64 Linux
 # has no uncompressed binary asset and the tarball naming is inconsistent
@@ -62,9 +63,23 @@ curl -fsSL -o /tmp/chezmoi.deb \
 dpkg -i /tmp/chezmoi.deb
 chezmoi --version
 
+# Ghostty's theme catalog, same source and pin as CI (smoke.yml): every
+# color-carrying template resolves its theme names at apply time via
+# scripts/ghostty-theme.py, which reads Ghostty's bundled theme files.
+# Ghostty has no headless Linux package, but its catalog is generated
+# weekly from mbadolato/iTerm2-Color-Schemes -- same files, same names,
+# same format. Keep ICS_SHA in lockstep with the workflow's pin.
+ICS_SHA=752a9c079396cc9939b86e893578ed81e80c140f
+git clone -q --depth 1 --filter=blob:none --sparse \
+  https://github.com/mbadolato/iTerm2-Color-Schemes /tmp/ics
+git -C /tmp/ics checkout -q --detach "$ICS_SHA"
+git -C /tmp/ics sparse-checkout set ghostty
+mv /tmp/ics/ghostty /tmp/ghostty-themes
+export DOTFILES_GHOSTTY_THEMES=/tmp/ghostty-themes
+
 if [[ "${1:-}" == "--full" ]]; then
   # Homebrew refuses to run as root -- do everything as a sudo-capable user.
-  apt-get install -y -qq git build-essential procps file >/dev/null
+  apt-get install -y -qq build-essential procps file >/dev/null
   useradd -m tester
   echo 'tester ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/tester
   su tester -c 'NONINTERACTIVE=1 /bin/bash -c \
