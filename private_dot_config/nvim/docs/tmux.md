@@ -115,9 +115,11 @@ Practice this once at the desk before you ever need it:
 3. Open the SSH client and connect.
 4. `tmux attach -t work`. If the desktop terminal is still attached, take
    over with `tmux attach -d -t work` — the `-d` kicks the other client off.
-   Do this rather than sharing: tmux sizes the session to the **smallest**
-   attached client, so a lingering desktop connection shrinks the phone's
-   view to a corner.
+   Both can stay attached (the view mirrors to every client), but the most
+   recent attacher sets the size for everyone (`window-size latest`, the
+   default on tmux 3.7) — so when the phone attaches, the whole session
+   goes phone-sized and the desktop view shrinks to a corner of its window.
+   One device at a time is the comfortable arrangement.
 5. Type to pi as usual. One honesty note: `Shift+Enter` (newline without
    submitting) needs the phone terminal to speak extended keys — Blink and
    Termius do; if yours does not, plain `Enter` still submits fine.
@@ -164,7 +166,7 @@ plan.
 | Symptom | Cause and fix |
 |---|---|
 | SSH times out; nothing responds | The Mac is asleep. Connect from somewhere it can wake (Tailscale + Wake-on-LAN), or prevent sleep next time with `caffeinate -dims`. |
-| Phone shows a tiny corner of a huge session | Another client is still attached. `tmux attach -d -t work` to take over. |
+| One screen shows the session shrunk into a corner | Another client attached after it and set the size for everyone (`window-size latest`, the default). `tmux attach -d -t work` from the device that should be full-size — it kicks the other off. |
 | `no server running on /tmp/tmux-.../default` | No sessions exist — they were killed or the machine rebooted. `tmux new -s work` and start fresh. |
 | Closed Ghostty mid-pi-run — is it lost? | No. Only `tmux kill-session`, a reboot, or killing the process ends a detached session. Closing a terminal never does. |
 | `Shift+Enter` submits instead of newline (from the phone) | That client does not speak extended keys. Blink and Termius do; otherwise keep prompts single-line. |

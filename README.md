@@ -167,9 +167,11 @@ Getting in from elsewhere:
 
 Two things to know:
 
-- tmux sizes the session to the **smallest attached client**. Detach the
+- With two clients attached, the **most recent** one sets the size for
+  everyone (`window-size latest`, the default on tmux 3.7). Detach the
   desktop side when you leave (`Ctrl-b d`), or reattach with
-  `tmux attach -d` to take over from a lingering connection.
+  `tmux attach -d` to take over from a lingering connection. The view
+  itself mirrors to every attached client, live.
 - Forgot to start under tmux? pi conversations still carry over: every one
   is saved under `~/.pi/agent/sessions/`, so from the phone
   `cd <project> && pi -c` resumes the latest (`pi -r` to pick from a list,
