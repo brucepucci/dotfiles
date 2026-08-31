@@ -3,8 +3,9 @@
 # ~/.zshrc — the interactive shell config, read by EVERY terminal on this
 # machine: Ghostty, Terminal.app, iTerm2, and SSH sessions alike. Managed by
 # chezmoi (dot_zshrc.tmpl in the dotfiles repo) — edit it there, not here.
-# The one rendered line: the tmux_wrap setting from settings.toml becomes a
-# PI_TMUX_WRAP default in the pi section when set to "off". Everything else
+# Two conditional renders: tmux_wrap = "off" becomes a PI_TMUX_WRAP
+# default in the pi section, and a pinned theme renders PI_THEME_PINNED
+# so the wrapper never injects --use-theme over the pin. Everything else
 # is static. Login-shell PATH lives in ~/.zprofile; this file is the
 # interactive half: options, history, completion, keybindings, shell
 # integrations (fzf, autosuggestions, syntax highlighting), aliases,

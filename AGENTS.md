@@ -23,9 +23,12 @@ pi coding agent (Z.ai/GLM models).
 ```
 dot_zshrc.tmpl              # interactive shell: options, history, aliases, prompt;
                             # the pi() wrapper -- every new conversation gets
-                            # its own named tmux session (never attaches).
-                            # Template for ONE rendered line: tmux_wrap=off
-                            # defaults PI_TMUX_WRAP to never. Guarded fzf /
+                            # its own named tmux session (never attaches) and
+                            # probes the viewing terminal for the theme side.
+                            # TWO conditional renders: tmux_wrap=off defaults
+                            # PI_TMUX_WRAP to never; a pinned theme renders
+                            # PI_THEME_PINNED (the wrapper must not inject
+                            # --use-theme over the pin). Guarded fzf /
                             # zsh-autosuggestions / zsh-syntax-highlighting
                             # blocks after compinit; syntax-highlighting is
                             # sourced LAST (it wraps ZLE widgets at load)
