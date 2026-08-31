@@ -109,6 +109,10 @@ the result the way real sessions do. It covers:
   zsh-syntax-highlighting sourced LAST)
 - sparse custom themes emitting role hexes; pinned-theme mode rendering
   `PI_THEME_PINNED`
+- the runbook skill: generated from AGENTS.md at apply time (drift-proof
+  by construction; apply itself fails if the sections vanish), with a
+  closed frontmatter block obeying pi's validation rules and the
+  load-bearing command lines intact in both files
 
 `--nvim` additionally restores plugins in the throwaway HOME (~2 min) for
 plugin-level checks. CI runs tier 1 on `macos-latest` with the Ghostty
@@ -205,6 +209,13 @@ Edit `dot_zshrc.tmpl` / `dot_zprofile` / `ps1.zsh`, apply, and run the
 smoke test (it asserts the structural invariants: integrations after
 compinit, syntax-highlighting last, indexed colors). New interactive-shell
 windows pick it up; existing ones need a restart.
+
+### Edit the runbook / the pi skill
+The verification runbook lives in AGENTS.md ("Verifying a change",
+"After changing plugins"). Edit it there; `chezmoi apply` regenerates
+`~/.pi/agent/skills/runbook/SKILL.md` from those sections — never edit
+the skill, and don't rename the AGENTS.md headings (apply fails loudly,
+by design). The smoke test checks the render and the frontmatter.
 
 ### Keep the docs honest
 - Repo docs (`docs/`) — this folder; ignored by chezmoi; edit freely.

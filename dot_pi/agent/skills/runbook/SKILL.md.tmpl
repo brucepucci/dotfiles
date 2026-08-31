@@ -1,0 +1,63 @@
+{{/*
+  dot_pi/agent/skills/runbook/SKILL.md -- GENERATED at apply time.
+
+  The "Verifying a change" and "After changing plugins" sections below are
+  extracted VERBATIM from AGENTS.md at the repo root, so the skill cannot
+  drift from the source of truth: edit AGENTS.md, then `chezmoi apply` --
+  never this file. Nothing is cached here to go stale (same principle as
+  the palette system). The template fails loudly if either section goes
+  missing or loses its load-bearing commands, so a restructure of AGENTS.md
+  breaks apply rather than silently shipping a gutted runbook.
+*/ -}}
+{{- $agents := include "AGENTS.md" -}}
+{{- $verify := "" -}}
+{{- $plugins := "" -}}
+{{- range $section := splitList "\n## " $agents -}}
+  {{- if and (eq $verify "") (hasPrefix "Verifying a change" $section) -}}
+    {{- $verify = $section -}}
+  {{- end -}}
+  {{- if and (eq $plugins "") (hasPrefix "After changing plugins" $section) -}}
+    {{- $plugins = $section -}}
+  {{- end -}}
+{{- end -}}
+{{- if eq $verify "" -}}{{ fail "runbook skill: AGENTS.md has no '## Verifying a change' section to render" }}{{ end -}}
+{{- if eq $plugins "" -}}{{ fail "runbook skill: AGENTS.md has no '## After changing plugins' section to render" }}{{ end -}}
+{{- if not (contains "smoke-test.sh" $verify) -}}{{ fail "runbook skill: AGENTS.md's verify section lost its smoke-test step" }}{{ end -}}
+{{- if not (contains "lazy-lock.json" $plugins) -}}{{ fail "runbook skill: AGENTS.md's plugins section lost its lockfile re-add step" }}{{ end -}}
+---
+name: runbook
+description: Verification runbook for the chezmoi dotfiles repo at ~/.local/share/chezmoi (github.com/brucepucci/dotfiles). Run after ANY change to that repo's files, and again before pushing or opening a PR. Covers the tier-1 smoke test, chezmoi diff/apply, headless checkhealth, the LSP attach check, and the plugin lockfile re-add + commit steps.
+---
+
+# dotfiles repo runbook
+
+The verify and plugins steps below are generated from AGENTS.md in the repo
+root — that file is the source of truth. Regenerate with `chezmoi apply`;
+never edit this file by hand.
+
+**Precondition: this runbook is for the dotfiles repo only.** If the change
+you are verifying is not to `~/.local/share/chezmoi` or its installed
+targets, stop here. Every run starts in the source repo:
+
+```bash
+cd "$(chezmoi source-path)"        # -> ~/.local/share/chezmoi
+```
+
+## {{ $verify | trimSuffix "\n" }}
+
+## {{ $plugins | trimSuffix "\n" }}
+
+## Themes
+
+Appearance is edited only via `settings.toml` at the repo root; the resolver
+runs at apply time and nothing is cached — see `docs/theming.md`. Note
+`chezmoi re-add` skips template-sourced files: pi's own settings bumps
+(`defaultModel` etc., saved via `/model` + Ctrl+S) fold into
+`dot_pi/agent/settings.json.tmpl` by hand — see `docs/developing.md`,
+"pi self-bumps".
+
+## Before opening a PR
+
+Branch, commit, push, `gh pr create`. CI runs the same tier-1 smoke test as
+step 1 and must be green. The maintainer-side details (test pyramid,
+rollback, successors) are in `docs/developing.md`.

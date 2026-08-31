@@ -87,7 +87,10 @@ private_dot_config/ghostty/config.tmpl # terminal appearance only — no shell s
                             # theme line from the settings (pair or single)
 dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # .json.tmpl — the pi TUI's themes, generated from
-                            # the active themes' roles (stable file names)
+                            # the active themes' roles (stable file names);
+                            # skills/runbook/SKILL.md — this runbook as a pi
+                            # skill (/skill:runbook), smoke-guarded against
+                            # this file
 docs/                      # repo-level docs, never installed: one page per
                             # tool + developing.md (the maintainer guide)
 ```
@@ -175,7 +178,14 @@ bad update bisectable via `git log -p -- private_dot_config/nvim/lazy-lock.json`
 
 ## Verifying a change
 
+This runbook also ships as a pi skill (dot_pi/agent/skills/runbook/
+SKILL.md → ~/.pi/agent/skills/, `/skill:runbook`) so pi can be told to
+verify with one command. AGENTS.md stays the source of truth: the smoke
+test asserts every command line the skill teaches appears verbatim here,
+so edit both together or tier 1 fails.
+
 ```bash
+chezmoi cd                  # -> ~/.local/share/chezmoi, if not already there
 scripts/smoke-test.sh      # from-scratch apply + shell behavior, ~1s -- run
                            # this after EVERY change (see docs/developing.md
                            # for the full test pyramid and the VM tiers)

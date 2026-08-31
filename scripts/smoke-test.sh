@@ -74,6 +74,14 @@
 #      (fn+Delete) and its esc-prefix twin kill the next word (pi
 #      parity) and forward-delete kills a char -- live bindings
 #      asserted only where the formula exists, shape always
+#  19. the runbook skill: GENERATED from AGENTS.md at apply time
+#      (SKILL.md.tmpl extracts the verify/plugins sections verbatim, so
+#      drift is impossible by construction and apply itself fails loudly
+#      if the sections vanish); tier 1 asserts the render, a closed
+#      frontmatter block obeying pi's validation rules, and the
+#      load-bearing command lines whole-line in both the skill and
+#      AGENTS.md (issue #24; replaces an earlier, softer string-match
+#      guard that truncated at Lua's `#` and matched substrings)
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see docs/developing.md's test
@@ -758,6 +766,53 @@ grep -qF -- '--use-theme' "$TLOG" \
 ! grep -qF 'PI_THEME_PINNED=' "$NEWHOME/.zshrc" \
   || die "theme=system (committed) must not render a pin into ~/.zshrc"
 ok "pin renders, wraps without --use-theme; system mode stays unpinned"
+
+step "runbook skill: generated from AGENTS.md, frontmatter valid"
+# dot_pi/agent/skills/runbook/SKILL.md.tmpl renders ~/.pi/agent/skills/
+# runbook/SKILL.md (a global pi skill location, /skill:runbook) by
+# extracting AGENTS.md's "Verifying a change" and "After changing
+# plugins" sections VERBATIM -- drift between the two is impossible by
+# construction, and apply itself fails loudly if the sections vanish or
+# lose their commands (the template `fail`s). That generation replaced an
+# earlier string-match guard whose comment-stripping truncated commands at
+# Lua's `#` and whose grep -qF matched substrings (review of PR #39).
+# What tier 1 still asserts: the file rendered, the frontmatter parses as
+# a closed block obeying the rules pi validates (name charset/length,
+# description present, 1024-char cap), and the sections arrived carrying
+# their load-bearing command lines -- whole-line (grep -qxF), in BOTH the
+# rendered skill and AGENTS.md, so a mangled extraction or a gutted
+# AGENTS.md section cannot pass silently.
+SKILL="$NEWHOME/.pi/agent/skills/runbook/SKILL.md"
+[[ -f "$SKILL" ]] || die "pi runbook skill did not render under the target HOME"
+if ! python3 - "$SKILL" <<'PY'
+import re, sys
+text = open(sys.argv[1]).read()
+m = re.match(r"---\n(.*?\n)---\n", text, re.S)
+assert m, "frontmatter block (--- ... ---) missing or never closed"
+fm = m.group(1)
+name = re.search(r"^name: (.+)$", fm, re.M)
+desc = re.search(r"^description: (.+)$", fm, re.M | re.S)
+assert name, "frontmatter: name missing"
+assert re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", name.group(1)) \
+    and len(name.group(1)) <= 64, f"frontmatter: bad name {name.group(1)!r}"
+assert desc and desc.group(1).strip(), "frontmatter: description missing/empty"
+assert len(desc.group(1)) <= 1024, "frontmatter: description over 1024 chars"
+PY
+then die "skill frontmatter invalid (see python output above)"
+fi
+grep -q '^## Verifying a change' "$SKILL" \
+  || die "skill: the verify section did not embed from AGENTS.md"
+grep -q '^## After changing plugins' "$SKILL" \
+  || die "skill: the plugins section did not embed from AGENTS.md"
+for cmd in \
+  "nvim --headless some.py '+lua vim.wait(6000, function() return #vim.lsp.get_clients({bufnr=0}) >= 2 end); for _,c in ipairs(vim.lsp.get_clients({bufnr=0})) do print(c.name) end' +qa" \
+  'chezmoi re-add ~/.config/nvim/lazy-lock.json'; do
+  grep -qxF -- "$cmd" "$SKILL" \
+    || die "skill lost a command line (extraction mangled?): $cmd"
+  grep -qxF -- "$cmd" "$SOURCE/AGENTS.md" \
+    || die "AGENTS.md lost a command line the runbook needs: $cmd"
+done
+ok "rendered, frontmatter valid, sections embedded with commands intact"
 
 step "theme probe: reply parsing on a real pty"
 # __pi_theme_side needs a tty, so wrap_zsh above cannot exercise it --
