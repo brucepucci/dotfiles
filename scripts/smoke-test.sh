@@ -768,8 +768,19 @@ def run_case(name, dsr_feed, osc_feed, want, want_typed=None, timeout=15):
     if "TYPED=" in text:
         typed = text.split("TYPED=", 1)[1].split("\r")[0].split("\n")[0]
     if got != want or (want_typed is not None and typed != want_typed):
-        print("  FAIL %s: result=%r typed=%r (want %r/%r)"
-              % (name, got, typed, want, want_typed))
+        # Diagnostics for exactly the situation that once failed this
+        # step silently on CI: what did the child print, and is it
+        # alive, stopped, or gone? /proc is linux-only; guarded for macOS.
+        state = "?"
+        try:
+            with open("/proc/%d/status" % pid) as f:
+                ms = re.search(r"State:\s+(\S+)", f.read())
+                state = ms.group(1) if ms else "?"
+        except OSError:
+            pass
+        print("  FAIL %s: result=%r typed=%r (want %r/%r) child=%s buflen=%d"
+              % (name, got, typed, want, want_typed, state, len(buf)))
+        print("       raw tail: %r" % buf[-300:])
         return False
     print("  ok  %s" % name)
     return True
