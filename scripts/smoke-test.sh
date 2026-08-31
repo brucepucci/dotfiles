@@ -703,12 +703,21 @@ step "theme probe: reply parsing on a real pty"
 # a pty (python stdlib), answering its queries the way a terminal would:
 # an inverted mapping, a naive /255 average, a narrow rgb: regex, or an
 # 'n'-terminated read loop each fail a case below.
-if ! python3 - "$NEWHOME" <<'PY'
+if ! python3 -u - "$NEWHOME" <<'PY'
 import os, pty, re, select, signal, sys, time
 signal.alarm(240)
 home = sys.argv[1]
 
-def run_case(name, dsr_feed, osc_feed, want, want_typed=None, timeout=25):
+# GitHub's runner images ship zsh fpath dirs owned by neither root nor
+# the job's uid, so on a tty (this harness is the one place the test
+# tree gets one) compinit asks "Ignore insecure directories and continue
+# [y] or abort compinit [n]?" and blocks the shell before the probe
+# ever runs -- the same quirk AGENTS.md documents for the -u branch.
+# Answer it the way an interactive user would; on real machines the
+# prompt never appears. Single 'y', no newline: it is a read -k1.
+COMPINIT_PROMPT = b"[y] or abort compinit [n]"
+
+def run_case(name, dsr_feed, osc_feed, want, want_typed=None, timeout=15):
     pid, fd = pty.fork()
     if pid == 0:
         env = {"HOME": home, "TERM": "xterm-256color",
@@ -717,7 +726,7 @@ def run_case(name, dsr_feed, osc_feed, want, want_typed=None, timeout=25):
                   '__pi_theme_side; print -r -- "RESULT=$REPLY"; '
                   'print -r -- "TYPED=${__pi_typed}"'], env)
     buf = b""
-    fed_dsr = fed_osc = False
+    fed_dsr = fed_osc = compinit_answered = False
     deadline = time.time() + timeout
     while time.time() < deadline:
         r, _, _ = select.select([fd], [], [], 0.2)
@@ -730,6 +739,10 @@ def run_case(name, dsr_feed, osc_feed, want, want_typed=None, timeout=25):
         if not chunk:
             break
         buf += chunk
+        # split-safe: matched against everything read so far, answered once
+        if not compinit_answered and COMPINIT_PROMPT in buf:
+            os.write(fd, b"y")
+            compinit_answered = True
         if not fed_dsr and b"\x1b[?996n" in buf:
             fed_dsr = True
             if dsr_feed is not None:
