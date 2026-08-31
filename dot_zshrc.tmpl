@@ -89,6 +89,17 @@ zle -N down-line-or-beginning-search
 bindkey '^[[A' up-line-or-beginning-search
 bindkey '^[[B' down-line-or-beginning-search
 
+# Vim-style word motions under Ctrl: ctrl-w jumps to the next word
+# (vim's w), ctrl-b to the previous one (vim's b). Both displace stock
+# emacs bindings -- backward-kill-word stays available on Option-Backspace
+# (same chord pi uses), and char-wise motion stays on the arrows. ctrl-b
+# is deliberately zsh-only: tmux (which wraps every pi conversation)
+# keeps its default Ctrl-b prefix and swallows the key, so pi's word
+# motions remain Option-b / Option-arrows; ctrl-w is aligned with pi via
+# ~/.pi/agent/keybindings.json.
+bindkey '^W' forward-word
+bindkey '^B' backward-word
+
 # Option+Left / Option+Right word jumping works in Ghostty out of the box,
 # and iTerm2/Terminal.app send compatible sequences; emacs mode binds
 # ESC-b / ESC-f automatically. No macos-option-as-alt setting is needed.

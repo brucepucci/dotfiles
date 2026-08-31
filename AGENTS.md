@@ -31,7 +31,9 @@ dot_zshrc.tmpl              # interactive shell: options, history, aliases, prom
                             # --use-theme over the pin). Guarded fzf /
                             # zsh-autosuggestions / zsh-syntax-highlighting
                             # blocks after compinit; syntax-highlighting is
-                            # sourced LAST (it wraps ZLE widgets at load)
+                            # sourced LAST (it wraps ZLE widgets at load).
+                            # ctrl-w/ctrl-b = vim word motions (delete-word
+                            # stays on Option-Backspace)
 dot_zprofile               # login-shell PATH (Homebrew, ~/.local/bin)
 dot_local/bin/executable_delta-theme.tmpl   # ~/.local/bin: delta, colored for the
                             # configured mode/theme; git + lazygit call it

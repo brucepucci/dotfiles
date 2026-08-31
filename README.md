@@ -99,7 +99,12 @@ Ctrl-R history, Ctrl-T files, Alt-C directories), zsh-autosuggestions
 (fish-style ghost text, in indexed color 8 so it follows the terminal
 palette like the prompt does), and zsh-syntax-highlighting (invalid
 commands color red before Enter — sourced last in `~/.zshrc`, where it
-must stay, because it wraps every ZLE widget at load time).
+must stay, because it wraps every ZLE widget at load time). Word motions
+are vim-flavored under Ctrl: `Ctrl-W` jumps to the next word, `Ctrl-B`
+to the previous one (zsh only for `Ctrl-B` — tmux's default prefix
+swallows the key inside pi sessions; pi's `ctrl+w` is aligned via
+`~/.pi/agent/keybindings.json`, and deleting the previous word stays on
+`Option-Backspace` everywhere).
 oh-my-zsh and powerlevel10k are gone —
 the Ghostty setup they were replaced by is now the default everywhere, and the
 Ghostty config itself sets nothing shell-related.

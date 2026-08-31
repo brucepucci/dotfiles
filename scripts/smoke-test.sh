@@ -65,6 +65,10 @@
 #      gamma-corrected luminance threshold (mid-tones classify opposite
 #      to a naive average), every OSC 11 reply shape pi's parser accepts,
 #      typeahead preservation, and the silent-terminal dark fallback
+#  18. the vim-style word motions: ctrl-w/ctrl-b jump words in zsh,
+#      Option-Backspace keeps delete-previous-word, and pi's
+#      keybindings.json aligns ctrl-w (word-right) while keeping
+#      alt+backspace for deletion
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -108,7 +112,7 @@ chezmoi --source "$SOURCE" --destination "$NEWHOME" apply
 for f in .zshrc .zprofile .config/zsh/ps1.zsh \
          .config/zsh-ghostty/.zshenv .config/ghostty/config \
          .config/nvim/init.lua .zsh/secrets.example.zsh \
-         .tmux.conf; do
+         .tmux.conf .pi/agent/keybindings.json; do
   [[ -f "$NEWHOME/$f" ]] || die "missing $f"
 done
 # tmux.conf carries pi's documented requirements (docs/tmux.md bundled with
@@ -428,6 +432,27 @@ last_source="$(grep -E '^[^#]*[[:space:]]source [^[:space:]]' "$zrc" | tail -1 |
 [[ "$last_source" == *zsh-syntax-highlighting* ]] \
   || die "~/.zshrc: zsh-syntax-highlighting must be the last source (got: $last_source)"
 ok "all three render after compinit; ghost text indexed; highlighting last"
+
+step "keybindings: vim-style word motions, delete-word preserved"
+# ctrl-w / ctrl-b jump words (vim's w/b). Both displace stock emacs
+# bindings, so the step also proves nothing was lost: Option-Backspace
+# still deletes the previous word (the same chord pi uses), and pi's
+# keybindings.json aligns ctrl-w with the zsh side while dropping it
+# from delete-word (alt+backspace covers deletion there too). ctrl-b
+# stays zsh-only: tmux's default prefix swallows the key inside pi
+# sessions, so pi's word motions remain Option-b / Option-arrows.
+out="$(fresh_zsh 'bindkey "^W"; bindkey "^B"; bindkey "^[^?"' || true)"
+[[ "$out" == *'"^W" forward-word'* ]] || die "~/.zshrc: ctrl-w must be forward-word (vim w)"
+[[ "$out" == *'"^B" backward-word'* ]] || die "~/.zshrc: ctrl-b must be backward-word (vim b)"
+[[ "$out" == *'"^[^?" backward-kill-word'* ]] \
+  || die "~/.zshrc: Option-Backspace must keep delete-previous-word"
+grep -qF '"tui.editor.cursorWordRight": ["alt+right", "ctrl+right", "alt+f", "ctrl+w"]' \
+  "$NEWHOME/.pi/agent/keybindings.json" \
+  || die "pi: ctrl+w must be word-right, aligned with zsh"
+grep -qF '"tui.editor.deleteWordBackward": ["alt+backspace"]' \
+  "$NEWHOME/.pi/agent/keybindings.json" \
+  || die "pi: delete-word-backward must keep alt+backspace"
+ok "ctrl-w/ctrl-b word motions; Option-Backspace deletes; pi aligned on ctrl-w"
 
 step "legacy ZDOTDIR guard (pre-unification Ghostty window)"
 # A Ghostty still running from before the unification exports ZDOTDIR at
