@@ -46,8 +46,7 @@ return {
         --   * mkdp#util#install() spawns an async job, which a headless
         --     bootstrap (`nvim --headless +Lazy! restore`) exits before.
         --   * install.sh prints "No pre-built binary available" and exits 0 on
-        --     platforms upstream does not ship for (notably Linux aarch64:
-        --     WSL-on-ARM, Graviton, Raspberry Pi). Without the glob check
+        --     platforms upstream does not ship for. Without the glob check
         --     below, lazy records a successful build and <leader>mp only fails
         --     later, at runtime.
         build = function(plugin)

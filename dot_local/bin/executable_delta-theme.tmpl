@@ -10,8 +10,7 @@
 #          'background' (dark syntax on a light terminal and vice versa
 #          are unreadable). Detection: `defaults read -g
 #          AppleInterfaceStyle` prints "Dark" and exits 0 in dark mode; in
-#          light mode the key does not exist and it exits nonzero. Without
-#          `defaults` (Linux) stay dark -- the default look.
+#          light mode the key does not exist and it exits nonzero.
 #   theme  always "none": bat syntax colors are disabled, so diffs render
 #          in the terminal's own 16-color palette -- cohesive with
 #          whatever Ghostty theme is active, by construction.
@@ -22,9 +21,7 @@ case "$MODE" in
 light|dark) mode=$MODE ;;
 *)
     mode=dark
-    if command -v defaults >/dev/null 2>&1; then
-        defaults read -g AppleInterfaceStyle >/dev/null 2>&1 || mode=light
-    fi
+    defaults read -g AppleInterfaceStyle >/dev/null 2>&1 || mode=light
     ;;
 esac
 

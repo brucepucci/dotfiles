@@ -1,9 +1,12 @@
 name: smoke
 
 # Tier 1 of the test pyramid (see README "Testing changes"): apply the repo
-# into a pristine HOME on clean Linux and exercise the shell the way real
-# sessions do. Runs in well under a minute on the 1x-billed Ubuntu runners;
-# the macOS/GUI half is deliberately not covered here.
+# into a pristine HOME on a clean macOS runner and exercise the shell the
+# way real sessions do. The repo targets macOS only, so CI runs there too.
+# Ghostty itself is installed (as a cask -- just the app bundle, nothing
+# GUI runs) because the palette resolver reads Ghostty's bundled theme
+# catalog at apply time: CI resolves theme names against the exact same
+# catalog a local machine has. No pins, no proxy catalog to keep fresh.
 on:
   push:
     branches: [main]
@@ -11,40 +14,14 @@ on:
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install zsh and chezmoi
+      - name: Install chezmoi and Ghostty
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq zsh curl ca-certificates >/dev/null
-          ver=$(curl -fsSL https://api.github.com/repos/twpayne/chezmoi/releases/latest \
-            | grep -oE '"tag_name": "v[0-9.]+"' | grep -oE '[0-9.]+')
-          curl -fsSL -o /tmp/chezmoi.deb \
-            "https://github.com/twpayne/chezmoi/releases/download/v${ver}/chezmoi_${ver}_linux_amd64.deb"
-          sudo dpkg -i /tmp/chezmoi.deb
-
-      - name: Fetch Ghostty's theme catalog
-        # The palette resolver reads Ghostty's bundled theme files (the
-        # catalog behind `ghostty +list-themes`). Ghostty itself has no
-        # headless Linux package, but its catalog is generated weekly from
-        # mbadolato/iTerm2-Color-Schemes -- same files, same names, same
-        # format -- so fetch just that directory. PINNED so CI is
-        # deterministic (an unpinned HEAD could change under us and make a
-        # green run meaningless or a red one spurious); bump the pin
-        # deliberately when local machines move to a newer Ghostty.
-        env:
-          ICS_SHA: 752a9c079396cc9939b86e893578ed81e80c140f
-        run: |
-          git clone -q --depth 1 --filter=blob:none --sparse \
-            https://github.com/mbadolato/iTerm2-Color-Schemes /tmp/ics
-          git -C /tmp/ics checkout -q --detach "$ICS_SHA"
-          git -C /tmp/ics sparse-checkout set ghostty
-          mv /tmp/ics/ghostty /tmp/ghostty-themes
-          ls /tmp/ghostty-themes | wc -l
+          brew install chezmoi
+          brew install --cask ghostty
 
       - name: From-scratch smoke test
-        env:
-          DOTFILES_GHOSTTY_THEMES: /tmp/ghostty-themes
         run: scripts/smoke-test.sh

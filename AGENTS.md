@@ -10,6 +10,12 @@ Neovim is the bulk of it, plus the zsh shell config shared by every terminal
 and SSH session, Ghostty (theme only), git tooling (delta, lazygit), and the
 pi coding agent (Z.ai/GLM models).
 
+**macOS only.** The repo is optimized for one install target: a Mac with
+Homebrew and zsh. The only remote story is being SSH'd *into* the Mac.
+Nothing supports installing on Linux or WSL, and cross-platform machinery
+(OS.linux? gates, distro caveats, Linux CI, alternate install paths) should
+not be reintroduced.
+
 - **Source of truth:** this repo — `private_dot_config/nvim/` for Neovim.
 - **Target:** the files in `$HOME` (`~/.config/nvim` etc.) — build artifacts.
   **Never edit them directly.** Edit here, then `chezmoi apply`.
@@ -56,8 +62,7 @@ scripts/ghostty-theme.py   # the resolver templates call at apply time (via
                             # chezmoi's `output`): parse+derive each theme
                             # from Ghostty's own catalog -- nothing cached,
                             # nothing goes stale; Ghostty is a prerequisite
-                            # for `chezmoi apply` (CI fetches the catalog
-                            # from its upstream, iTerm2-Color-Schemes, pinned)
+                            # for `chezmoi apply` (CI installs the cask)
 private_dot_config/nvim/
 ├── init.lua              # sets mapleader, syncs appearance, then requires
 │                         # core.* and bruce.lazy
@@ -83,6 +88,12 @@ Adding a plugin = drop a file in `lua/bruce/plugins/` returning a lazy.nvim
 spec. No `init.lua` edit.
 
 ## Rules for this config
+
+**macOS only.** The target is a Mac with Homebrew and zsh; SSH *into* the
+Mac is the supported remote case (which is why the prompt and pi render in
+indexed terminal slots that follow the viewing terminal). Do not add
+cross-platform branches, Linux CI, or "works on distro X" caveats — if a
+change only makes sense on another OS, it does not belong here.
 
 **One shell everywhere.** `~/.zshrc` + `~/.zprofile` + `~/.config/zsh/ps1.zsh`
 are the only shell config; every terminal and SSH session reads them. The
