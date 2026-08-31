@@ -77,14 +77,15 @@
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
-# of the README (Linux VM via scripts/test-linux-vm.sh, macOS VM via tart).
+# of the README (a disposable macOS VM via tart).
 #
 # Usage:  scripts/smoke-test.sh [--nvim]
 #   --nvim   also bootstrap Neovim plugins from scratch in the temp HOME
 #            (~2 min, needs network). Without it the run takes seconds.
 #
-# Works on macOS and Linux (assertions adapt: e.g. EDITOR must fall back to
-# vim when nvim is not resolvable — that guard branch is a test too).
+# Runs on macOS (the repo's one target). Assertions adapt to what the
+# host has: e.g. EDITOR must fall back to vim when nvim is not resolvable
+# — that guard branch is a test too.
 
 set -euo pipefail
 
@@ -682,9 +683,9 @@ env -i HOME="$homep" TERM=xterm-256color SHELL=/bin/zsh \
     >/dev/null 2>&1
 [[ -s "$PLOG" && ! -s "$TLOG" ]] || die "from \$HOME pi must run plain"
 # no tmux binary on PATH: plain pi, no crash. The payload PATH drops
-# /usr/bin entirely -- GitHub's Ubuntu runners SHIP tmux there, which
-# would turn this case into a real (failing) attach; nothing in the
-# payload needs coreutils, so the shim dir alone is enough.
+# /usr/bin entirely -- CI runner images may SHIP tmux there, which would
+# turn this case into a real (failing) attach; nothing in the payload
+# needs coreutils, so the shim dir alone is enough.
 nobin="$WORK/nobin"; mkdir -p "$nobin"
 cp "$wbin/pi" "$nobin/pi"; : > "$PLOG"
 env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
@@ -771,23 +772,20 @@ import os, pty, re, select, signal, sys, time
 signal.alarm(240)
 home = sys.argv[1]
 
-# GitHub's runner images ship zsh fpath dirs owned by neither root nor
-# the job's uid, so on a tty (this harness is the one place the test
-# tree gets one) compinit asks "Ignore insecure directories and continue
-# [y] or abort compinit [n]?" and blocks the shell before the probe
-# ever runs -- the same quirk AGENTS.md documents for the -u branch.
-# The runner asks TWICE (its /etc/zsh/zshrc runs a compinit that then
-# fails, so the applied .zshrc's own call audits again), so answer
-# every occurrence, not just the first: count prompts seen against
-# answers given. On real machines the prompt never appears. One 'y'
-# per prompt, no newline: each is a read -k1.
+# compinit asks "Ignore insecure directories and continue [y] or abort
+# compinit [n]?" when it finds fpath dirs owned by neither root nor the
+# job's uid — some CI runner images ship exactly that, and this harness is
+# the one place the test tree gets a tty, so the question can actually be
+# asked and would block the shell before the probe ever runs. Answer every
+# occurrence (each is a read -k1, no newline). On real machines the prompt
+# never appears and this is inert.
 COMPINIT_PROMPT = b"[y] or abort compinit [n]"
 
 def run_case(name, dsr_feed, osc_feed, want, want_typed=None, timeout=15):
     pid, fd = pty.fork()
     if pid == 0:
         env = {"HOME": home, "TERM": "xterm-256color",
-               "PATH": "/usr/bin:/bin", "LC_ALL": "C.UTF-8"}
+               "PATH": "/usr/bin:/bin", "LC_ALL": "C"}
         os.execve("/bin/zsh", ["/bin/zsh", "-i", "-c",
                   '__pi_theme_side; print -r -- "RESULT=$REPLY"; '
                   'print -r -- "TYPED=${__pi_typed}"'], env)
@@ -838,17 +836,10 @@ def run_case(name, dsr_feed, osc_feed, want, want_typed=None, timeout=15):
         typed = text.split("TYPED=", 1)[1].split("\r")[0].split("\n")[0]
     if got != want or (want_typed is not None and typed != want_typed):
         # Diagnostics for exactly the situation that once failed this
-        # step silently on CI: what did the child print, and is it
-        # alive, stopped, or gone? /proc is linux-only; guarded for macOS.
-        state = "?"
-        try:
-            with open("/proc/%d/status" % pid) as f:
-                ms = re.search(r"State:\s+(\S+)", f.read())
-                state = ms.group(1) if ms else "?"
-        except OSError:
-            pass
-        print("  FAIL %s: result=%r typed=%r (want %r/%r) child=%s buflen=%d"
-              % (name, got, typed, want, want_typed, state, len(buf)))
+        # step silently: what did the child print, and is it alive,
+        # stopped, or gone?
+        print("  FAIL %s: result=%r typed=%r (want %r/%r) buflen=%d"
+              % (name, got, typed, want, want_typed, len(buf)))
         print("       raw tail: %r" % buf[-300:])
         return False
     print("  ok  %s" % name)

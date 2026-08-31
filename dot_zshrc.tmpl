@@ -62,12 +62,11 @@ setopt EXTENDED_GLOB NO_NOMATCH   # NO_NOMATCH: unmatched globs pass through
 
 autoload -Uz compinit
 # compinit consults compaudit and y/n-PROMPTS when it finds insecure fpath
-# dirs — owned by neither root nor $USER; GitHub's runner images ship
-# exactly that (image built as uid 1000, jobs run as uid 1001). On a tty
-# that is a fine, deliberate question; with no tty (CI, -c shells,
-# scripted ssh) the prompt cannot be answered and compinit aborts
-# silently: no completions, no dump file, no error shown. Keep the audit
-# for interactive shells, skip it where it can only break things.
+# dirs — owned by neither root nor $USER; some CI runner images ship
+# exactly that. On a tty that is a fine, deliberate question; with no tty
+# (CI, -c shells, scripted ssh) the prompt cannot be answered and compinit
+# aborts silently: no completions, no dump file, no error shown. Keep the
+# audit for interactive shells, skip it where it can only break things.
 if [[ -t 0 ]]; then
   compinit -d "$HOME/.zcompdump"
 else
@@ -110,8 +109,8 @@ bindkey '^[[3~' delete-char
 # syntax highlighting, is sourced at the very end of this file.
 # HOMEBREW_PREFIX is exported by `brew shellenv` (top of this file for
 # non-login shells, ~/.zprofile for login ones); probe `brew --prefix`
-# as a fallback for shells where neither ran -- it works on
-# /opt/homebrew and /home/linuxbrew alike.
+# as a fallback for shells where neither ran -- it answers the Apple
+# Silicon (/opt/homebrew) and Intel (/usr/local) prefixes alike.
 if [[ -z ${HOMEBREW_PREFIX:-} ]] && command -v brew >/dev/null 2>&1; then
   HOMEBREW_PREFIX="$(command brew --prefix)"
 fi
@@ -174,10 +173,9 @@ if [[ -r $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; 
 fi
 
 # --- Aliases ----------------------------------------------------------------
-# Colorized ls is spelled differently across implementations: GNU wants
-# --color=auto and reads -G as "omit the group column", while older BSD/macOS
-# wants -G. (macOS 26's ls happens to accept both.) Probe instead of assuming,
-# so this file is correct on Linux without editing.
+# Colorized ls: probe instead of assuming, so a GNU ls (coreutils) shadowing
+# the stock BSD one still works -- they disagree on the flag (-G vs
+# --color=auto; recent macOS ls happens to accept both).
 if ls --color=auto . >/dev/null 2>&1; then
   _ls_color='--color=auto'
 else

@@ -3,8 +3,7 @@
 -- The mode is rendered into core/theming.lua from settings.toml (the repo root):
 --   theme = "system" -- follow the macOS interface style live, the way
 --     Ghostty's theme pair and the prompt's indexed colors do; flipping the
---     OS mid-session needs no restart (Dark stays the default where the
---     probe is unavailable, i.e. non-macOS hosts).
+--     OS mid-session needs no restart.
 --   theme = "light"/"dark" -- pin the whole stack, OS be damned.
 --
 -- The colorscheme itself is generated from the active Ghostty themes' roles
@@ -26,9 +25,6 @@ local applied = false
 -- `defaults read -g AppleInterfaceStyle` prints "Dark" and exits 0 in dark
 -- mode; in light mode the key does not exist and it exits nonzero.
 function M.detect()
-    if vim.fn.executable("defaults") ~= 1 then
-        return "dark"
-    end
     local style = vim.trim(vim.fn.system({ "defaults", "read", "-g", "AppleInterfaceStyle" }))
     if vim.v.shell_error == 0 and style == "Dark" then
         return "dark"

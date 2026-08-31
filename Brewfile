@@ -3,10 +3,8 @@
 # Not run by chezmoi. Install with:
 #   brew bundle --file="$(chezmoi source-path)/Brewfile"
 #
-# Homebrew is the only supported install path on every OS -- Debian 12 and
-# Ubuntu 22.04 cannot supply Neovim 0.12, lua-language-server, marksman, or
-# tree-sitter-cli >= 0.26.1 from their own repos. This file is evaluated as
-# Ruby, so OS.mac? / OS.linux? gate the platform-specific entries.
+# macOS only -- Homebrew on a Mac is the one supported install path (the
+# repo's scope; see README).
 
 # --- editor ---------------------------------------------------------------
 brew "neovim"               # 0.12+ REQUIRED: nvim-treesitter main branch, vim.hl
@@ -42,8 +40,7 @@ brew "ipython"              # the REPL iron.nvim drives (<leader>`)
 
 # --- build / runtime ------------------------------------------------------
 brew "tree-sitter-cli"      # nvim-treesitter `main` compiles parsers (needs >= 0.26.1)
-brew "node"                 # REQUIRED: pi (below) installs via npm; also builds
-                            # markdown-preview on aarch64 Linux
+brew "node"                 # REQUIRED: pi (below) installs via npm
 brew "fastfetch"            # banner in ~/.zshrc (guarded, optional)
 
 # --- coding agent ---------------------------------------------------------
@@ -62,21 +59,12 @@ system "npm", "install", "-g", "@earendil-works/pi-coding-agent"
 # settings pi's Shift+Enter collapses to plain Enter under tmux.
 brew "tmux"
 
-# --- macOS only -----------------------------------------------------------
+# --- macOS: the GUI pieces -----------------------------------------------
 # The config and the zsh prompt render Nerd Font glyphs (diagnostics,
 # markdown icons, the prompt's git branch mark). Ghostty ships one as its
 # default face, but Terminal.app and iTerm2 do not — without setting the
-# font there by hand, glyphs show as placeholder boxes.
-cask "font-jetbrains-mono-nerd-font" if OS.mac?
-cask "ghostty" if OS.mac?
-
-# --- Linux only -----------------------------------------------------------
-# macOS has pbcopy built in. On Linux, options.lua's clipboard=unnamedplus has
-# nothing to talk to, and every yank SILENTLY fails to reach the system
-# clipboard -- only :checkhealth reports it. Install both; Neovim picks
-# whichever matches the session (Wayland vs X11).
-#
-# WSL is different again: neither of these works. Install win32yank instead --
-# see the WSL note in the README.
-brew "wl-clipboard" if OS.linux?
-brew "xclip" if OS.linux?
+# font there by hand, glyphs show as placeholder boxes. Ghostty is also a
+# hard prerequisite for `chezmoi apply` itself: the palette resolver reads
+# its bundled theme catalog (see scripts/ghostty-theme.py).
+cask "font-jetbrains-mono-nerd-font"
+cask "ghostty"

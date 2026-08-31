@@ -49,10 +49,8 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 GHOSTTY_THEME_DIRS = [
-    "/Applications/Ghostty.app/Contents/Resources/ghostty/themes",  # macOS cask
-    "/opt/homebrew/Caskroom/ghostty/*/ghostty/themes",              # homebrew alt
-    os.path.expanduser("~/.local/share/ghostty/themes"),            # linux, user
-    "/usr/share/ghostty/themes",                                    # linux, system
+    "/Applications/Ghostty.app/Contents/Resources/ghostty/themes",  # the brew cask
+    "/opt/homebrew/Caskroom/ghostty/*/ghostty/themes",              # caskroom, alt prefix
 ]
 
 # Keys of a Ghostty theme file we keep, in output order.

@@ -5,6 +5,15 @@ Terminal setup, managed with [chezmoi](https://chezmoi.io).
 Neovim 0.12 · lazy.nvim · native LSP (ruff + pyright) · snacks.nvim · pi +
 GLM via Z.ai · built for reviewing code an AI agent wrote.
 
+**Scope: a Mac, and only a Mac.** This repo is optimized for installation
+on one target — a Mac with Homebrew and zsh (stock `/bin/zsh` is fine). The
+one remote story it supports is being SSH'd **into**: every terminal and
+every SSH session reads the same `~/.zshrc`, and the prompt and pi render
+in the *viewing* terminal's palette, so a client from any OS looks right.
+Installing this on Linux or WSL is explicitly out of scope — there are no
+cross-platform branches, no Linux CI, no distro caveats, and none should
+be added back.
+
 ## New machine
 
 Six commands on macOS. Order matters — see the notes.
@@ -113,9 +122,9 @@ Secrets — GitHub token, API keys — belong in `~/.zsh/secrets.zsh`, which
 below): secrets never go in git.
 
 The Ghostty config lives at the XDG path, not
-`~/Library/Application Support/com.mitchellh.ghostty/config.ghostty`. Ghostty
-reads both on macOS and only the XDG one on Linux — and it **merges** them when
-both exist, so there is only ever one.
+`~/Library/Application Support/com.mitchellh.ghostty/config.ghostty`. macOS
+Ghostty reads both and **merges** them when both exist, so there is only
+ever one.
 
 Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
 generated), `~/.zsh/secrets.zsh` (API keys and tokens — a secret), `~/.ssh/`,
@@ -243,49 +252,10 @@ troubleshooting) is in
 | Take over from another client | `tmux attach -d -t <name>` |
 | Retire a session for good | `tmux kill-session -t <name>` |
 
-## Linux / WSL
-
-Homebrew is the supported install path on every OS. Debian 12 and Ubuntu 22.04
-cannot supply Neovim 0.12, `lua-language-server`, `marksman`, or
-`tree-sitter-cli >= 0.26.1` from their own repositories, so distro packages are
-not an option.
-
-```bash
-# Homebrew on Linux (needs sudo once, plus build-essential curl file git)
-NONINTERACTIVE=1 /bin/bash -c \
-  "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-```
-
-Then follow the four steps above. The Brewfile is OS-aware: it skips the font
-cask on Linux and adds `wl-clipboard` + `xclip` there instead.
-
-**Clipboard.** macOS has `pbcopy` built in; Linux does not. Without one of the
-clipboard tools, `clipboard=unnamedplus` means every yank **silently** fails to
-reach the system clipboard — only `:checkhealth` reports it. The Brewfile
-covers Wayland and X11.
-
-**WSL** needs different tools than either:
-
-```bash
-# clipboard -- neither wl-clipboard nor xclip works under WSL
-curl -sLo /tmp/win32yank.zip https://github.com/equalsraf/win32yank/releases/latest/download/win32yank-x64.zip
-unzip -p /tmp/win32yank.zip win32yank.exe > ~/.local/bin/win32yank.exe
-chmod +x ~/.local/bin/win32yank.exe
-
-# markdown preview needs a way to reach a Windows browser
-sudo apt install wslu       # provides wslview
-```
-
-**Linux aarch64** (WSL-on-ARM, Graviton, Raspberry Pi): upstream
-markdown-preview ships no prebuilt binary for this platform. The build detects
-that and falls back to compiling the Node app, so `<leader>mp` still works —
-but it needs `npm`, which the Brewfile installs.
-
 ## Testing changes
 
-Three tiers, by cost. Tier 1 runs in about a second and should follow every
-change to the shell config; tier 3 is a real macOS VM for full new-machine
+Two tiers, by cost. Tier 1 runs in about a second and should follow every
+change to the shell config; tier 2 is a real macOS VM for full new-machine
 runs before big changes.
 
 ```bash
@@ -305,14 +275,7 @@ runs before big changes.
 #    zsh-syntax-highlighting is the last source in ~/.zshrc).
 scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
 
-# 2. ~1 min. The same, inside a clean Debian 12 userland on the colima VM.
-#    Catches "works on my mac" assumptions (GNU vs BSD ls, no Homebrew,
-#    nvim absent so the EDITOR fallback branch actually runs).
-scripts/test-linux-vm.sh           # --full adds Homebrew-on-Linux + brew
-                                   # bundle + plugin restore (~25 min): the
-                                   # "New machine" steps on Linux, verbatim
-
-# 3. The real thing: a disposable macOS VM via tart (Virtualization
+# 2. The real thing: a disposable macOS VM via tart (Virtualization
 #    framework; first run downloads a ~15 GB image, clones are cheap).
 brew install tart
 tart clone ghcr.io/cirruslabs/macos-sequoia:latest dotfiles-test
@@ -321,10 +284,11 @@ ssh admin@$(tart ip dotfiles-test) # then run New-machine steps 0-4 inside
 tart delete dotfiles-test          # done -- throw it away
 ```
 
-CI runs tier 1 on Ubuntu for every push and PR
-(`.github/workflows/smoke.yml`). Tiers 1-2 cover everything chezmoi manages;
-only tier 3 exercises `brew bundle`, the GUI apps, and the terminal
-emulators themselves.
+CI runs tier 1 for every push and PR (`.github/workflows/smoke.yml`) on a
+macOS runner with Ghostty installed from the cask — so the palette resolver
+reads the same real theme catalog a local machine does, with nothing pinned
+or proxied. Tier 1 covers everything chezmoi manages; only tier 2 exercises
+`brew bundle`, the GUI apps, and the terminal emulators themselves.
 
 ## Editing the config
 
@@ -388,9 +352,8 @@ construction.
 
 The one prerequisite: **Ghostty must be installed wherever you run
 `chezmoi apply`** — without it the resolver fails loudly. That is why the
-new-machine steps install Ghostty (brew bundle) before applying, and CI
-fetches the theme catalog (pinned commit of its upstream,
-iTerm2-Color-Schemes) before the smoke test.
+new-machine steps install Ghostty (brew bundle) before applying; CI does
+the same (the macOS runner installs the cask itself).
 
 Everything rendered — the pi themes, nvim's `core/theming.lua`, the
 delta/gitconfig lines — is a build artifact; the smoke test fails
