@@ -25,8 +25,12 @@
 #      so no GUI toggling is required)
 #  10. the color system: the chosen theme names resolve from Ghostty's
 #      own catalog (via the same script the templates call), no rendered
-#      output carries a hex the themes don't define, and nvim's
-#      generated data module carries the chosen roles verbatim
+#      output carries a hex the themes don't define, nvim's generated
+#      data module carries the chosen roles verbatim, and pi's themes
+#      ride the viewing terminal's indexed slots (bg/fg/accents/grey on
+#      0-15 and defaults, shades on the fixed xterm cube) so SSH'd pi
+#      follows the terminal you are looking at -- only the two tool
+#      tints remain live hexes
 #  11. the tmux config renders with pi's requirements intact: extended
 #      keys (Shift+Enter survives the tmux layer), OSC 52 clipboard,
 #      truecolor passthrough, mouse-wheel copy-mode scrollback, status-bar
@@ -245,7 +249,52 @@ for side in light dark; do
       || die "theming.lua $side.$role does not match the $t roles"
   done
 done
-ok "themes resolve, no orphan hexes, roles verbatim"
+# pi themes: the SSH guarantee. bg/fg/accents/grey ride the viewing
+# terminal's slots, shades no slot can carry ride the xterm cube, and a
+# hex that is not one of the two live tints would mean SSH'd pi is back
+# to showing the rendering machine's opinion.
+for side in light dark; do
+  t="$( [[ $side == light ]] && echo "$LTHEME" || echo "$DTHEME" )"
+  piv="$(python3 "$SOURCE/scripts/ghostty-theme.py" --pi "$t")"
+  for want in '"bg": ""' '"fg": ""' '"red": 1' '"green": 2' '"yellow": 3' \
+              '"blue": 4' '"purple": 5' '"aqua": 6' '"grey": 8'; do
+    grep -qF "$want" <<<"$piv" || die "--pi $t lost the terminal slot $want"
+  done
+  if ! python3 - "$piv" "$t" "$SOURCE" <<'PY'
+import json, subprocess, sys
+v = json.loads(sys.argv[1]); theme, src = sys.argv[2], sys.argv[3]
+def role(r):
+    return subprocess.run(["python3", src + "/scripts/ghostty-theme.py",
+                           "--get", theme, "roles." + r],
+                          capture_output=True, text=True,
+                          check=True).stdout.strip()
+slots = {"red": 1, "yellow": 3, "green": 2, "aqua": 6, "blue": 4,
+         "purple": 5, "grey": 8, "grey_neutral": 8, "grey_soft": 8}
+for k, x in v.items():
+    if k in ("bg", "fg"):
+        ok = x == ""
+    elif k in slots:
+        ok = x == slots[k]
+    elif k == "fg_bright":          # 15 on dark, cube on light
+        ok = isinstance(x, int) and 15 <= x <= 255
+    elif k in ("surface", "grey_dim", "orange"):
+        ok = isinstance(x, int) and 16 <= x <= 255
+    elif k in ("tint_green", "tint_red"):
+        ok = x == role(k)
+    else:
+        ok = False
+    if not ok:
+        sys.exit("pi var %s = %r is not a slot/cube/tint value" % (k, x))
+PY
+  then
+    die "--pi $t: a var left the slot/cube/tint discipline (see above)"
+  fi
+  f="$NEWHOME/.pi/agent/themes/dotfiles-$side.json"
+  for want in '"bg": ""' '"red": 1' '"grey": 8'; do
+    grep -qF "$want" "$f" || die "$f: slot $want did not render"
+  done
+done
+ok "themes resolve, no orphan hexes, roles verbatim, pi follows the terminal"
 
 step "fresh login shell (new terminal window)"
 out="$(fresh_zsh '

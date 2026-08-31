@@ -25,7 +25,8 @@
 #   Ghostty        the theme itself (light:/dark: pair when theme=system)
 #   zsh prompt     indexed colors 0-15, inherited from the terminal palette
 #   delta/git      diffs in the theme's own ANSI palette (no bat themes)
-#   pi TUI         themes generated from the palette's 16 colors
+#   pi TUI         themes in the palette's own indexed slots -- they follow
+#                  the viewing terminal, even over SSH
 #   nvim + lualine a colorscheme generated from the palette's 16 colors
 #
 # The names are resolved at apply time from Ghostty's own catalog by

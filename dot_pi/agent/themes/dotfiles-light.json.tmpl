@@ -1,40 +1,40 @@
 {
   "$schema": "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
-{{- /* GENERATED from settings.toml (the repo root) and the light theme's
-     roles, resolved live from Ghostty's catalog by scripts/ghostty-theme.py
-     -- do not hand-edit; change the theme name in settings.toml and
-     `chezmoi apply`. The file name is stable across theme changes;
-     entries referencing the theme's own vars stay literal (that mapping
-     is Layer 3, decided per surface). */ -}}
-{{ $t := (output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "appearance" | trim | fromJson).light }}
+{{- /* GENERATED from settings.toml (the repo root) and Ghostty's catalog by
+     scripts/ghostty-theme.py -- do not hand-edit; change the theme name in
+     settings.toml and `chezmoi apply`. The file name is stable across theme
+     changes.
+
+     The vars ride TERMINAL-INDEXED colors, not hexes: bg/fg are the
+     terminal defaults, the six accents are their exact palette slots
+     (derive_roles maps them from those very entries), grey is slot 8 --
+     the theme author's own muted color. pi renders these as 256-color
+     indices, and 0-15 are mapped by the VIEWING terminal through its own
+     palette, so over SSH pi follows the terminal you are sitting at, not
+     the machine that rendered this file (the zsh prompt works the same
+     way). Locally this is pixel-identical to the old hexes: same theme on
+     both sides of the glass. Shades with no honest slot (surface, dim
+     grey, the blended orange) ride the xterm cube -- fixed by spec, every
+     terminal renders 16-255 identically. The two tool tints stay
+     live-derived hexes: the cube has no muted olive/rust, and nearest-
+     mapping them collapses the success/error cue into two greys.
+
+     colors (Layer 3) reference only the vars above; that mapping is
+     decided here, per surface. */ -}}
+{{ $a := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "appearance" | trim | fromJson }}
+{{ $pi := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--pi" $a.light_theme | trim }}
   "name": "dotfiles-light",
-  "vars": {
-    "bg": "{{ $t.roles.bg }}",
-    "bgDeep": "{{ $t.roles.bg_deep }}",
-    "surface": "{{ $t.roles.surface }}",
-    "fg": "{{ $t.roles.fg }}",
-    "fgSoft": "{{ $t.roles.fg_soft }}",
-    "fgBright": "{{ $t.roles.fg_bright }}",
-    "grey": "{{ $t.roles.grey }}",
-    "greyDim": "{{ $t.roles.grey_dim }}",
-    "red": "{{ $t.roles.red }}",
-    "orange": "{{ $t.roles.orange }}",
-    "yellow": "{{ $t.roles.yellow }}",
-    "green": "{{ $t.roles.green }}",
-    "aqua": "{{ $t.roles.aqua }}",
-    "blue": "{{ $t.roles.blue }}",
-    "purple": "{{ $t.roles.purple }}"
-  },
+  "vars": {{ $pi }},
   "colors": {
     "accent": "blue",
-    "border": "greyDim",
+    "border": "grey",
     "borderAccent": "blue",
     "borderMuted": "surface",
     "success": "green",
     "error": "red",
     "warning": "yellow",
     "muted": "grey",
-    "dim": "greyDim",
+    "dim": "grey_dim",
     "text": "",
     "thinkingText": "grey",
     "selectedBg": "bg",
@@ -47,24 +47,24 @@
     "customMessageText": "",
     "customMessageLabel": "blue",
     "toolPendingBg": "bg",
-    "toolSuccessBg": "{{ $t.roles.tint_green }}",
-    "toolErrorBg": "{{ $t.roles.tint_red }}",
-    "toolTitle": "fg",
+    "toolSuccessBg": "tint_green",
+    "toolErrorBg": "tint_red",
+    "toolTitle": "fg_bright",
     "toolOutput": "",
     "mdHeading": "yellow",
     "mdLink": "blue",
     "mdLinkUrl": "grey",
     "mdCode": "aqua",
     "mdCodeBlock": "fg",
-    "mdCodeBlockBorder": "greyDim",
+    "mdCodeBlockBorder": "grey",
     "mdQuote": "fg",
-    "mdQuoteBorder": "greyDim",
-    "mdHr": "greyDim",
+    "mdQuoteBorder": "grey",
+    "mdHr": "grey",
     "mdListBullet": "aqua",
     "toolDiffAdded": "green",
     "toolDiffRemoved": "red",
     "toolDiffContext": "grey",
-    "syntaxComment": "{{ $t.roles.grey_neutral }}",
+    "syntaxComment": "grey_neutral",
     "syntaxKeyword": "red",
     "syntaxFunction": "blue",
     "syntaxVariable": "orange",
@@ -73,10 +73,10 @@
     "syntaxType": "yellow",
     "syntaxOperator": "blue",
     "syntaxPunctuation": "fg",
-    "thinkingOff": "{{ $t.roles.grey_soft }}",
-    "thinkingMinimal": "greyDim",
+    "thinkingOff": "grey_soft",
+    "thinkingMinimal": "grey_dim",
     "thinkingLow": "grey",
-    "thinkingMedium": "aqua",
+    "thinkingMedium": "green",
     "thinkingHigh": "yellow",
     "thinkingXhigh": "orange",
     "thinkingMax": "red",
