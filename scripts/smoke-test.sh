@@ -41,6 +41,10 @@
 #      : ${PI_TMUX_WRAP:=never} into ~/.zshrc (second apply against a
 #      flipped settings file via DOTFILES_SETTINGS_FILE, the same override
 #      pattern as the themes dir); an invalid value fails the resolver
+#  14. the shell integrations' shape: fzf + autosuggestions + syntax
+#      highlighting blocks render after compinit, ghost text uses indexed
+#      color 8 (no hex), and zsh-syntax-highlighting is the LAST source in
+#      ~/.zshrc -- the absent-formula branch is what CI exercises live
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -269,6 +273,35 @@ fi
 [[ "$out" == *"alias=yes"* ]] || die "aliases missing"
 [[ -f "$NEWHOME/.zcompdump" ]] || die "compinit did not run"
 ok "prompt, shared history, options, aliases, completion, EDITOR=$editor (nvim=$hasnvim)"
+
+step "shell integrations: guarded, after compinit, syntax highlighting last"
+# The three quality-of-life blocks (fzf keybindings, autosuggestions,
+# syntax highlighting) are guarded by file existence: an environment
+# without the brew formulas -- CI, a fresh install mid-setup -- takes the
+# absent branch and stays quiet, which is exactly what this run exercises
+# functionally. What every environment CAN check is shape: all three
+# source lines render, they sit after compinit, ghost text is indexed
+# color 8 (never a hex), and zsh-syntax-highlighting is the final source
+# in the file (it wraps ZLE widgets at load; a later binding would wrap
+# a stale copy).
+zrc="$NEWHOME/.zshrc"
+compinit_line="$(grep -nE '^[[:space:]]*compinit ' "$zrc" | cut -d: -f1 | head -1 || true)"
+fzf_line="$(grep -nF '$HOMEBREW_PREFIX/opt/fzf/shell/key-bindings.zsh' "$zrc" | cut -d: -f1 | head -1 || true)"
+asugg_line="$(grep -nF '$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh' "$zrc" | cut -d: -f1 | head -1 || true)"
+zshy_line="$(grep -nF '$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh' "$zrc" | cut -d: -f1 | head -1 || true)"
+[[ -n "$compinit_line" ]] || die "~/.zshrc: compinit invocation not found"
+for pair in "fzf:$fzf_line" "autosuggestions:$asugg_line" "syntax-highlighting:$zshy_line"; do
+  name="${pair%%:*}"; line="${pair##*:}"
+  [[ -n "$line" ]] || die "~/.zshrc: $name integration source line missing"
+  (( line > compinit_line )) \
+    || die "~/.zshrc: $name must source after compinit (line $line <= $compinit_line)"
+done
+grep -qF "ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'" "$zrc" \
+  || die "~/.zshrc: ghost text must be indexed color 8, not a hex"
+last_source="$(grep -E '^[^#]*[[:space:]]source [^[:space:]]' "$zrc" | tail -1 || true)"
+[[ "$last_source" == *zsh-syntax-highlighting* ]] \
+  || die "~/.zshrc: zsh-syntax-highlighting must be the last source (got: $last_source)"
+ok "all three render after compinit; ghost text indexed; highlighting last"
 
 step "legacy ZDOTDIR guard (pre-unification Ghostty window)"
 # A Ghostty still running from before the unification exports ZDOTDIR at

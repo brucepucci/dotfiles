@@ -14,7 +14,15 @@ brew "neovim"               # 0.12+ REQUIRED: nvim-treesitter main branch, vim.h
 # --- pickers and search ---------------------------------------------------
 brew "ripgrep"              # snacks.picker grep -- no fallback, <leader>fs needs it
 brew "fd"                   # snacks.picker file finding (falls back to find)
-brew "fzf"                  # shell fuzzy-find; nvim's picker has its own matcher
+brew "fzf"                  # shell fuzzy-find: Ctrl-R/Ctrl-T/Alt-C, wired in
+                            # ~/.zshrc; nvim's picker has its own matcher
+
+# --- shell quality of life ----------------------------------------------
+# Guarded blocks in ~/.zshrc source these after compinit; a machine without
+# them just skips the feature. zsh-syntax-highlighting MUST be sourced last
+# in ~/.zshrc (it wraps ZLE widgets at load time).
+brew "zsh-autosuggestions"     # fish-style ghost-text suggestions from history
+brew "zsh-syntax-highlighting" # live command-validity coloring (red before Enter)
 
 # --- git / review ---------------------------------------------------------
 brew "lazygit"              # <leader>gg

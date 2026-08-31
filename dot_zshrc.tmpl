@@ -5,7 +5,8 @@
 # The one rendered line: the tmux_wrap setting from settings.toml becomes a
 # PI_TMUX_WRAP default in the pi section when set to "off". Everything else
 # is static. Login-shell PATH lives in ~/.zprofile; this file is the
-# interactive half: options, history, completion, keybindings, aliases,
+# interactive half: options, history, completion, keybindings, shell
+# integrations (fzf, autosuggestions, syntax highlighting), aliases,
 # secrets, prompt.
 
 # --- PATH -------------------------------------------------------------------
@@ -89,6 +90,38 @@ bindkey '^[[B' down-line-or-beginning-search
 # Option+Left / Option+Right word jumping works in Ghostty out of the box,
 # and iTerm2/Terminal.app send compatible sequences; emacs mode binds
 # ESC-b / ESC-f automatically. No macos-option-as-alt setting is needed.
+
+# --- Shell integrations ------------------------------------------------------
+# The three quality-of-life pieces, each guarded by file existence so a
+# machine without the formula (CI, a fresh install mid-setup) stays quiet
+# -- same idea as the fastfetch guard below. Both blocks below source
+# AFTER compinit, which fzf's completion.zsh expects; the third,
+# syntax highlighting, is sourced at the very end of this file.
+# HOMEBREW_PREFIX is exported by `brew shellenv` (top of this file for
+# non-login shells, ~/.zprofile for login ones); probe `brew --prefix`
+# as a fallback for shells where neither ran -- it works on
+# /opt/homebrew and /home/linuxbrew alike.
+if [[ -z ${HOMEBREW_PREFIX:-} ]] && command -v brew >/dev/null 2>&1; then
+  HOMEBREW_PREFIX="$(command brew --prefix)"
+fi
+
+# fzf: fuzzy Ctrl-R (history), Ctrl-T (files into the command line),
+# Alt-C (directories). fzf replaces the Ctrl-R widget only -- the
+# up/down beginning-search binds above are different keys; both survive.
+[[ -r $HOMEBREW_PREFIX/opt/fzf/shell/key-bindings.zsh ]] \
+  && source $HOMEBREW_PREFIX/opt/fzf/shell/key-bindings.zsh
+[[ -r $HOMEBREW_PREFIX/opt/fzf/shell/completion.zsh ]] \
+  && source $HOMEBREW_PREFIX/opt/fzf/shell/completion.zsh
+
+# zsh-autosuggestions: fish-style ghost text from history. Indexed color
+# 8 -- ghost text follows the terminal palette like ps1.zsh, never a hex
+# (the color-system rule). Suggestions read the in-memory history, so
+# SHARE_HISTORY makes other terminals' commands suggestable live; the
+# one-file history design needs no changes.
+if [[ -r $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+  ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+  source $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+fi
 
 # --- Aliases ----------------------------------------------------------------
 # Colorized ls is spelled differently across implementations: GNU wants
@@ -210,3 +243,11 @@ source "$HOME/.config/zsh/ps1.zsh"
 if [[ -o interactive ]] && command -v fastfetch >/dev/null; then
   fastfetch
 fi
+
+# --- Syntax highlighting -----------------------------------------------------
+# LAST on purpose and must stay that way: zsh-syntax-highlighting wraps
+# ZLE widgets at load time, so every other widget binding above (the
+# up/down history search, fzf's Ctrl-R) has to exist first or it wraps a
+# stale copy. Invalid commands color red before Enter, valid ones green.
+[[ -r $HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] \
+  && source $HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
