@@ -65,6 +65,15 @@
 #      gamma-corrected luminance threshold (mid-tones classify opposite
 #      to a naive average), every OSC 11 reply shape pi's parser accepts,
 #      typeahead preservation, and the silent-terminal dark fallback
+#  18. the suggestion keys: ctrl+enter runs the suggestion as-is,
+#      ctrl+option+enter accepts without running (ghostty's
+#      modifyOtherKeys csi bytes, plus csi-u twins for tmux
+#      forwarding), all no-ops otherwise and every other chord stock
+#      (option+enter keeps self-insert-unmeta; ctrl-w kills a word,
+#      ctrl-b moves a char, ctrl-l clears); option+forward-delete
+#      (fn+Delete) and its esc-prefix twin kill the next word (pi
+#      parity) and forward-delete kills a char -- live bindings
+#      asserted only where the formula exists, shape always
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -428,6 +437,53 @@ last_source="$(grep -E '^[^#]*[[:space:]]source [^[:space:]]' "$zrc" | tail -1 |
 [[ "$last_source" == *zsh-syntax-highlighting* ]] \
   || die "~/.zshrc: zsh-syntax-highlighting must be the last source (got: $last_source)"
 ok "all three render after compinit; ghost text indexed; highlighting last"
+
+step "suggestion keys: ctrl+enter runs, ctrl+option+enter accepts; else stock"
+# Ghostty encodes the ctrl-modified Enters in modifyOtherKeys CSI form
+# (esc[27;N;13~, N = 1 + ctrl 4 + alt 2); tmux's extended-keys csi-u
+# forwarding re-encodes the same chords as esc[13;Nu for panes, so both
+# byte forms are bound to the same widgets. ctrl+enter runs the
+# suggestion as-is, ctrl+option+enter accepts without running -- and
+# everything else keeps its stock binding, asserted directly
+# (option+enter stays the stock self-insert-unmeta fallback, ctrl-w
+# kills a word, ctrl-b moves a char, ctrl-l clears). Option+forward-
+# delete (and its esc-prefix twin) kills the next word; plain forward-
+# delete kills a char. The suggestion keys only exist where the formula
+# does: rendered binds are asserted always, live bindings only where
+# the plugin is installed.
+out="$(fresh_zsh 'bindkey "^W"; bindkey "^B"; bindkey "^L"; bindkey "^[^M"; bindkey "^[[27;5;13~"; bindkey "^[[13;5u"; bindkey "^[[27;7;13~"; bindkey "^[[13;7u"; bindkey "^[[3;3~"; bindkey "^[^[[3~"; bindkey "^[[3~"; [[ ${+widgets[autosuggest-accept]} == 1 ]] && print plugin=yes || print plugin=no; (( ${+functions[_zsh_autosuggest_start]} )) && _zsh_autosuggest_start; print "w=${widgets[run-suggestion]:-none}"' || true)"
+[[ "$out" == *'"^W" backward-kill-word'* ]] || die "~/.zshrc: ctrl-w must keep the stock backward-kill-word"
+[[ "$out" == *'"^B" backward-char'* ]] || die "~/.zshrc: ctrl-b must keep the stock backward-char"
+[[ "$out" == *'"^L" clear-screen'* ]] || die "~/.zshrc: ctrl-l must keep the stock clear-screen"
+[[ "$out" == *'"^[^M" self-insert-unmeta'* ]] || die "~/.zshrc: option+enter must keep the stock binding"
+[[ "$out" == *'"^[[3;3~" kill-word'* ]] || die "~/.zshrc: option+forward-delete must kill the next word"
+[[ "$out" == *'"^[^[[3~" kill-word'* ]] || die "~/.zshrc: esc-prefix option+forward-delete must kill the next word"
+[[ "$out" == *'"^[[3~" delete-char'* ]] || die "~/.zshrc: forward-delete must delete one char"
+grep -qF "bindkey '^[[27;5;13~' run-suggestion" "$zrc" \
+  || die "~/.zshrc: ctrl+enter must run the suggestion as-is"
+grep -qF "bindkey '^[[13;5u' run-suggestion" "$zrc" \
+  || die "~/.zshrc: the csi-u twin must run the suggestion as-is (tmux forwarding)"
+grep -qF "bindkey '^[[27;7;13~' autosuggest-accept" "$zrc" \
+  || die "~/.zshrc: ctrl+option+enter must accept the suggestion"
+grep -qF "bindkey '^[[13;7u' autosuggest-accept" "$zrc" \
+  || die "~/.zshrc: the csi-u twin must accept the suggestion (tmux forwarding)"
+grep -qF "ZSH_AUTOSUGGEST_IGNORE_WIDGETS+='run-suggestion'" "$zrc" \
+  || die "~/.zshrc: run-suggestion must be exempted from the plugin's modify-wrapping (which clears POSTDISPLAY before the body runs)"
+if [[ "$out" == *plugin=yes* ]]; then
+  [[ "$out" == *'"^[[27;5;13~" run-suggestion'* ]] \
+    || die "~/.zshrc: ctrl+enter must run the suggestion as-is (live)"
+  [[ "$out" == *'"^[[13;5u" run-suggestion'* ]] \
+    || die "~/.zshrc: the csi-u twin must run the suggestion as-is (live)"
+  [[ "$out" == *'"^[[27;7;13~" autosuggest-accept'* ]] \
+    || die "~/.zshrc: ctrl+option+enter must accept the suggestion (live)"
+  [[ "$out" == *'"^[[13;7u" autosuggest-accept'* ]] \
+    || die "~/.zshrc: the csi-u twin must accept the suggestion (live)"
+  [[ "$out" == *'w=user:run-suggestion'* ]] \
+    || die "~/.zshrc: run-suggestion must survive the plugin's rebinder unwrapped (w=${out##*w=})"
+  ok "stock defaults preserved; ctrl+enter runs, ctrl+option+enter accepts, unwrapped via IGNORE_WIDGETS"
+else
+  ok "absent-formula branch: binds render, defaults stock, live bindings skipped"
+fi
 
 step "legacy ZDOTDIR guard (pre-unification Ghostty window)"
 # A Ghostty still running from before the unification exports ZDOTDIR at
