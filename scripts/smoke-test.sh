@@ -76,8 +76,8 @@
 #      asserted only where the formula exists, shape always
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
-# of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
-# of the README (a disposable macOS VM via tart).
+# of Ghostty/Terminal/iTerm2. For those, see docs/developing.md's test
+# pyramid (a disposable macOS VM via tart).
 #
 # Usage:  scripts/smoke-test.sh [--nvim]
 #   --nvim   also bootstrap Neovim plugins from scratch in the temp HOME

@@ -13,6 +13,7 @@ Brewfile
 LICENSE
 scripts/
 settings.toml
+docs/
 
 # Generated or private files at $HOME. chezmoi only tracks what is
 # explicitly added, but these are listed so an accidental

@@ -1,18 +1,85 @@
 # dotfiles
 
-Terminal setup, managed with [chezmoi](https://chezmoi.io).
+A chezmoi-managed terminal setup for an **agent-first** workflow: Neovim is
+the bulk of it, plus the one zsh shell every terminal and SSH session
+shares, Ghostty, git tooling (delta, lazygit), tmux, and the
+[pi](https://github.com/earendil-works/pi) coding agent running Z.ai's GLM
+models. Built around a simple reality: most code is now *written* by an
+agent in one terminal split and *reviewed* by a human in the other — so
+the editor is tuned for reading diffs and deciding what to keep, the shell
+is tuned for hopping between machines, and everything else stays out of
+the way.
 
-Neovim 0.12 · lazy.nvim · native LSP (ruff + pyright) · snacks.nvim · pi +
-GLM via Z.ai · built for reviewing code an AI agent wrote.
+**Scope: a Mac, and only a Mac.** One install target — a Mac with Homebrew
+and zsh. The one remote story is being SSH'd **into** the Mac: every
+terminal and every SSH session reads the same `~/.zshrc`, and the prompt
+and pi render in the *viewing* terminal's palette, so a client from any OS
+looks right. Installing this on Linux or WSL is explicitly out of scope.
 
-**Scope: a Mac, and only a Mac.** This repo is optimized for installation
-on one target — a Mac with Homebrew and zsh (stock `/bin/zsh` is fine). The
-one remote story it supports is being SSH'd **into**: every terminal and
-every SSH session reads the same `~/.zshrc`, and the prompt and pi render
-in the *viewing* terminal's palette, so a client from any OS looks right.
-Installing this on Linux or WSL is explicitly out of scope — there are no
-cross-platform branches, no Linux CI, no distro caveats, and none should
-be added back.
+New to the repo? Each tool has its own page in [docs/](docs/):
+
+| Tool / area | Doc | What it covers |
+|---|---|---|
+| Neovim | [docs/nvim.md](docs/nvim.md) | structure, all 17 plugins, every keybinding grouped (git/review, finding, windows, LSP, REPL…) |
+| zsh | [docs/zsh.md](docs/zsh.md) | the one-shell design, history, prompt, shell keybindings & aliases, the pi wrapper, secrets |
+| Ghostty | [docs/ghostty.md](docs/ghostty.md) | the terminal — appearance only, the font, why apply needs Ghostty |
+| Colors | [docs/theming.md](docs/theming.md) | the whole palette system: two theme names drive every surface, nothing cached |
+| tmux + SSH | [docs/tmux.md](docs/tmux.md) | detachable sessions, the phone/SSH workflow, the managed config explained |
+| Git tooling | [docs/git.md](docs/git.md) | gitconfig, delta, lazygit, gh — the shell side |
+| pi | [docs/pi.md](docs/pi.md) | the coding agent: settings, themes, the tmux wrapper, keys |
+| Maintaining this repo | [docs/developing.md](docs/developing.md) | the developer guide: editing, testing, common tasks, rules |
+
+There is also a set of cheatsheet docs *installed into the editor* —
+[getting-started](private_dot_config/nvim/docs/getting-started.md) (the
+agent-review walkthrough), [keymaps](private_dot_config/nvim/docs/keymaps.md)
+(the full cheatsheet), [tools](private_dot_config/nvim/docs/tools.md) (the
+tool inventory), and [tmux](private_dot_config/nvim/docs/tmux.md) (the
+detach/reattach walkthrough). They live at
+`private_dot_config/nvim/docs/`, install to `~/.config/nvim/docs/`, and
+open with `<leader>?` in nvim. Repo docs explain the machine; in-editor
+docs drive it.
+
+## Why it looks like this
+
+The decisions, so future-you doesn't have to re-derive them:
+
+- **Reviewing is the job.** diffview surveys a whole changeset, gitsigns
+  accepts/rejects individual hunks, and staging is the ledger: whatever is
+  staged when you open lazygit is precisely what you approved. See
+  [docs/nvim.md](docs/nvim.md).
+- **One shell everywhere.** Every terminal and SSH session reads the same
+  `~/.zshrc`; history is one shared file, merged live. A terminal is just
+  a view; the shell doesn't change underneath it. oh-my-zsh and
+  powerlevel10k are gone.
+- **macOS only, no cross-platform machinery.** Anything that only makes
+  sense on another OS doesn't belong here — that surface was removed once
+  and shouldn't come back.
+- **Homebrew, not Mason; built-ins, not plugins.** One package manager,
+  versions visible in the `Brewfile`. Neovim's built-in commenting
+  (0.10+), LSP keymaps (0.11+), and LSP framework (0.11+) are used
+  instead of plugins for them; the 0.12 floor below is what the rest of
+  the config needs (`vim.hl`, nvim-treesitter `main`). The plugin count
+  is 17 and shrinking in spirit.
+- **Loud failures.** No `pcall(require, ...)` guards. The previous config
+  had a silently dead LSP for months because errors were being swallowed;
+  this one names what's missing (missing servers warn by name, the config
+  refuses to load below Neovim 0.12, the theme resolver fails loudly
+  without Ghostty).
+- **One look everywhere, by construction.** Two Ghostty theme names in
+  `settings.toml` drive every surface — the terminal, prompt, editor,
+  statusline, diffs, and pi's TUI — resolved from Ghostty's own catalog at
+  apply time with nothing cached. Surfaces that travel over SSH render in
+  the terminal's indexed color slots so the *viewing* terminal decides.
+  Never a hardcoded hex. See [docs/theming.md](docs/theming.md).
+- **Secrets never enter the repo.** `~/.zsh/secrets.zsh` (unmanaged,
+  listed in `.chezmoiignore`) holds the keys; pi's `auth.json` and session
+  transcripts are unmanaged too.
+- **Committed lockfile.** `lazy-lock.json` pins exact plugin revisions —
+  a second machine reproduces the first, and a bad update is bisectable
+  via `git log -p` on the lockfile.
+- **tmux only for detachability.** Local windows are Ghostty's job; tmux
+  exists so sessions survive disconnects and rejoin from anywhere — and
+  `pi` wraps itself automatically.
 
 ## New machine
 
@@ -53,10 +120,10 @@ $EDITOR ~/.zsh/secrets.zsh   # ZAI_API_KEY (https://z.ai), GITHUB_TOKEN, ...
 #    ~/.pi/agent/auth.json, which then takes precedence over the variable.)
 ```
 
-Then open Ghostty and run `nvim` — or `pi`, once step 6 is done. That is the
-whole thing: nothing is left to configure or install by hand — editor,
-terminal, shell, git tooling, and coding agent are all in place. From here on,
-every change is an edit in this repo plus `chezmoi apply`.
+Then open Ghostty and run `nvim` — or `pi`, once step 6 is done. That is
+the whole thing: nothing left to configure by hand — editor, terminal,
+shell, git tooling, and coding agent are all in place. From here on, every
+change is an edit in this repo plus `chezmoi apply`.
 
 > **Step 1 is not optional.** `chezmoi init` clones over HTTPS, and this repo
 > is private, so without a credential helper it fails with
@@ -65,246 +132,44 @@ every change is an edit in this repo plus `chezmoi apply`.
 
 > **Do step 3 before step 4.** Ghostty must be installed before
 > `chezmoi apply` — the palette resolver reads Ghostty's bundled theme
-> files (the catalog behind `ghostty +list-themes`) to derive every
-> surface's colors, and apply fails loudly without it. Language servers
-> come from Homebrew too, not Mason: launching Neovim earlier is not fatal
-> — it warns and names what is missing — but `Lazy! restore` also needs
-> `tree-sitter` to build parsers.
+> files to derive every surface's colors, and apply fails loudly without
+> it. Language servers come from Homebrew too, not Mason: launching Neovim
+> earlier is not fatal — it warns and names what is missing — but
+> `Lazy! restore` also needs `tree-sitter` to build parsers.
 
-> **Not using Ghostty?** The Nerd Font is installed by step 3, but only Ghostty
-> picks it up automatically. In Terminal.app or iTerm2, set the font to
-> JetBrainsMono Nerd Font by hand or icons — and the prompt's git branch mark —
-> render as boxes. The shell itself needs nothing: every terminal reads the
-> same `~/.zshrc`.
+> **Not using Ghostty?** The Nerd Font is installed by step 3, but only
+> Ghostty picks it up automatically. In Terminal.app or iTerm2, set the
+> font to JetBrainsMono Nerd Font by hand or icons — and the prompt's git
+> branch mark — render as boxes. The shell itself needs nothing: every
+> terminal reads the same `~/.zshrc`.
 
-**Requires Neovim 0.12+.** Below that the config refuses to load and says so,
-rather than half-working: `vim.lsp.config`, `vim.hl`, and nvim-treesitter's
-`main` branch all need it. Homebrew's `neovim` is current, so this only bites
-if you install Neovim some other way.
+**Requires Neovim 0.12+** (`vim.lsp.config`, `vim.hl`, nvim-treesitter
+`main`). Homebrew's `neovim` is current, so this only bites with a
+non-Homebrew install.
 
-## What is managed
+## What chezmoi manages
 
-| Path | What |
-|---|---|
-| `~/.zshrc`, `~/.zprofile` | The shell — every terminal and every SSH session |
-| `~/.config/zsh/ps1.zsh` | The prompt: git state, duration, exit code |
-| `~/.config/nvim/` | The editor |
-| `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts |
-| `~/.config/lazygit/config.yml` | delta as lazygit's pager |
-| `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
-| `~/.tmux.conf` | tmux, kept minimal: pi's extended-keys, OSC 52 clipboard, truecolor passthrough — detachable sessions only |
-| `~/.pi/agent/settings.json` | pi coding agent: appearance-following theme pair, `zai` provider, `glm-5.3` default |
-| `settings.toml` | The settings that drive every color, plus the `tmux_wrap` flag — visible at the repo root (never applied; themes resolve from Ghostty at apply time) |
+| Target | What it is | Doc |
+|---|---|---|
+| `~/.zshrc`, `~/.zprofile`, `~/.config/zsh/ps1.zsh` | The shell — every terminal, every SSH session | [zsh.md](docs/zsh.md) |
+| `~/.config/nvim/` | The editor (17 plugins, pinned) | [nvim.md](docs/nvim.md) |
+| `~/.config/ghostty/config` | The terminal's appearance — nothing shell-related | [ghostty.md](docs/ghostty.md) |
+| `~/.tmux.conf` | Detachable sessions: pi's extended-keys, OSC 52 clipboard, truecolor | [tmux.md](docs/tmux.md) |
+| `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts | [git.md](docs/git.md) |
+| `~/.config/lazygit/config.yml` | delta as lazygit's diff renderer | [git.md](docs/git.md) |
+| `~/.local/bin/delta-theme` | Appearance-aware delta wrapper | [git.md](docs/git.md) |
+| `~/.pi/agent/settings.json`, `~/.pi/agent/themes/` | pi's settings and generated theme pair | [pi.md](docs/pi.md) |
 
-**One shell everywhere.** Ghostty, Terminal.app, iTerm2, and anyone SSH-ing
-into this machine all get the same zsh: `~/.zprofile` sets the login PATH,
-`~/.zshrc` carries options, aliases, completion and keybindings, and
-`~/.config/zsh/ps1.zsh` renders the prompt. History is a single shared file
-(`~/.zsh_history` with `SHARE_HISTORY`), so a command typed in one terminal is
-immediately searchable from another. On top of that sit the three big
-shell quality-of-life integrations, each a guarded block so a machine
-without the Homebrew formula just skips it: fzf's keybindings (fuzzy
-Ctrl-R history, Ctrl-T files, Alt-C directories), zsh-autosuggestions
-(fish-style ghost text, in indexed color 8 so it follows the terminal
-palette like the prompt does — in Ghostty, **Ctrl+Enter** runs the
-visible suggestion as-is and **Ctrl+Option+Enter** accepts it without
-running, both no-ops otherwise), and zsh-syntax-highlighting (invalid
-commands color red before Enter — sourced last in `~/.zshrc`, where it
-must stay, because it wraps every ZLE widget at load time). Outside the
-guarded blocks sit two plain keybindings: **Option+forward-delete**
-(fn+Delete) kills the next word like pi's `alt+delete`.
-oh-my-zsh and powerlevel10k are gone —
-the Ghostty setup they were replaced by is now the default everywhere, and the
-Ghostty config itself sets nothing shell-related.
-
-Secrets — GitHub token, API keys — belong in `~/.zsh/secrets.zsh`, which
-`~/.zshrc` sources when present. That file is deliberately unmanaged (see
-below): secrets never go in git.
-
-The Ghostty config lives at the XDG path, not
-`~/Library/Application Support/com.mitchellh.ghostty/config.ghostty`. macOS
-Ghostty reads both and **merges** them when both exist, so there is only
-ever one.
+Repo-level files that are **never installed** (see `.chezmoiignore`):
+this README, `AGENTS.md`, `Brewfile`, `scripts/`, `settings.toml`, and
+`docs/`.
 
 Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
-generated), `~/.zsh/secrets.zsh` (API keys and tokens — a secret), `~/.ssh/`,
-and `~/.config/gh/hosts.yml` (auth token). For pi: `~/.pi/agent/auth.json`
-(an optional copy of the Z.ai key written by `/login` — it takes precedence
-over `ZAI_API_KEY` when present), `~/.pi/agent/sessions/` (transcripts), and
-`~/.pi/agent/models-store.json` (a catalog cache pi refetches from Z.ai).
-
-## pi + Z.ai
-
-`pi` is the terminal coding agent, running Z.ai's GLM models on their Coding
-Plan. `zai` is a **built-in** pi provider, so the whole setup is three pieces:
-
-1. the npm package — `@earendil-works/pi-coding-agent`, installed by the
-   Brewfile alongside its one hard dependency, `node`;
-2. `~/.pi/agent/settings.json` — chezmoi-managed; sets the dark theme and the
-   `zai` / `glm-5.3` startup defaults (change them in pi with `/model` +
-   Ctrl+S);
-3. the API key — `ZAI_API_KEY` in `~/.zsh/secrets.zsh` (step 5 above), in
-   the same place as every other key: it is a secret like the rest and
-   cannot live in this repo. pi's `/login` is an alternative that writes
-   `~/.pi/agent/auth.json` instead; when that file exists it takes
-   precedence over the environment variable.
-
-`settings.json` also carries `lastChangelogVersion`, which pi bumps by itself
-on updates, so `chezmoi diff` will show that one field drifting after an
-upgrade — harmless, like a lazy-lock drift. The file is a chezmoi template
-(its `theme` pair renders from the palette, below), and `chezmoi re-add`
-skips template-sourced files — so after changing model defaults via `/model`,
-fold them into `dot_pi/agent/settings.json.tmpl` by hand:
-
-```bash
-chezmoi cd
-$EDITOR dot_pi/agent/settings.json.tmpl   # port defaultModel etc.
-chezmoi diff && chezmoi apply
-```
-
-`pi` itself is wrapped by `~/.zshrc`: every new conversation gets its own
-tmux session so it survives disconnects and rejoins from any device — see
-"Picking up from another device".
-
-## Picking up from another device
-
-**pi handles tmux itself.** Every `pi` started in a project directory runs
-inside its own tmux session — typing `pi` is the whole interface, and it
-always starts a **new** conversation, never a stray attach:
-
-```bash
-cd code/chezmoi
-pi                   # new tmux session "chezmoi" (hint printed), pi inside
-# ... work; leave by closing the terminal or Ctrl-b d — the session lives on
-tmux a -t chezmoi    # rejoin from ANY terminal: desk, laptop, phone over SSH
-```
-
-Naming: the project directory's basename, numbered siblings on collision
-(`chezmoi`, `chezmoi-2`, …), or a topic — `pi -n "auth refactor"` names the
-session `auth-refactor` *and* pi's own session display name. A session dies
-when pi exits, so `tmux ls` lists exactly the live conversations — nothing
-dangles. pi runs unwrapped already inside a tmux session (a manual session
-keeps its own bare pi), from `$HOME`, for one-shot runs (`pi -p`, `--help`,
-management subcommands), or with `tmux_wrap = "off"` in `settings.toml`
-(per machine or shell: `PI_TMUX_WRAP=never`; one forced run: `=force`) —
-and the wrapper is guarded like everything else: no tmux installed means
-plain pi.
-
-For anything that isn't pi — nvim, a dev server, plain shells — start it
-under tmux by hand:
-
-```bash
-tmux new -s work     # manual session (same survival properties)
-# ... work: shells, nvim ...
-tmux attach -t work  # reattach, from any terminal, local or over SSH
-```
-
-Getting in from elsewhere:
-
-- **Enable SSH**: System Settings → General → Sharing → Remote Login.
-- **Phone clients**: Blink Shell (mosh-aware — the best option over cellular)
-  or Termius on iOS; Termius or Termux on Android.
-- **Away from home**: put the machines on
-  [Tailscale](https://tailscale.com) and SSH over it. Never expose port 22
-  to the internet.
-- **Flaky cellular**: `mosh` survives phone sleep and IP changes where SSH
-  drops; pair it with tmux (mosh deliberately has no scrollback — tmux
-  provides it). Not in the Brewfile; install server-side if you want it.
-
-Two things to know:
-
-- With two clients attached, the **most recent** one sets the size for
-  everyone (`window-size latest`, the default on tmux 3.7). Detach the
-  desktop side when you leave (`Ctrl-b d`), or reattach with
-  `tmux attach -d` to take over from a lingering connection. The view
-  itself mirrors to every attached client, live.
-- Forgot to start under tmux? pi conversations still carry over: every one
-  is saved under `~/.pi/agent/sessions/`, so from the phone
-  `cd <project> && pi -c` resumes the latest (`pi -r` to pick from a list,
-  `/export` for a read-only HTML dump) — in a new wrapped session. That
-  restores the conversation, not live state — an in-flight tool run or open
-  splits don't come along.
-
-The managed `~/.tmux.conf` is deliberately minimal, every setting
-load-bearing: pi's documented `extended-keys` (without them `Shift+Enter`
-collapses to plain Enter under tmux), focus reporting (nvim's appearance
-sync), OSC 52 clipboard (yanks reach the connecting device), `mouse on`
-(the wheel scrolls pane history in copy-mode — without it the wheel
-arrives as arrow keys and pi's input box eats them as message history),
-truecolor passthrough (nvim's generated colorscheme keeps its exact
-colors), and a status-bar window separator. No prefix remap, no plugins —
-local window management stays Ghostty's job, and tmux shells are just more
-zsh reading the same `~/.zshrc`: one shell everywhere, history shared,
-prompt following whatever palette the connecting terminal runs.
-
-Quick reference — the full walkthrough (mental model, phone-client setup,
-troubleshooting) is in
-[tmux.md](private_dot_config/nvim/docs/tmux.md):
-
-| Action | Keys / command |
-|---|---|
-| New pi conversation (auto-wrapped, named) | `pi` (in the project dir) |
-| Named topic conversation | `pi -n "auth refactor"` |
-| Detach | `Ctrl-b` `d` |
-| Rejoin — lands straight inside the running pi | `tmux a -t <name>` |
-| Scroll / copy mode | mouse wheel, or `Ctrl-b` `[` (exit: `q`) |
-| List live conversations | `tmux ls` |
-| Take over from another client | `tmux attach -d -t <name>` |
-| Retire a session for good | `tmux kill-session -t <name>` |
-
-## Testing changes
-
-Two tiers, by cost. Tier 1 runs in about a second and should follow every
-change to the shell config; tier 2 is a real macOS VM for full new-machine
-runs before big changes.
-
-```bash
-# 1. Seconds, no VM. Applies the repo into a pristine throwaway HOME and
-#    exercises the result the way real sessions do: fresh-window shell,
-#    the legacy ZDOTDIR guard, SSH prompt segment, history shared across
-#    shells, EDITOR fallback, secrets staying out, ghostty config hygiene,
-#    the light/dark mode wiring (ghostty theme line, nvim mode module,
-#    delta-theme wrapper exercised with fake `defaults`/`delta` shims),
-#    the color-system checks (both theme names resolve, no orphan
-#    hexes, roles render verbatim), the tmux config's shape
-#    (extended keys, clipboard, truecolor — no tmux binary needed),
-#    the pi->tmux wrapper (creates named sessions, never
-#    attaches; guards fall through to plain pi), and the shell
-#    integrations' shape (fzf/autosuggestions/syntax-highlighting
-#    source after compinit, ghost text is indexed color, and
-#    zsh-syntax-highlighting is the last source in ~/.zshrc).
-scripts/smoke-test.sh              # --nvim also restores plugins (~2 min)
-
-# 2. The real thing: a disposable macOS VM via tart (Virtualization
-#    framework; first run downloads a ~15 GB image, clones are cheap).
-brew install tart
-tart clone ghcr.io/cirruslabs/macos-sequoia:latest dotfiles-test
-tart run dotfiles-test             # Cirrus images ship ssh admin/admin
-ssh admin@$(tart ip dotfiles-test) # then run New-machine steps 0-4 inside
-tart delete dotfiles-test          # done -- throw it away
-```
-
-CI runs tier 1 for every push and PR (`.github/workflows/smoke.yml`) on a
-macOS runner with Ghostty installed from the cask — so the palette resolver
-reads the same real theme catalog a local machine does, with nothing pinned
-or proxied. Tier 1 covers everything chezmoi manages; only tier 2 exercises
-`brew bundle`, the GUI apps, and the terminal emulators themselves.
-
-## Editing the config
-
-**Edit in the source directory, not in `~/.config/nvim`.** The target is a build
-artifact; hand-editing it means the next `chezmoi apply` overwrites your work.
-
-```bash
-chezmoi cd                  # -> ~/.local/share/chezmoi
-$EDITOR private_dot_config/nvim/lua/bruce/plugins/foo.lua
-chezmoi diff                # review
-chezmoi apply               # install
-```
-
-Adding a plugin means dropping a file into
-`private_dot_config/nvim/lua/bruce/plugins/` — they are auto-imported, so no
-`init.lua` edit is needed.
+generated), `~/.zsh/secrets.zsh` (API keys — a secret), `~/.ssh/`,
+`~/.config/gh/hosts.yml` (auth token), and on the pi side
+`~/.pi/agent/auth.json` (optional key copy from `/login`),
+`~/.pi/agent/sessions/` (transcripts), and `~/.pi/agent/models-store.json`
+(a catalog cache pi refetches itself).
 
 ## Changing the settings
 
@@ -313,105 +178,98 @@ no hex, no per-app themes:
 
 ```toml
 theme = "system"                   # "system" | "light" | "dark"
-light_theme = "Gruvbox Light Hard"
-dark_theme = "Gruvbox Material Dark"
+light_theme = "Flexoki Light"
+dark_theme = "Kanagawa Wave"
 tmux_wrap = "on"                   # "on" | "off": pi in detachable tmux sessions?
 ```
 
-- **`light_theme` / `dark_theme`** are Ghostty theme names — browse with
-  `ghostty +list-themes` (highlighting one there previews its 16-color
-  mapping). Type the name exactly as shown, `chezmoi diff && chezmoi apply`,
-  and every surface follows: Ghostty runs the theme itself; the zsh prompt
-  renders in indexed colors it inherits from the terminal; pi's TUI themes
-  ride the same indexed slots (plus the fixed xterm cube for shades), so
-  pi follows the terminal you are looking at — even over SSH; delta
-  disables bat syntax colors so diffs render in the theme's own ANSI
-  palette; nvim and lualine use a colorscheme generated from the theme's
-  own palette.
-- **`theme`** picks the mode: `system` follows the OS light/dark appearance
-  live — Ghostty auto-switches its pair, nvim re-syncs on focus, delta
-  detects per invocation; `light`/`dark` pin one look everywhere, always,
-  regardless of what the OS says.
-- **`tmux_wrap`** is the one behavior knob: `on` (default) gives every new
-  pi conversation its own detachable tmux session; `off` runs pi bare —
-  no sessions to rejoin from the phone (`pi -c` still resumes a
-  conversation from any machine). A machine-level env override still
-  wins: `PI_TMUX_WRAP=never` for one shell, `=force` to wrap for one run
-  despite the setting.
+`light_theme`/`dark_theme` are Ghostty theme names (browse with `ghostty
++list-themes`); `theme` picks follow-the-OS vs pinned; `tmux_wrap` is the
+one behavior knob. Edit, `chezmoi diff && chezmoi apply`, and every
+surface follows — the full explanation, including what renders where and
+why nothing is cached, is in [docs/theming.md](docs/theming.md). The one
+prerequisite: **Ghostty must be installed wherever you run
+`chezmoi apply`.**
 
-The data behind a name is resolved **at apply time, nothing cached**:
-`scripts/ghostty-theme.py` parses each theme straight out of Ghostty's own
-catalog — the files behind `ghostty +list-themes` — and derives everything
-from its 16-color palette. New Ghostty themes work the moment you type
-their name, there is no catalog in this repo to keep fresh, and the only
-thing that pins values is Ghostty itself. Apps without a derivable
-equivalent follow the terminal instead: delta disables bat syntax colors
-(so diffs render in the theme's own ANSI palette) and nvim/lualine use a
-colorscheme generated from the theme's roles — one look, everywhere, by
-construction.
+## Editing this config
 
-The one prerequisite: **Ghostty must be installed wherever you run
-`chezmoi apply`** — without it the resolver fails loudly. That is why the
-new-machine steps install Ghostty (brew bundle) before applying; CI does
-the same (the macOS runner installs the cask itself).
+**Edit in the source repo, never in `$HOME`.** The target is a build
+artifact; hand-editing it means the next `chezmoi apply` overwrites your
+work.
 
-Everything rendered — the pi themes, nvim's `core/theming.lua`, the
-delta/gitconfig lines — is a build artifact; the smoke test fails
-if a name stops resolving, a rendered output carries a hex the active
-themes don't define, or a surface stops matching the settings.
-
-pi specifics: its theme files are named `dotfiles-{light,dark}.json`
-regardless of which themes are active (a theme swap never renames files),
-and `settings.json` picks the pair — or a single theme when the mode is
-pinned. The vars are terminal-indexed colors, not hexes: bg/fg/accents/grey
-map to the palette slots 0-15 that the **viewing** terminal resolves, so
-SSH'd pi matches the machine you are sitting at (the two tool tints are the
-only live hexes — the xterm cube has no muted olive/rust worth using; a
-sparse custom theme with unset slots falls back to role hexes). The
-wrapper decides which side of the pair each conversation runs: it asks the
-terminal (color-scheme report, falling back to a background query) *before*
-creating the tmux session, because pi's own detection cannot see through
-the tmux layer — over SSH it silently fell back to dark. A pinned mode
-(`theme = "light"/"dark"`) skips the ask entirely: `settings.json` already
-carries the single theme and `--use-theme` would override the pin. An
-explicit `pi --use-theme <name>` is passed through untouched, wrapped in
-tmux like any interactive run.
-
-## Updating plugins
-
-`lazy-lock.json` is committed on purpose: it is what makes a second machine
-reproduce this one, and what makes a bad update bisectable.
-
-```
-:Lazy update
-# test that things still work
-chezmoi re-add ~/.config/nvim/lazy-lock.json
-chezmoi cd && git commit -am "plugin update"
+```bash
+chezmoi cd                  # -> ~/.local/share/chezmoi
+$EDITOR private_dot_config/nvim/lua/bruce/plugins/foo.lua
+chezmoi diff                # review
+chezmoi apply               # install
 ```
 
-Skipping the `re-add` is not destructive — the lockfile just drifts, and
-`chezmoi diff` will show it.
+Repo-level files (`README.md`, `AGENTS.md`, `docs/`, `Brewfile`,
+`settings.toml`) are chezmoi-ignored and never install — edit and commit,
+nothing to apply. (`settings.toml` is still *read* at apply time — it
+renders every surface.)
 
-## Health check
+Everything else — testing tiers (`scripts/smoke-test.sh`, the macOS VM,
+CI), how to add a plugin or an LSP server, the color-system rules, the
+designated-successors table, rollback — is in
+[docs/developing.md](docs/developing.md), the maintainer's guide.
 
-Worth running quarterly. This is what would have caught the config rotting
-before: the previous setup had a dead LSP for months and never said so.
+## Picking up from another device (SSH)
 
-```vim
-:checkhealth
-:Lazy check
+The Mac is a server for your working sessions. pi conversations are
+already detachable — typing `pi` in a project directory always starts a
+new conversation in its own named tmux session:
+
+```bash
+cd code/chezmoi
+pi                   # new tmux session "chezmoi" (hint printed), pi inside
+# ... work; leave by closing the terminal or Ctrl-b d — the session lives on
+tmux a -t chezmoi    # rejoin from ANY terminal: desk, laptop, phone over SSH
 ```
+
+The session dies when pi exits, so `tmux ls` lists exactly the live
+conversations. Anything that isn't pi — nvim, a dev server — wraps by
+hand: `tmux new -s work` … `tmux attach -t work`.
+
+Why this works from anywhere: the SSH session reads the same `~/.zshrc`
+as the desk terminal (same history, same prompt), and the prompt + pi's
+TUI render in the *viewing* terminal's indexed palette — SSH from a
+light-mode phone and everything renders light, automatically, because the
+terminal in your hand decides. The pi wrapper even probes the connecting
+terminal for its light/dark side before creating the session, because
+pi's own detection can't see through the tmux layer.
+
+Getting in: enable **Remote Login** (System Settings → General → Sharing);
+use Blink Shell or Termius on the phone; put both ends on
+[Tailscale](https://tailscale.com) when away from home — **never expose
+port 22 to the internet**; keep the Mac awake with `caffeinate -dims`
+(a sleeping Mac refuses SSH). Forgot to start under tmux? Every pi
+conversation auto-saves — `pi -c` resumes the latest from any machine.
+The complete walkthrough — the mental model, phone-client setup, the
+handoff end to end, troubleshooting — is installed inside nvim
+(`<leader>?` → tmux) and sourced at
+[private_dot_config/nvim/docs/tmux.md](private_dot_config/nvim/docs/tmux.md);
+[docs/tmux.md](docs/tmux.md) is the repo-side reference (the managed
+config, setting by setting, plus the keys and the SSH setup).
+
+## Quick reference
+
+| Action | How |
+|---|---|
+| Apply config changes | `chezmoi diff && chezmoi apply` |
+| Run the test suite | `scripts/smoke-test.sh` (~1s; `--nvim` for plugin restore) |
+| Change themes | edit `settings.toml` → `chezmoi apply` |
+| Update plugins | `:Lazy update` → `chezmoi re-add ~/.config/nvim/lazy-lock.json` |
+| List / rejoin pi conversations | `tmux ls` / `tmux a -t <name>` |
+| Resume last pi conversation | `pi -c` |
+| In-nvim cheatsheet / keymap search | `<leader>?` / `<leader>fk` |
+| Health check | `:checkhealth`, `:Lazy check` |
+| The maintainer's guide | [docs/developing.md](docs/developing.md) |
 
 ## Rollback
 
-The pre-migration config is kept at `~/.config/nvim-old` and runs side by side
-without touching anything:
-
-```bash
-NVIM_APPNAME=nvim-old nvim
-```
-
-Full revert:
+The pre-migration config is kept at `~/.config/nvim-old` and runs side by
+side: `NVIM_APPNAME=nvim-old nvim`. Full revert:
 
 ```bash
 mv ~/.config/nvim ~/.config/nvim.new
@@ -420,19 +278,7 @@ mv ~/.local/share/nvim.pre-chezmoi ~/.local/share/nvim
 mv ~/.local/state/nvim.pre-chezmoi ~/.local/state/nvim
 ```
 
-Bad plugin update: `:Lazy restore`. Bad config change:
-`chezmoi cd && git revert <sha> && chezmoi apply`.
-
-The pre-migration history lives in the archived
+Bad plugin update: `:Lazy restore`. Bad config change: `chezmoi cd && git
+revert <sha> && chezmoi apply`. Pre-migration history lives in the archived
 [brucepucci/nvim](https://github.com/brucepucci/nvim) repo at tag
 `pre-chezmoi-2026-08-27`.
-
-## Docs
-
-- [keymaps.md](private_dot_config/nvim/docs/keymaps.md) — cheatsheet, grouped by task
-- [tools.md](private_dot_config/nvim/docs/tools.md) — what each tool is and why it is installed
-- [tmux.md](private_dot_config/nvim/docs/tmux.md) — full walkthrough: the detach/reattach habit, phone setup, troubleshooting
-
-All are installed to `~/.config/nvim/docs/`. In Neovim, `<leader>?` opens the
-cheatsheet and `<leader>fk` fuzzy-searches every live mapping. Press `<Space>`
-and pause for which-key.

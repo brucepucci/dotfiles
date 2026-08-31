@@ -6,7 +6,7 @@ Key bindings are in [keymaps.md](keymaps.md), and
 [getting-started.md](getting-started.md) walks the review workflow end to end.
 This file is the "what is this thing and why do I have it" reference.
 
-The shape of the setup: **18 Neovim plugins** (down from 34), **language
+The shape of the setup: **17 Neovim plugins** (down from 34), **language
 servers and CLI tools from Homebrew** rather than a second package manager
 inside the editor, and **several things that used to be plugins now handled by
 Neovim itself**.
@@ -54,7 +54,7 @@ Syntax-highlighted, side-by-side `git diff` output **in the terminal**. Nothing
 to do with Neovim — diffview and gitsigns render their own diffs. This improves
 `git diff`/`git show` in the shell and inside lazygit.
 
-Configured by hand in `~/.gitconfig`; see the repo README.
+Configured by hand in `~/.gitconfig`; see the dotfiles repo's `docs/git.md`.
 
 ---
 
@@ -194,16 +194,24 @@ proper tables). Ships a standalone binary; no Node needed.
 
 ## Appearance
 
-### gruvbox-material
-The colorscheme. Hard contrast, material palette. Follows the OS appearance:
-core/appearance.lua sets `'background` from macOS light/dark before plugins
-load and re-syncs on FocusGained, so a mid-session OS flip recolors without a
-restart. Light mode pairs with Ghostty's Gruvbox Light Hard.
+### The generated colorscheme
+No plugin — the colorscheme is **generated at `chezmoi apply` time** from the
+active Ghostty theme pair named in the dotfiles repo's `settings.toml`.
+`core/theming.lua` (the one
+rendered file) carries both themes' semantic roles; `colors/scheme.lua`
+builds highlight groups from them. The result: the editor matches the
+terminal for *any* theme picked in the settings, by construction.
+
+It follows the OS appearance live: `core/appearance.lua` sets `'background`
+from macOS light/dark before plugins load and re-syncs on FocusGained, so a
+mid-session OS flip recolors without a restart.
 
 ### lualine.nvim
-Statusline — mode, branch, diagnostics, position. Theme follows `'background`
-via a function: dark is lualine's gruvbox-material, light is a hand-rolled
-Gruvbox Material Light Hard table (lualine ships no material-light theme).
+Statusline — mode, branch, diagnostics, position. Its theme is a function
+that reads the generated palette's roles (`statusline`, `statusline_accent`,
+`mode_*`) for the current `'background`, so the statusline matches the
+terminal for any theme picked in the settings — and re-setups itself when
+`'background` flips.
 
 ### which-key.nvim
 Press `<Space>` and pause: it lists what's available under that prefix. This is
@@ -226,7 +234,8 @@ reproduce this one and a bad update bisectable.
 ### chezmoi *(CLI)*
 Manages this config as dotfiles. The source of truth is
 `~/.local/share/chezmoi`; `~/.config/nvim` is a build artifact. Edit the source,
-then `chezmoi apply`.
+then `chezmoi apply`. Per-tool docs live in the repo's `docs/` folder; the
+maintainer's guide is `docs/developing.md`.
 
 ### tmux *(CLI)*
 Detachable terminal sessions — the "leave the desk, continue from the phone"

@@ -7,8 +7,14 @@ or anything else that reads the cross-agent AGENTS.md convention).
 
 A chezmoi-managed dotfiles repo for an agent-focused terminal workflow:
 Neovim is the bulk of it, plus the zsh shell config shared by every terminal
-and SSH session, Ghostty (theme only), git tooling (delta, lazygit), and the
-pi coding agent (Z.ai/GLM models).
+and SSH session, Ghostty (theme only), git tooling (delta, lazygit), tmux
+(detachable sessions), and the pi coding agent (Z.ai/GLM models).
+
+`docs/` at the repo root (never installed -- see `.chezmoiignore`) holds one
+page per tool plus `docs/developing.md`, the long-form maintainer guide:
+edit loop, test pyramid, common tasks, rollback. This file is the condensed
+agent-facing version of those rules -- keep the two in step when either
+changes.
 
 **macOS only.** The repo is optimized for one install target: a Mac with
 Homebrew and zsh. The only remote story is being SSH'd *into* the Mac.
@@ -82,6 +88,8 @@ private_dot_config/ghostty/config.tmpl # terminal appearance only — no shell s
 dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # .json.tmpl — the pi TUI's themes, generated from
                             # the active themes' roles (stable file names)
+docs/                      # repo-level docs, never installed: one page per
+                            # tool + developing.md (the maintainer guide)
 ```
 
 Adding a plugin = drop a file in `lua/bruce/plugins/` returning a lazy.nvim
@@ -135,13 +143,14 @@ color-system step is the drift guard (names resolve, no orphan hexes, roles
 verbatim, pi rides the slots). Ghostty must be installed where `chezmoi apply` runs. `chezmoi
 re-add` skips
 template-sourced files (e.g. pi's `settings.json.tmpl`): fold pi's
-self-bumps in by hand. See README "Changing the settings" for the
+self-bumps in by hand. See docs/developing.md ("pi self-bumps") for the
 runbook.
 
 **Servers come from Homebrew, not Mason.** Mason is deliberately not installed:
 one package manager, versions visible in `Brewfile`, no duplicate copies, no
 PATH shadowing. To add a server: add it to `Brewfile`, then to the
-`vim.lsp.enable({...})` list in `lua/bruce/plugins/lsp.lua`.
+`vim.lsp.enable({...})` list *and* the `exes` table (which drives the
+missing-binary warning) in `lua/bruce/plugins/lsp.lua`.
 
 **Prefer built-ins.** Neovim 0.12 already provides commenting (`gc`/`gcc`), LSP
 keymaps (`grn` `gra` `grr` `gri` `gO` `K`), and the LSP framework. Do not add
@@ -168,8 +177,8 @@ bad update bisectable via `git log -p -- private_dot_config/nvim/lazy-lock.json`
 
 ```bash
 scripts/smoke-test.sh      # from-scratch apply + shell behavior, ~1s -- run
-                           # this after EVERY change (see README "Testing
-                           # changes" for the VM tiers)
+                           # this after EVERY change (see docs/developing.md
+                           # for the full test pyramid and the VM tiers)
 chezmoi diff && chezmoi apply
 nvim --headless "+checkhealth" "+w! /tmp/h.txt" +qa && grep -E 'ERROR|WARNING' /tmp/h.txt
 ```
