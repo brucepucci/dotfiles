@@ -33,10 +33,10 @@ dot_zshrc.tmpl              # interactive shell: options, history, aliases, prom
                             # blocks after compinit; syntax-highlighting is
                             # sourced LAST (it wraps ZLE widgets at load).
                             # Ctrl+Enter runs the autosuggestion as-is,
-                            # Ctrl+Option+Enter accepts (both no-ops else);
-                            # Option+Delete kills the next word (pi parity).
-                            # Option+Enter accepts the autosuggestion,
-                            # Option+Tab runs it as-is (both no-ops otherwise)
+                            # Ctrl+Option+Enter accepts (both no-ops else;
+                            # Ghostty-scoped, csi-u twins for tmux);
+                            # Option+forward-delete (fn+Delete) kills the
+                            # next word (pi parity).
 dot_zprofile               # login-shell PATH (Homebrew, ~/.local/bin)
 dot_local/bin/executable_delta-theme.tmpl   # ~/.local/bin: delta, colored for the
                             # configured mode/theme; git + lazygit call it

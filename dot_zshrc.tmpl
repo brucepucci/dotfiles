@@ -93,11 +93,13 @@ bindkey '^[[B' down-line-or-beginning-search
 # and iTerm2/Terminal.app send compatible sequences; emacs mode binds
 # ESC-b / ESC-f automatically. No macos-option-as-alt setting is needed.
 
-# Option+Delete (the forward-delete key) kills the NEXT word, matching
-# pi's alt+delete. The terminal encodes the modifier as a CSI parameter
-# (esc [ 3 ; 3 ~). Plain forward-delete -- which stock emacs mode leaves
-# unbound on this system -- deletes one character.
+# Option+forward-delete (fn+Delete) kills the NEXT word, matching pi's
+# alt+delete. Ghostty encodes the modifier as a CSI parameter (esc [ 3 ;
+# 3 ~); Esc-prefix terminals send esc esc [ 3 ~ instead. Plain
+# forward-delete -- which stock emacs mode leaves unbound on this
+# system -- deletes one character.
 bindkey '^[[3;3~' kill-word
+bindkey '^[^[[3~' kill-word
 bindkey '^[[3~' delete-char
 
 # --- Shell integrations ------------------------------------------------------
@@ -130,23 +132,31 @@ fi
 if [[ -r $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
   ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
   source $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-  # Suggestion shortcuts, everything else stock. Ghostty encodes the
-  # ctrl-modified Enters distinctly (legacy bytes cannot express ctrl on
-  # enter, so the terminal falls back to the modifyOtherKeys CSI form:
-  # esc[27;N;13~, N = 1 + ctrl 4 + alt 2): ctrl+enter runs the
-  # suggestion as-is, ctrl+option+enter accepts it without running.
-  # Every other chord -- option+enter, shift+enter, plain enter -- keeps
-  # its stock behavior. The replaced stock binding for ctrl+enter's
-  # bytes was nothing at all (unbound); the accept bytes likewise.
-  # Inside this guard because the plugin's widgets don't exist without
-  # the formula.
+  # Suggestion shortcuts, everything else stock. In Ghostty the
+  # ctrl-modified Enters arrive in the modifyOtherKeys CSI form
+  # (esc[27;N;13~, N = 1 + ctrl 4 + alt 2) -- legacy bytes cannot express
+  # ctrl on enter -- and OUTSIDE Ghostty ctrl+enter is byte-identical to
+  # plain enter, so these chords are Ghostty-scoped by nature: ctrl+enter
+  # runs the suggestion as-is, ctrl+option+enter accepts it without
+  # running. The csi-u twins (esc[13;5u / esc[13;7u) cover tmux, whose
+  # extended-keys csi-u forwarding re-encodes the chords for panes.
+  # Everything else keeps its stock behavior -- including the unbound
+  # shift variants (esc[27;2;13~ / esc[27;4;13~), which in Ghostty
+  # self-insert literal digits if pressed; an accepted trade, do not
+  # bind them without revisiting the "everything else stock" call. The
+  # replaced bytes were all unbound stock, nothing displaced. Inside
+  # this guard because the plugin's widgets don't exist without the
+  # formula.
   #
   # ZSH_AUTOSUGGEST_IGNORE_WIDGETS is load-bearing for run-suggestion:
   # the plugin's deferred rebinder (at the first prompt) wraps every user
   # widget in its "modify" action, which clears POSTDISPLAY before the
   # widget body runs -- without the exemption the guard below would
-  # never see a suggestion. autosuggest-accept needs no wrapper: it is
-  # the plugin's own widget and already no-ops with no suggestion or a
+  # never see a suggestion. It must also stay BELOW the source line:
+  # the plugin installs its default ignore list only when the variable
+  # is unset, so hoisting this line above the source would silently drop
+  # those defaults. autosuggest-accept needs no wrapper: it is the
+  # plugin's own widget and already no-ops with no suggestion or a
   # mid-line cursor.
   ZSH_AUTOSUGGEST_IGNORE_WIDGETS+='run-suggestion'
   run-suggestion() {
@@ -158,7 +168,9 @@ if [[ -r $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; 
   }
   zle -N run-suggestion
   bindkey '^[[27;5;13~' run-suggestion       # ctrl+enter: accept and run
+  bindkey '^[[13;5u' run-suggestion          # same, via tmux csi-u forwarding
   bindkey '^[[27;7;13~' autosuggest-accept   # ctrl+option+enter: accept only
+  bindkey '^[[13;7u' autosuggest-accept      # same, via tmux csi-u forwarding
 fi
 
 # --- Aliases ----------------------------------------------------------------
