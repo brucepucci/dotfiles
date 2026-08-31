@@ -49,7 +49,9 @@ is deliberate, not accidental.
 what's available under any prefix, or `<leader>fk` to fuzzy-search every
 mapping in the session (it jumps to where the mapping was defined, so it
 can never go stale). The same cheatsheet is installed inside the editor at
-`~/.config/nvim/docs/keymaps.md` (`<leader>?` opens the docs picker).
+`~/.config/nvim/docs/keymaps.md` (`<leader>?` opens the docs picker) — the
+installed cheatsheet is the authoritative copy; these tables mirror it for
+repo-side reading, and when they disagree, this file is the one to fix.
 
 ### Git / reviewing agent-written code
 
@@ -241,9 +243,15 @@ below it.
 
 ## In-editor docs
 
-Installed to `~/.config/nvim/docs/` and reachable with `<leader>?`:
+Installed to `~/.config/nvim/docs/` and reachable with `<leader>?` —
+sourced in the repo under
+[private_dot_config/nvim/docs/](../private_dot_config/nvim/docs/):
 
-- `getting-started.md` — the agent-review workflow, walked end to end
-- `keymaps.md` — the full cheatsheet (the tables above, in editor form)
-- `tools.md` — every plugin and CLI tool, what it is and why it's here
-- `tmux.md` — the detach/reattach walkthrough
+- [getting-started.md](../private_dot_config/nvim/docs/getting-started.md) —
+  the agent-review workflow, walked end to end
+- [keymaps.md](../private_dot_config/nvim/docs/keymaps.md) — the full
+  cheatsheet (the tables above, in editor form)
+- [tools.md](../private_dot_config/nvim/docs/tools.md) — every plugin and
+  CLI tool, what it is and why it's here
+- [tmux.md](../private_dot_config/nvim/docs/tmux.md) — the detach/reattach
+  walkthrough

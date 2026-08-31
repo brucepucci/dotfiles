@@ -149,7 +149,8 @@ runbook.
 **Servers come from Homebrew, not Mason.** Mason is deliberately not installed:
 one package manager, versions visible in `Brewfile`, no duplicate copies, no
 PATH shadowing. To add a server: add it to `Brewfile`, then to the
-`vim.lsp.enable({...})` list in `lua/bruce/plugins/lsp.lua`.
+`vim.lsp.enable({...})` list *and* the `exes` table (which drives the
+missing-binary warning) in `lua/bruce/plugins/lsp.lua`.
 
 **Prefer built-ins.** Neovim 0.12 already provides commenting (`gc`/`gcc`), LSP
 keymaps (`grn` `gra` `grr` `gri` `gO` `K`), and the LSP framework. Do not add

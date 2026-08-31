@@ -133,7 +133,7 @@ over the pin.
 file (listed in `.chezmoiignore`, template at
 `private_dot_zsh/secrets.example.zsh`). API keys and tokens never enter
 this repo. The guard makes it optional: machines with no secrets just skip
-it. See [developing.md](developing.md#adding-a-secret).
+it. See [developing.md](developing.md#add-a-secret).
 
 ## Editor, banner, misc
 
