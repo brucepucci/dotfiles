@@ -100,7 +100,8 @@ Ctrl-R history, Ctrl-T files, Alt-C directories), zsh-autosuggestions
 palette like the prompt does; **Option+Enter** runs the visible
 suggestion as-is (Ghostty remaps it to a byte-distinct sequence) and
 **Option+Shift+Enter** accepts it without running — both no-ops
-otherwise), and zsh-syntax-highlighting (invalid
+otherwise), **Option+Delete** kills the next word like in pi, and
+zsh-syntax-highlighting (invalid
 commands color red before Enter — sourced last in `~/.zshrc`, where it
 must stay, because it wraps every ZLE widget at load time).
 oh-my-zsh and powerlevel10k are gone —

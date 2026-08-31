@@ -93,6 +93,13 @@ bindkey '^[[B' down-line-or-beginning-search
 # and iTerm2/Terminal.app send compatible sequences; emacs mode binds
 # ESC-b / ESC-f automatically. No macos-option-as-alt setting is needed.
 
+# Option+Delete (the forward-delete key) kills the NEXT word, matching
+# pi's alt+delete. The terminal encodes the modifier as a CSI parameter
+# (esc [ 3 ; 3 ~). Plain forward-delete -- which stock emacs mode leaves
+# unbound on this system -- deletes one character.
+bindkey '^[[3;3~' kill-word
+bindkey '^[[3~' delete-char
+
 # --- Shell integrations ------------------------------------------------------
 # The three quality-of-life pieces, each guarded by file existence so a
 # machine without the formula (CI, a fresh install mid-setup) stays quiet

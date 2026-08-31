@@ -68,9 +68,10 @@
 #  18. the suggestion keys: option+enter (kitty bytes esc[13;3u, remapped
 #      in the ghostty config) runs the suggestion as-is, esc+cr
 #      (option+shift+enter) accepts without running, both no-ops
-#      otherwise; stock motion defaults stay untouched (ctrl-w kills a
-#      word, ctrl-b moves a char, ctrl-l clears) -- live bindings
-#      asserted only where the formula exists, shape always
+#      otherwise; option+delete kills the next word (pi parity) and
+#      forward-delete kills a char; stock motion defaults stay untouched
+#      (ctrl-w kills a word, ctrl-b moves a char, ctrl-l clears) --
+#      live bindings asserted only where the formula exists, shape always
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -435,22 +436,26 @@ last_source="$(grep -E '^[^#]*[[:space:]]source [^[:space:]]' "$zrc" | tail -1 |
   || die "~/.zshrc: zsh-syntax-highlighting must be the last source (got: $last_source)"
 ok "all three render after compinit; ghost text indexed; highlighting last"
 
-step "suggestion keys: option+enter runs, option+shift+enter accepts; defaults untouched"
+step "suggestion keys + option-delete word-kill; defaults untouched"
 # The ghostty config remaps option+enter to the kitty-protocol bytes
 # (esc[13;3u) so zsh gets a byte-distinct run key; esc+cr (which
 # option+shift+enter also produces -- shift is invisible on enter in the
 # legacy encoding) accepts without running. The safe action owns the
 # bytes every terminal sends: without the remap both chords collapse to
-# accept, never run. The stock motion defaults must remain exactly
-# stock, and the suggestion keys only exist where the formula does:
-# rendered binds are asserted always, live bindings only where the
-# plugin is installed.
+# accept, never run. Option+delete kills the next word (pi's alt+delete
+# parity) and plain forward-delete kills a char -- stock emacs mode left
+# both unbound. The stock motion defaults must remain exactly stock,
+# and the suggestion keys only exist where the formula does: rendered
+# binds are asserted always, live bindings only where the plugin is
+# installed.
 grep -qF 'keybind = opt+enter=text:\x1b[13;3u' "$NEWHOME/.config/ghostty/config" \
   || die "ghostty: option+enter must be remapped to the kitty bytes for run-suggestion"
-out="$(fresh_zsh 'bindkey "^W"; bindkey "^B"; bindkey "^L"; bindkey "^[[13;3u"; bindkey "^[^M"; [[ ${+widgets[autosuggest-accept]} == 1 ]] && print plugin=yes || print plugin=no' || true)"
+out="$(fresh_zsh 'bindkey "^W"; bindkey "^B"; bindkey "^L"; bindkey "^[[13;3u"; bindkey "^[^M"; bindkey "^[[3;3~"; bindkey "^[[3~"; [[ ${+widgets[autosuggest-accept]} == 1 ]] && print plugin=yes || print plugin=no' || true)"
 [[ "$out" == *'"^W" backward-kill-word'* ]] || die "~/.zshrc: ctrl-w must keep the stock backward-kill-word"
 [[ "$out" == *'"^B" backward-char'* ]] || die "~/.zshrc: ctrl-b must keep the stock backward-char"
 [[ "$out" == *'"^L" clear-screen'* ]] || die "~/.zshrc: ctrl-l must keep the stock clear-screen"
+[[ "$out" == *'"^[[3;3~" kill-word'* ]] || die "~/.zshrc: option+delete must kill the next word"
+[[ "$out" == *'"^[[3~" delete-char'* ]] || die "~/.zshrc: forward-delete must delete one char"
 grep -qF "bindkey '^[[13;3u' run-suggestion" "$NEWHOME/.zshrc" \
   || die "~/.zshrc: option+enter (kitty bytes) must run the suggestion as-is"
 grep -qF "bindkey '^[^M' autosuggest-accept" "$NEWHOME/.zshrc" \

@@ -33,7 +33,8 @@ dot_zshrc.tmpl              # interactive shell: options, history, aliases, prom
                             # blocks after compinit; syntax-highlighting is
                             # sourced LAST (it wraps ZLE widgets at load).
                             # Option+Enter runs the autosuggestion as-is,
-                            # Option+Shift+Enter accepts (both no-ops else).
+                            # Option+Shift+Enter accepts (both no-ops else);
+                            # Option+Delete kills the next word (pi parity).
                             # Option+Enter accepts the autosuggestion,
                             # Option+Tab runs it as-is (both no-ops otherwise)
 dot_zprofile               # login-shell PATH (Homebrew, ~/.local/bin)
