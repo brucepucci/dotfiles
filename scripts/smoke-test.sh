@@ -334,7 +334,14 @@ step "prompt git-state glyphs keep their spacing"
 # The staged/unstaged markers carry their own leading space (issue #5): they
 # must never render touching each other or the branch name, and a clean tree
 # must carry neither glyph nor a stray gap. Branch name is irrelevant to the
-# assertions, so CI's git default (master) is fine.
+# assertions, so CI's git default (master) is fine. Shape-checked too: every
+# icon-to-text boundary in ps1.zsh carries a space -- wide-ink nerd-font
+# glyphs otherwise overpaint the character that follows (seen over SSH).
+for pat in '${GB_SERVER_ICON} %n' '${GB_GIT_ICON} %b' '${GB_GEAR_ICON} %j' \
+           '${GB_HOURGLASS_ICON} $(printf'; do
+  grep -qF "$pat" "$NEWHOME/.config/zsh/ps1.zsh" \
+    || die "ps1.zsh: icon/text boundary lost its space: $pat"
+done
 grepo="$WORK/grepo"
 git init -q "$grepo"
 git -C "$grepo" -c user.email=smoke@t -c user.name=smoke commit -q --allow-empty -m x

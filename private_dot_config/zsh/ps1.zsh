@@ -33,6 +33,11 @@ GB_ORANGE=3
 # renders as a box, use its stand-in:
 #   branch U+E0A0 -> 'git:'      ssh host U+F233 -> 'ssh:'
 #   jobs   U+F013 -> '&'         elapsed U+F252 -> '' (bare seconds)
+# Every icon is followed by a space wherever text comes next: the glyph ink
+# is wider than the one cell a terminal grants a private-use codepoint, so
+# an icon flush against text overpaints the first character that follows
+# (seen over SSH with the host and branch icons). Not cosmetic -- the
+# spacing rule is asserted in scripts/smoke-test.sh.
 GB_GIT_ICON=''
 GB_SERVER_ICON=''
 GB_GEAR_ICON=''
@@ -55,13 +60,13 @@ zstyle ':vcs_info:git:*' check-for-changes true
 # the full picture; set check-for-changes to false for a branch-only prompt.
 #
 # Each marker carries a leading space. It separates the two glyphs when both
-# are present and separates the first from the branch name (the nerd-font
-# branch icon is wide and crowds what follows), while vanishing with the
-# marker itself -- a clean tree gets no stray gap.
+# are present and separates the first from the branch name, while vanishing
+# with the marker itself -- a clean tree gets no stray gap. The branch icon's
+# trailing space is the ink-wider-than-cell rule from the header comment.
 zstyle ':vcs_info:git:*' unstagedstr "%F{$GB_YELLOW} ○%f"
 zstyle ':vcs_info:git:*' stagedstr   "%F{$GB_PURPLE} ●%f"
-zstyle ':vcs_info:git:*' formats       " %F{$GB_AQUA}${GB_GIT_ICON}%b%f%u%c"
-zstyle ':vcs_info:git:*' actionformats " %F{$GB_AQUA}${GB_GIT_ICON}%b%f %F{$GB_ORANGE}(%a)%f%u%c"
+zstyle ':vcs_info:git:*' formats       " %F{$GB_AQUA}${GB_GIT_ICON} %b%f%u%c"
+zstyle ':vcs_info:git:*' actionformats " %F{$GB_AQUA}${GB_GIT_ICON} %b%f %F{$GB_ORANGE}(%a)%f%u%c"
 
 # ---------------------------------------------------------------------------
 # Hooks: command duration (only when it exceeds the threshold) + vcs refresh
@@ -81,7 +86,7 @@ _gb_precmd() {
   if (( ${+_gb_start} )); then
     elapsed=$(( EPOCHREALTIME - _gb_start ))
     unset _gb_start
-    (( elapsed > GB_SLOW_THRESHOLD )) && _gb_elapsed="${GB_HOURGLASS_ICON}$(printf '%.1fs' $elapsed)"
+    (( elapsed > GB_SLOW_THRESHOLD )) && _gb_elapsed="${GB_HOURGLASS_ICON} $(printf '%.1fs' $elapsed)"
   fi
   # One blank line between the previous command's output and this prompt --
   # but only when a command actually ran: not before the shell's first
@@ -123,7 +128,7 @@ GB_HOST=''
 # %(4~|…/%3~|%~) — full path until 4 components deep, then elide the front
 PROMPT="${GB_HOST}%B%F{$GB_BLUE}%(4~|…/%3~|%~)%f%b"
 PROMPT+='${vcs_info_msg_0_}'
-PROMPT+="%(1j. %F{$GB_PURPLE}${GB_GEAR_ICON}%j%f.)"
+PROMPT+="%(1j. %F{$GB_PURPLE}${GB_GEAR_ICON} %j%f.)"
 PROMPT+=" %(?.%F{$GB_GREEN}.%F{$GB_RED})%(!.#.❯)%f "
 
 RPROMPT="%(?..%F{$GB_RED}✗ %?%f )%F{$GB_GRAY}"'${_gb_elapsed}'"%f"
