@@ -32,8 +32,9 @@ dot_zshrc.tmpl              # interactive shell: options, history, aliases, prom
                             # zsh-autosuggestions / zsh-syntax-highlighting
                             # blocks after compinit; syntax-highlighting is
                             # sourced LAST (it wraps ZLE widgets at load).
-                            # Option+Enter runs the autosuggestion as-is,
-                            # Option+Shift+Enter accepts (both no-ops else);
+                            # Option+Enter / Ctrl+Enter run the
+                            # autosuggestion as-is, Option+Shift+Enter
+                            # accepts (all no-ops otherwise);
                             # Option+Delete kills the next word (pi parity).
                             # Option+Enter accepts the autosuggestion,
                             # Option+Tab runs it as-is (both no-ops otherwise)

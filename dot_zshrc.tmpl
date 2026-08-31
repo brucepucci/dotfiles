@@ -130,17 +130,17 @@ fi
 if [[ -r $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
   ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
   source $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-  # Suggestion shortcuts, on byte sequences terminals already send -- plus
-  # one remap. Option+Enter is remapped in the Ghostty config to its own
-  # kitty-protocol bytes (esc [ 13 ; 3 u -- what kitty-aware apps like pi
-  # already receive for it), which frees plain esc+cr for
-  # Option+Shift+Enter (shift is invisible on enter in the legacy
-  # encoding, so the two are otherwise identical). In terminals without
-  # the remap both chords arrive as esc+cr, which binds to the SAFE
-  # action: accept, never run. ctrl+enter is byte-identical to enter and
-  # stays unbound. The replaced stock bindings -- self-insert-unmeta on
-  # esc+cr/esc+lf -- insert the raw byte, which nothing uses. Inside this
-  # guard because the plugin's widgets don't exist without the formula.
+  # Suggestion shortcuts on the Enter family. Ghostty already encodes the
+  # shift/ctrl-modified Enters distinctly -- legacy bytes cannot express
+  # shift or ctrl on enter, so the terminal falls back to the
+  # modifyOtherKeys CSI form (esc[27;N;13~, N = 1 + modifiers: shift 1,
+  # alt 2, ctrl 4) -- while plain Option+Enter stays esc+cr. So: run on
+  # option+enter and ctrl+enter, accept on every shift variant. In
+  # terminals that do NOT encode them distinctly (iTerm2, ssh) every
+  # modifier+enter collapses to esc+cr = the option+enter action (run).
+  # The replaced stock bindings were self-insert-unmeta fallbacks
+  # (insert the raw byte) that nothing uses. Inside this guard because
+  # the plugin's widgets don't exist without the formula.
   #
   # ZSH_AUTOSUGGEST_IGNORE_WIDGETS is load-bearing for run-suggestion:
   # the plugin's deferred rebinder (at the first prompt) wraps every user
@@ -158,9 +158,13 @@ if [[ -r $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; 
     fi
   }
   zle -N run-suggestion
-  bindkey '^[[13;3u' run-suggestion   # option+enter: accept and run as-is
-  bindkey '^[^M' autosuggest-accept   # option+shift+enter: accept, no run
-  bindkey '^[^J' autosuggest-accept   # same, terminals sending esc+lf
+  bindkey '^[^M' run-suggestion          # option+enter: run as-is
+  bindkey '^[^J' run-suggestion          # same, terminals sending esc+lf
+  bindkey '^[[27;5;13~' run-suggestion   # ctrl+enter: run as-is
+  bindkey '^[[27;4;13~' autosuggest-accept   # option+shift+enter: accept
+  bindkey '^[[27;2;13~' autosuggest-accept   # shift+enter
+  bindkey '^[[27;6;13~' autosuggest-accept   # ctrl+shift+enter
+  bindkey '^[[27;7;13~' autosuggest-accept   # ctrl+option+shift+enter
 fi
 
 # --- Aliases ----------------------------------------------------------------

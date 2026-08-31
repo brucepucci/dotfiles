@@ -82,7 +82,7 @@ if you install Neovim some other way.
 | `~/.config/nvim/` | The editor |
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts |
 | `~/.config/lazygit/config.yml` | delta as lazygit's pager |
-| `~/.config/ghostty/config` | Ghostty's theme, plus one input keybind (Option+Enter → a byte-distinct sequence for the shell's suggestion shortcuts) |
+| `~/.config/ghostty/config` | Ghostty's theme — nothing shell-related |
 | `~/.tmux.conf` | tmux, kept minimal: pi's extended-keys, OSC 52 clipboard, truecolor passthrough — detachable sessions only |
 | `~/.pi/agent/settings.json` | pi coding agent: appearance-following theme pair, `zai` provider, `glm-5.3` default |
 | `settings.toml` | The settings that drive every color, plus the `tmux_wrap` flag — visible at the repo root (never applied; themes resolve from Ghostty at apply time) |
@@ -98,16 +98,15 @@ without the Homebrew formula just skips it: fzf's keybindings (fuzzy
 Ctrl-R history, Ctrl-T files, Alt-C directories), zsh-autosuggestions
 (fish-style ghost text, in indexed color 8 so it follows the terminal
 palette like the prompt does; **Option+Enter** runs the visible
-suggestion as-is (Ghostty remaps it to a byte-distinct sequence) and
-**Option+Shift+Enter** accepts it without running — both no-ops
-otherwise), **Option+Delete** kills the next word like in pi, and
-zsh-syntax-highlighting (invalid
+suggestion as-is and **Option+Shift+Enter** accepts it without running
+(Ghostty encodes the shift chord distinctly; **Ctrl+Enter** runs too) —
+all no-ops otherwise), **Option+Delete** kills the next word like in
+pi, and zsh-syntax-highlighting (invalid
 commands color red before Enter — sourced last in `~/.zshrc`, where it
 must stay, because it wraps every ZLE widget at load time).
 oh-my-zsh and powerlevel10k are gone —
 the Ghostty setup they were replaced by is now the default everywhere, and the
-Ghostty config itself sets nothing shell-related (its one non-appearance
-line remaps Option+Enter so the shell's suggestion keys are byte-distinct).
+Ghostty config itself sets nothing shell-related.
 
 Secrets — GitHub token, API keys — belong in `~/.zsh/secrets.zsh`, which
 `~/.zshrc` sources when present. That file is deliberately unmanaged (see
