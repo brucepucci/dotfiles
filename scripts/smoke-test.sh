@@ -74,6 +74,10 @@
 #      (fn+Delete) and its esc-prefix twin kill the next word (pi
 #      parity) and forward-delete kills a char -- live bindings
 #      asserted only where the formula exists, shape always
+#  19. the runbook skill: renders under ~/.pi/agent/skills/runbook/ with
+#      Agent-Skills-valid frontmatter, and every command line it teaches
+#      string-matches AGENTS.md -- the drift guard that keeps the skill
+#      and the source of truth from diverging (issue #24)
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see docs/developing.md's test
@@ -758,6 +762,43 @@ grep -qF -- '--use-theme' "$TLOG" \
 ! grep -qF 'PI_THEME_PINNED=' "$NEWHOME/.zshrc" \
   || die "theme=system (committed) must not render a pin into ~/.zshrc"
 ok "pin renders, wraps without --use-theme; system mode stays unpinned"
+
+step "runbook skill: rendered, valid frontmatter, mirrors AGENTS.md"
+# dot_pi/agent/skills/runbook/SKILL.md -> ~/.pi/agent/skills/runbook/SKILL.md,
+# a global pi skill location, so the repo's verification runbook versions
+# with the dotfiles and loads via /skill:runbook. AGENTS.md is the source
+# of truth; the skill quotes its commands, so assert (a) the file renders
+# with Agent-Skills-valid frontmatter, and (b) every command line inside
+# the skill's fenced blocks appears verbatim in AGENTS.md -- editing one
+# without the other fails here, same loud-failure style as the color-system
+# drift guard.
+SKILL="$NEWHOME/.pi/agent/skills/runbook/SKILL.md"
+[[ -f "$SKILL" ]] || die "pi runbook skill did not render under the target HOME"
+head -1 "$SKILL" | grep -qx -- '---' \
+  || die "skill: frontmatter must open with '---'"
+grep -q '^name: runbook$' "$SKILL" \
+  || die "skill: frontmatter must carry 'name: runbook'"
+desc="$(sed -n 's/^description: \(.*\)$/\1/p' "$SKILL")"
+[[ -n "$desc" ]] || die "skill: frontmatter needs a non-empty description"
+sed -n '2,10p' "$SKILL" | grep -qx -- '---' \
+  || die "skill: frontmatter must close with '---'"
+# command lines = fenced-block lines starting with a known command head,
+# trailing comments stripped so spacing differences in AGENTS.md don't matter
+mirrored="$(awk '
+  /^```/ { fence = !fence; next }
+  fence && /^(scripts\/|chezmoi |nvim |:Lazy )/ {
+    sub(/ #.*$/, ""); gsub(/^[ \t]+|[ \t]+$/, ""); print
+  }' "$SKILL")"
+[[ -n "$mirrored" ]] || die "skill: no command lines found to guard"
+n=0
+while IFS= read -r line; do
+  grep -qF -- "$line" "$SOURCE/AGENTS.md" \
+    || die "skill command not mirrored in AGENTS.md (edit both together): $line"
+  n=$((n+1))
+done <<< "$mirrored"
+(( n >= 6 )) \
+  || die "skill: expected at least 6 mirrored command lines, found $n -- removing steps from BOTH files must update this floor"
+ok "frontmatter valid; $n command lines all string-match AGENTS.md"
 
 step "theme probe: reply parsing on a real pty"
 # __pi_theme_side needs a tty, so wrap_zsh above cannot exercise it --
