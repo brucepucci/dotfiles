@@ -97,11 +97,10 @@ shell quality-of-life integrations, each a guarded block so a machine
 without the Homebrew formula just skips it: fzf's keybindings (fuzzy
 Ctrl-R history, Ctrl-T files, Alt-C directories), zsh-autosuggestions
 (fish-style ghost text, in indexed color 8 so it follows the terminal
-palette like the prompt does; **Option+Enter** runs the visible
-suggestion as-is and **Option+Shift+Enter** accepts it without running
-(Ghostty encodes the shift chord distinctly; **Ctrl+Enter** runs too) —
-all no-ops otherwise), **Option+Delete** kills the next word like in
-pi, and zsh-syntax-highlighting (invalid
+palette like the prompt does; **Ctrl+Enter** runs the visible
+suggestion as-is and **Ctrl+Option+Enter** accepts it without running
+— both no-ops otherwise), **Option+Delete** kills the next word like
+in pi, and zsh-syntax-highlighting (invalid
 commands color red before Enter — sourced last in `~/.zshrc`, where it
 must stay, because it wraps every ZLE widget at load time).
 oh-my-zsh and powerlevel10k are gone —

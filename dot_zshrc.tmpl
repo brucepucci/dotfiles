@@ -130,17 +130,16 @@ fi
 if [[ -r $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
   ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
   source $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-  # Suggestion shortcuts on the Enter family. Ghostty already encodes the
-  # shift/ctrl-modified Enters distinctly -- legacy bytes cannot express
-  # shift or ctrl on enter, so the terminal falls back to the
-  # modifyOtherKeys CSI form (esc[27;N;13~, N = 1 + modifiers: shift 1,
-  # alt 2, ctrl 4) -- while plain Option+Enter stays esc+cr. So: run on
-  # option+enter and ctrl+enter, accept on every shift variant. In
-  # terminals that do NOT encode them distinctly (iTerm2, ssh) every
-  # modifier+enter collapses to esc+cr = the option+enter action (run).
-  # The replaced stock bindings were self-insert-unmeta fallbacks
-  # (insert the raw byte) that nothing uses. Inside this guard because
-  # the plugin's widgets don't exist without the formula.
+  # Suggestion shortcuts, everything else stock. Ghostty encodes the
+  # ctrl-modified Enters distinctly (legacy bytes cannot express ctrl on
+  # enter, so the terminal falls back to the modifyOtherKeys CSI form:
+  # esc[27;N;13~, N = 1 + ctrl 4 + alt 2): ctrl+enter runs the
+  # suggestion as-is, ctrl+option+enter accepts it without running.
+  # Every other chord -- option+enter, shift+enter, plain enter -- keeps
+  # its stock behavior. The replaced stock binding for ctrl+enter's
+  # bytes was nothing at all (unbound); the accept bytes likewise.
+  # Inside this guard because the plugin's widgets don't exist without
+  # the formula.
   #
   # ZSH_AUTOSUGGEST_IGNORE_WIDGETS is load-bearing for run-suggestion:
   # the plugin's deferred rebinder (at the first prompt) wraps every user
@@ -158,13 +157,8 @@ if [[ -r $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; 
     fi
   }
   zle -N run-suggestion
-  bindkey '^[^M' run-suggestion          # option+enter: run as-is
-  bindkey '^[^J' run-suggestion          # same, terminals sending esc+lf
-  bindkey '^[[27;5;13~' run-suggestion   # ctrl+enter: run as-is
-  bindkey '^[[27;4;13~' autosuggest-accept   # option+shift+enter: accept
-  bindkey '^[[27;2;13~' autosuggest-accept   # shift+enter
-  bindkey '^[[27;6;13~' autosuggest-accept   # ctrl+shift+enter
-  bindkey '^[[27;7;13~' autosuggest-accept   # ctrl+option+shift+enter
+  bindkey '^[[27;5;13~' run-suggestion       # ctrl+enter: accept and run
+  bindkey '^[[27;7;13~' autosuggest-accept   # ctrl+option+enter: accept only
 fi
 
 # --- Aliases ----------------------------------------------------------------
