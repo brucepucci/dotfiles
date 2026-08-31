@@ -355,9 +355,11 @@ tmux_wrap = "on"                   # "on" | "off": pi in detachable tmux session
   mapping). Type the name exactly as shown, `chezmoi diff && chezmoi apply`,
   and every surface follows: Ghostty runs the theme itself; the zsh prompt
   renders in indexed colors it inherits from the terminal; pi's TUI themes
-  are generated from the theme's palette; delta disables bat syntax colors
-  so diffs render in the theme's own ANSI palette; nvim and lualine use a
-  colorscheme generated from the theme's own palette.
+  ride the same indexed slots (plus the fixed xterm cube for shades), so
+  pi follows the terminal you are looking at — even over SSH; delta
+  disables bat syntax colors so diffs render in the theme's own ANSI
+  palette; nvim and lualine use a colorscheme generated from the theme's
+  own palette.
 - **`theme`** picks the mode: `system` follows the OS light/dark appearance
   live — Ghostty auto-switches its pair, nvim re-syncs on focus, delta
   detects per invocation; `light`/`dark` pin one look everywhere, always,
@@ -394,7 +396,19 @@ themes don't define, or a surface stops matching the settings.
 pi specifics: its theme files are named `dotfiles-{light,dark}.json`
 regardless of which themes are active (a theme swap never renames files),
 and `settings.json` picks the pair — or a single theme when the mode is
-pinned.
+pinned. The vars are terminal-indexed colors, not hexes: bg/fg/accents/grey
+map to the palette slots 0-15 that the **viewing** terminal resolves, so
+SSH'd pi matches the machine you are sitting at (the two tool tints are the
+only live hexes — the xterm cube has no muted olive/rust worth using; a
+sparse custom theme with unset slots falls back to role hexes). The
+wrapper decides which side of the pair each conversation runs: it asks the
+terminal (color-scheme report, falling back to a background query) *before*
+creating the tmux session, because pi's own detection cannot see through
+the tmux layer — over SSH it silently fell back to dark. A pinned mode
+(`theme = "light"/"dark"`) skips the ask entirely: `settings.json` already
+carries the single theme and `--use-theme` would override the pin. An
+explicit `pi --use-theme <name>` is passed through untouched, wrapped in
+tmux like any interactive run.
 
 ## Updating plugins
 

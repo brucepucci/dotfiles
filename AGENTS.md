@@ -23,9 +23,12 @@ pi coding agent (Z.ai/GLM models).
 ```
 dot_zshrc.tmpl              # interactive shell: options, history, aliases, prompt;
                             # the pi() wrapper -- every new conversation gets
-                            # its own named tmux session (never attaches).
-                            # Template for ONE rendered line: tmux_wrap=off
-                            # defaults PI_TMUX_WRAP to never. Guarded fzf /
+                            # its own named tmux session (never attaches) and
+                            # probes the viewing terminal for the theme side.
+                            # TWO conditional renders: tmux_wrap=off defaults
+                            # PI_TMUX_WRAP to never; a pinned theme renders
+                            # PI_THEME_PINNED (the wrapper must not inject
+                            # --use-theme over the pin). Guarded fzf /
                             # zsh-autosuggestions / zsh-syntax-highlighting
                             # blocks after compinit; syntax-highlighting is
                             # sourced LAST (it wraps ZLE widgets at load)
@@ -104,10 +107,16 @@ parsed + derived from Ghostty's own catalog — no overrides, nothing pinned:
 what Ghostty ships is what every surface renders (delta falls back to the
 terminal's own palette; nvim/lualine use a scheme generated from the roles).
 Never hardcode a hex or theme name in a managed file — render it from the
-resolver or read it via `bruce.core.theming`. In nvim, only
+resolver or read it via `bruce.core.theming`. Surfaces that travel over
+SSH (the prompt, pi's TUI) avoid hexes entirely: they render in the
+terminal's indexed slots, which the *viewing* terminal maps through its
+own palette — pi's only hexes are the two live-derived tool tints, where
+the fixed xterm cube has no honest match (a sparse custom theme whose
+slots the author left out also falls back to role hexes — see `pi_vars`).
+In nvim, only
 `core/theming.lua` is generated; the rest is static Lua. The smoke test's
 color-system step is the drift guard (names resolve, no orphan hexes, roles
-verbatim). Ghostty must be installed where `chezmoi apply` runs. `chezmoi
+verbatim, pi rides the slots). Ghostty must be installed where `chezmoi apply` runs. `chezmoi
 re-add` skips
 template-sourced files (e.g. pi's `settings.json.tmpl`): fold pi's
 self-bumps in by hand. See README "Changing the settings" for the

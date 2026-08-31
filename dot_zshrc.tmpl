@@ -1,9 +1,11 @@
 {{- $piWrap := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--setting" "tmux_wrap" | trim -}}
+{{- $piTheme := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--setting" "theme" | trim -}}
 # ~/.zshrc — the interactive shell config, read by EVERY terminal on this
 # machine: Ghostty, Terminal.app, iTerm2, and SSH sessions alike. Managed by
 # chezmoi (dot_zshrc.tmpl in the dotfiles repo) — edit it there, not here.
-# The one rendered line: the tmux_wrap setting from settings.toml becomes a
-# PI_TMUX_WRAP default in the pi section when set to "off". Everything else
+# Two conditional renders: tmux_wrap = "off" becomes a PI_TMUX_WRAP
+# default in the pi section, and a pinned theme renders PI_THEME_PINNED
+# so the wrapper never injects --use-theme over the pin. Everything else
 # is static. Login-shell PATH lives in ~/.zprofile; this file is the
 # interactive half: options, history, completion, keybindings, shell
 # integrations (fzf, autosuggestions, syntax highlighting), aliases,
@@ -165,6 +167,13 @@ alias grep='grep --color=auto'
 # the environment says otherwise (PI_TMUX_WRAP=force wraps for one run).
 : ${PI_TMUX_WRAP:=never}
 {{ end -}}
+{{ if ne $piTheme "system" -}}
+# settings.toml pins theme = "{{ $piTheme }}": pi's settings.json carries the
+# single dotfiles-{{ $piTheme }} theme. The wrapper below must not inject
+# --use-theme either (the flag beats settings.json and would silently
+# override the pin on a terminal that disagrees), so it never probes.
+PI_THEME_PINNED="{{ $piTheme }}"
+{{ end -}}
 # Sanitize a tmux session name: lowercase, dashes for spaces/underscores,
 # [a-z0-9-] only (tmux forbids ':' and '.'; keep it shell- and
 # human-friendly). Prints the result; may be empty for hostile input.
@@ -176,21 +185,206 @@ __pi_tmux_name() {
   printf '%s' "${${s#-}%-}"
 }
 
+# Which side of the dotfiles-{light,dark} pair this conversation runs.
+# pi cannot ask the terminal itself once the wrapper puts it under tmux:
+# its OSC 11 / CSI ?996n queries stop at the tmux layer, COLORFGBG never
+# crosses SSH, and pi's fallback is "dark" -- so without this, every
+# conversation rendered the dark pair no matter what the terminal in
+# front of you actually looked like (most visible when SSH-ing from a
+# light-mode machine: pi's conversation panels stayed dark). Here, before
+# the session exists, the query travels the raw pipe -- SSH included --
+# to the VIEWING terminal. Sets REPLY to light|dark (dark unless a reply
+# proves otherwise -- pi's own fallback); returns nonzero if interrupted.
+# Keystrokes that arrive during the exchange are stashed in __pi_typed
+# (pi() re-injects them into the session), so the probe never eats
+# typeahead; stdin+stdout must be the terminal itself (the wrapper's own
+# guards ensure that in practice).
+#
+# The reply contract mirrors pi's own parser byte for byte:
+#   CSI ? 996 n   ->  CSI ? 997 ; 1 n (dark) / CSI ? 997 ; 2 n (light)
+#   OSC 11 query  ->  ESC ] 11 ; rgb:R/G/B | rgba:R/G/B/A | #RRGGBB |
+#                    #RRRRGGGGBBBB (1-4 hex digits per channel, BEL- or
+#                    ST-terminated), classified by pi's gamma-corrected
+#                    luminance, >= 0.5 = light: the linearization step is
+#                    what a naive /255 weighted average gets wrong on
+#                    mid-tones (#999999 is dark). Echo is off during the
+#                    exchange so the reply does not paint the screen.
+
+# One channel of an OSC color reply, scaled pi's way: any-width hex
+# digits -> 0..255 (round(v/max*255)). Sets REPLY; returns 1 on garbage.
+__pi_hex255() {
+  emulate -L zsh
+  local h=$1
+  [[ $h =~ '^[0-9a-f]+$' ]] || return 1
+  local max=$(( 16 ** $#h - 1 ))
+  (( max > 0 )) || return 1
+  REPLY=$(( (16#$h * 255 + max / 2) / max ))
+}
+
+# Read one terminal query reply. $1: query bytes to send ('' = drain
+# pass, sends nothing); $2: the reply prefix this call awaits ('' =
+# consume anything reply-shaped, return nothing); $3: seconds to wait
+# for the first byte (an SSH round trip, not just the inter-byte gap);
+# $4: seconds between bytes of one reply burst. Bytes are classified as
+# they arrive: an escape sequence matching the awaited prefix is the
+# reply (REPLY, return 0); anything else that looks like a terminal
+# report (CSI-? or OSC -- e.g. a late reply to the earlier query) is
+# consumed and dropped, since re-injecting THAT into pi would type
+# garbage; every other byte -- plain characters, arrow keys, pasted
+# text -- is user typeahead, accumulated in __pi_typed and never eaten.
+# Returns 1 when no reply completed (REPLY empty).
+__pi_read_reply() {
+  emulate -L zsh
+  local query=$1 await=$2 tfirst=$3 trest=$4
+  local c seq='' t=$tfirst
+  local -i in_seq=0 n=0
+  REPLY=''
+  [[ -n $query ]] && print -n -- "$query"
+  while (( n++ < 128 )) && IFS= read -r -k 1 -t $t c; do
+    if (( ! in_seq )); then
+      if [[ $c == $'\e' ]]; then
+        seq=$c; in_seq=1; t=$trest
+      else
+        __pi_typed+=$c; t=$tfirst
+      fi
+      continue
+    fi
+    seq+=$c
+    # A sequence is complete at: OSC BEL, OSC ST (ESC \), a CSI final
+    # byte (0x40-0x7e, at least one byte after the '['), or a bare
+    # ESC+key pair (alt-b, ESC o, ...) -- everything else is payload.
+    # (Separate ifs, not one ||-chain: shell && and || bind with equal
+    # precedence, so a chain would misparse. "$await" stays quoted --
+    # the DSR prefix contains '[', which unquoted would parse as the
+    # start of a bracket pattern class.)
+    local -i done=0
+    if [[ $c == $'\a' ]]; then done=1                            # OSC: BEL
+    elif [[ ${seq[-2]} == $'\e' && $c == '\' ]]; then done=1     # OSC: ST
+    elif (( ${#seq} > 2 )) && [[ ${seq[2]} == '[' && $c =~ '[@-~]' ]]; then done=1  # CSI final
+    elif [[ ${seq[2]} != '[' && ${seq[2]} != ']' ]]; then done=1 # ESC + key
+    fi
+    if (( done )); then
+      if [[ -n $await && $seq == "$await"* ]]; then
+        REPLY=$seq
+        return 0
+      fi
+      if [[ $seq != $'\e[?'* && $seq != $'\e]'* ]]; then
+        __pi_typed+=$seq        # a keystroke, not a report: keep it
+      fi
+      seq=''; in_seq=0; t=$tfirst
+    fi
+  done
+  # Half a sequence when the window lapsed: keep only a lone ESC (a
+  # real keypress); ESC-plus-payload is a report fragment, and
+  # re-injecting it into pi would type garbage.
+  (( in_seq )) && [[ $seq == $'\e' ]] && __pi_typed+=$seq
+  return 1
+}
+
+__pi_theme_side() {
+  emulate -L zsh
+  setopt localtraps
+  local result='' saved reply val hex spec r g b
+  local -a ch
+  local -i interrupted=0 ok
+  local -F vr vg vb lum
+  REPLY=dark
+  __pi_typed=''
+  [[ -t 0 && -t 1 ]] || return 0
+  saved=$(command stty -g 2>/dev/null) || return 0
+  # Ctrl-C / kill during the probe window must not leave the tty raw:
+  # the flag aborts the launch, the always block restores the settings.
+  trap 'interrupted=1' INT TERM
+  {
+    command stty -echo -icanon 2>/dev/null
+    # Scheme report first: one round trip, an exact answer where the
+    # terminal supports it. A report naming an unknown scheme (or no
+    # report at all) falls through to the background-color query.
+    __pi_read_reply $'\e[?996n' $'\e[?997;' 1.0 0.15
+    reply=$REPLY
+    val=${reply##*;}          # '2n' / '1n' / '' -- last group wins, as in pi
+    val=${val%n}
+    [[ $val == 2 ]] && result=light
+    [[ $val == 1 ]] && result=dark
+    if [[ -z $result ]]; then
+      # OSC 11 background color: the widely supported fallback.
+      __pi_read_reply $'\e]11;?\a' $'\e]11;' 1.0 0.15
+      reply=$REPLY
+      val=${reply#$'\e]11;'}
+      val=${val%$'\a'}
+      [[ $val == *$'\e\\' ]] && val=${val[1,-3]}
+      val=${val:l}
+      ok=0
+      if [[ $val == \#* ]]; then
+        hex=${val#\#}
+        if (( $#hex == 6 )); then
+          r=$(( 16#${hex[1,2]} )); g=$(( 16#${hex[3,4]} )); b=$(( 16#${hex[5,6]} )); ok=1
+        elif (( $#hex == 12 )); then
+          ok=1
+          __pi_hex255 ${hex[1,4]} && r=$REPLY || ok=0
+          __pi_hex255 ${hex[5,8]} && g=$REPLY || ok=0
+          __pi_hex255 ${hex[9,12]} && b=$REPLY || ok=0
+        fi
+      elif [[ $val == rgb:* || $val == rgba:* ]]; then
+        spec=${val#rgb*:}
+        ch=(${(s./.)spec})
+        if (( $#ch >= 3 )); then
+          ok=1
+          __pi_hex255 $ch[1] && r=$REPLY || ok=0
+          __pi_hex255 $ch[2] && g=$REPLY || ok=0
+          __pi_hex255 $ch[3] && b=$REPLY || ok=0
+        fi
+      fi
+      if (( ok )); then
+        # pi's getRgbColorLuminance verbatim: linearize each sRGB
+        # channel (the gamma step), then Rec.709 weights, >= 0.5 light.
+        vr=$(( r / 255.0 ))
+        if (( vr <= 0.03928 )); then vr=$(( vr / 12.92 )); else vr=$(( ((vr + 0.055) / 1.055) ** 2.4 )); fi
+        vg=$(( g / 255.0 ))
+        if (( vg <= 0.03928 )); then vg=$(( vg / 12.92 )); else vg=$(( ((vg + 0.055) / 1.055) ** 2.4 )); fi
+        vb=$(( b / 255.0 ))
+        if (( vb <= 0.03928 )); then vb=$(( vb / 12.92 )); else vb=$(( ((vb + 0.055) / 1.055) ** 2.4 )); fi
+        lum=$(( 0.2126 * vr + 0.7152 * vg + 0.0722 * vb ))
+        if (( lum >= 0.5 )); then result=light; else result=dark; fi
+      fi
+    fi
+    # Straggler sweep: a reply still in flight when the windows lapsed
+    # must be consumed here, not leak into the session tmux is about to
+    # own (where it would type escape garbage into the conversation).
+    __pi_read_reply '' '' 0.1 0.05
+  } always {
+    command stty "$saved" 2>/dev/null
+    trap - INT TERM
+  }
+  (( interrupted )) && return 1
+  # ${result:-dark}: a terminal that answered nothing keeps pi's own
+  # fallback (and the drain pass above leaves REPLY empty when it ate
+  # a straggler, so REPLY cannot carry the default through).
+  REPLY=${result:-dark}
+  return 0
+}
+
 pi() {
   emulate -L zsh
-  local arg i name=""
+  local arg i name="" REPLY
+  local __pi_typed=''
+  local -i user_theme=0
   local -a a=("$@") quoted=()
   if [[ ${PI_TMUX_WRAP:-} == never ]]; then command pi "$@"; return; fi
   # One-shot invocations must never spawn a tmux server: the session would
   # flash the alternate screen and swallow the output when it dies. Flags
   # anywhere in argv, and pi's management subcommands, mean "just run it".
   # The -n/--name topic rides along in the same pass (passed to pi verbatim).
+  # An explicit --use-theme is NOT one-shot (it is a normal interactive
+  # run flag): the session still wraps, but the wrapper must not stack a
+  # detected theme on top of the user's choice.
   for (( i=1; i<=${#a}; i++ )); do
     case "${a[i]}" in
       -h|--help|-v|--version|-p|--print|--mode|--mode=*|--list-models)
         command pi "$@"; return ;;
       -n|--name)    name="${a[i+1]:-}" ;;
       --name=*)     name="${${a[i]}#--name=}" ;;
+      --use-theme|--use-theme=*) user_theme=1 ;;
     esac
   done
   case "${a[1]:-}" in
@@ -223,9 +417,28 @@ pi() {
   while command tmux has-session -t "=$sess" 2>/dev/null; do
     sess="${base}-${n}"; (( n++ ))
   done
-  for arg in "$@"; do quoted+=("${(q)arg}"); done
+  # Theme side: decided here, passed explicitly -- inside the session pi
+  # cannot see the terminal anymore. A pinned settings.toml theme never
+  # probes (pi's settings.json already names the one theme, and
+  # --use-theme would override the pin); a user-supplied --use-theme
+  # stands exactly as given.
+  local -a theme_args=()
+  if (( ! user_theme )) && [[ -z ${PI_THEME_PINNED:-} ]]; then
+    __pi_theme_side || return        # interrupted mid-probe: abort quietly
+    theme_args=(--use-theme "dotfiles-$REPLY")
+  fi
+  for arg in ${theme_args} "$@"; do quoted+=("${(q)arg}"); done
   print -r -- "pi: tmux session \"$sess\" (detach Ctrl-b d; rejoin: tmux attach -t $sess)"
-  command tmux new-session -s "$sess" "command pi ${(j: :)quoted}"
+  if (( ${#__pi_typed} )); then
+    # Keystrokes that arrived while the probe held the terminal: deliver
+    # them to the conversation they were aimed at. new-session's client
+    # blocks until the session ends, so mint detached, feed, then attach.
+    command tmux new-session -d -s "$sess" "command pi ${(j: :)quoted}"
+    command tmux send-keys -t "$sess" -l -- "$__pi_typed"
+    command tmux attach -t "$sess"
+  else
+    command tmux new-session -s "$sess" "command pi ${(j: :)quoted}"
+  fi
 }
 
 # --- Secrets ----------------------------------------------------------------

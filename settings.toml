@@ -25,7 +25,8 @@
 #   Ghostty        the theme itself (light:/dark: pair when theme=system)
 #   zsh prompt     indexed colors 0-15, inherited from the terminal palette
 #   delta/git      diffs in the theme's own ANSI palette (no bat themes)
-#   pi TUI         themes generated from the palette's 16 colors
+#   pi TUI         themes in the palette's own indexed slots -- they follow
+#                  the viewing terminal, even over SSH
 #   nvim + lualine a colorscheme generated from the palette's 16 colors
 #
 # The names are resolved at apply time from Ghostty's own catalog by
@@ -34,8 +35,8 @@
 # `chezmoi apply` runs. After editing: `chezmoi diff && chezmoi apply`.
 
 theme = "system"
-light_theme = "Gruvbox Light Hard"
-dark_theme = "Gruvbox Material Dark"
+light_theme = "Flexoki Light"
+dark_theme = "Kanagawa Wave"
 
 # pi conversations in tmux? on = detachable sessions (the feature), off =
 # bare pi. Rendered into ~/.zshrc at apply time; see the header above.

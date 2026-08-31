@@ -13,6 +13,10 @@ is served through chezmoi's hidden .chezmoidata machinery:
   ghostty-theme.py <name>         # JSON: {terminal, roles} for one theme
   ghostty-theme.py --get <name> <path>  # one value, e.g. roles.bg
   ghostty-theme.py --hexes <name>...    # every hex the theme(s) define
+  ghostty-theme.py --pi <name>          # the pi TUI's vars for one theme:
+                                       # terminal slots + xterm cube + the
+                                       # two live tints, as ready-to-embed
+                                       # JSON (indices follow the terminal)
 
 The settings live in settings.toml at the repo root (the user-facing
 file); names are parsed from Ghostty's own catalog (the files behind
@@ -102,6 +106,28 @@ def contrast(a, b):
     return (la + 0.05) / (lb + 0.05)
 
 
+# xterm 256-color cube/grayscale ramp. Palette 0-15 are the theme slots;
+# 16-255 are fixed by the xterm spec, so every terminal renders them
+# identically -- the stable side channel for shades no theme slot carries.
+XTERM_LEVELS = [0, 95, 135, 175, 215, 255]
+
+
+def nearest_256(rgb):
+    """Nearest xterm index in 16..255 (cube + grayscale ramp)."""
+    best, best_d = 16, 1 << 30
+    for i in range(16, 256):
+        if i < 232:
+            j = i - 16
+            cand = (XTERM_LEVELS[j // 36], XTERM_LEVELS[j // 6 % 6],
+                    XTERM_LEVELS[j % 6])
+        else:
+            cand = (8 + 10 * (i - 232),) * 3
+        d = sum((a - c) ** 2 for a, c in zip(rgb, cand))
+        if d < best_d:
+            best, best_d = i, d
+    return best
+
+
 # ---------------------------------------------------------------------------
 # ghostty's own theme file
 # ---------------------------------------------------------------------------
@@ -121,6 +147,7 @@ def find_ghostty_dir():
 
 def parse_ghostty_theme(path):
     term = {}
+    defined = set()          # palette entries the theme file actually sets
     with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -131,6 +158,7 @@ def parse_ghostty_theme(path):
             m = re.fullmatch(r"palette\s*=\s*(\d+)\s*=\s*(\S+)", line)
             if m:
                 term["palette_%s" % m.group(1)] = m.group(2)
+                defined.add(int(m.group(1)))
                 continue
             key, _, value = line.partition("=")
             key, value = key.strip(), value.strip()
@@ -144,6 +172,10 @@ def parse_ghostty_theme(path):
     term.setdefault("selection-foreground", term["background"])
     for i in range(16):
         term.setdefault("palette_%d" % i, term["background"])
+    # Internal (resolve() does not pass it through): which palette slots are
+    # real. A defaulted slot holds the background hex, NOT a color the theme
+    # author chose -- pi must not ride it as an index (see pi_vars).
+    term["_palette_defined"] = frozenset(defined)
     return term
 
 
@@ -186,6 +218,69 @@ def derive_roles(term):
         "mode_blue": term["palette_4"],
         "mode_purple": term["palette_5"],
     }
+
+
+# ---------------------------------------------------------------------------
+# pi TUI vars: the roles mapped onto what a terminal can actually follow.
+# pi's theme format accepts 256-color indices, and 0-15 are the slots the
+# VIEWING terminal maps through its own palette. So: bg/fg ride the
+# terminal defaults, the accents ride their exact palette slots (the roles
+# are derived from those very entries -- locally pixel-identical), grey
+# rides slot 8 (the theme author's own muted color, warmth included).
+# Over SSH this makes pi follow the terminal you are looking at instead of
+# the machine that rendered the config. Shades with no honest slot
+# (surface, dim greys, the blended orange) ride the xterm cube -- fixed by
+# spec, identical on every terminal. The one deliberate exception: the two
+# tool tints stay live-derived hexes, because the cube holds no muted
+# olive/rust and nearest-mapping them collapses the success/error cue into
+# two indistinguishable greys.
+# ---------------------------------------------------------------------------
+
+PI_VARS = [
+    "bg", "fg", "fg_bright", "grey", "grey_dim", "grey_neutral",
+    "grey_soft", "surface", "red", "orange", "yellow", "green",
+    "aqua", "blue", "purple", "tint_green", "tint_red",
+]
+
+
+def pi_vars(term, roles):
+    dark = luminance(parse_hex(term["foreground"])) > \
+        luminance(parse_hex(term["background"]))
+    defined = term.get("_palette_defined", frozenset())
+
+    def cube(role):
+        return nearest_256(parse_hex(roles[role]))
+
+    # Ride the terminal's slot only when the theme actually defines it. A
+    # sparse custom theme leaves unset slots defaulted to the background
+    # hex -- riding the index would show the VIEWING terminal's own color
+    # there, silently diverging from the roles nvim/lualine render from the
+    # same theme. Emit the concrete hex instead.
+    def ride(idx, role):
+        return idx if idx in defined else roles[role]
+
+    v = {
+        "bg": "",
+        "fg": "",
+        # dark themes: palette_15 is exactly what derive_roles picked; light
+        # themes have no brighter slot (15 ~= the background), so cube it
+        "fg_bright": ride(15, "fg_bright") if dark else cube("fg_bright"),
+        "grey": ride(8, "grey"),
+        "grey_dim": cube("grey_dim"),
+        "grey_neutral": ride(8, "grey_neutral"),
+        "grey_soft": ride(8, "grey_soft"),
+        "surface": cube("surface"),
+        "red": ride(1, "red"),
+        "orange": cube("orange"),
+        "yellow": ride(3, "yellow"),
+        "green": ride(2, "green"),
+        "aqua": ride(6, "aqua"),
+        "blue": ride(4, "blue"),
+        "purple": ride(5, "purple"),
+        "tint_green": roles["tint_green"],
+        "tint_red": roles["tint_red"],
+    }
+    return {k: v[k] for k in PI_VARS}
 
 
 # ---------------------------------------------------------------------------
@@ -252,6 +347,9 @@ def resolve(name):
         "terminal": {key: term[key] for key in TERMINAL_KEYS}
         | {"palette_%d" % i: term["palette_%d" % i] for i in range(16)},
         "roles": {key: roles[key] for key in ROLE_ORDER},
+        # the raw parse (carries _palette_defined); used by --pi, popped
+        # before anything is printed
+        "_term": term,
         "apps": {
             # no curated per-app themes: neutral fallbacks, so every app
             # follows the terminal's own palette
@@ -279,7 +377,17 @@ def main():
         out["mode"] = settings["theme"]  # templates read .mode
         for side in ("light", "dark"):
             out[side] = resolve(settings[side + "_theme"])
+            out[side].pop("_term", None)
         print(json.dumps(out, sort_keys=True))
+        return
+
+    if args[0] == "--pi":
+        if len(args) != 2:
+            die("usage: --pi <theme>")
+        data = resolve(args[1])
+        block = json.dumps(pi_vars(data["_term"], data["roles"]),
+                           indent=4)
+        print(block.replace("\n}", "\n  }"))
         return
 
     if args[0] == "--hexes":
@@ -308,7 +416,9 @@ def main():
 
     if len(args) != 1:
         die("expected exactly one theme name (quote names with spaces)")
-    print(json.dumps(resolve(args[0]), sort_keys=True))
+    data = resolve(args[0])
+    data.pop("_term", None)
+    print(json.dumps(data, sort_keys=True))
 
 
 if __name__ == "__main__":

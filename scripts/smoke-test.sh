@@ -25,17 +25,25 @@
 #      so no GUI toggling is required)
 #  10. the color system: the chosen theme names resolve from Ghostty's
 #      own catalog (via the same script the templates call), no rendered
-#      output carries a hex the themes don't define, and nvim's
-#      generated data module carries the chosen roles verbatim
+#      output carries a hex the themes don't define, nvim's generated
+#      data module carries the chosen roles verbatim, and pi's themes
+#      ride the viewing terminal's indexed slots (bg/fg/accents/grey on
+#      0-15 and defaults, shades on the fixed xterm cube) so SSH'd pi
+#      follows the terminal you are looking at -- only the two tool
+#      tints remain live hexes
 #  11. the tmux config renders with pi's requirements intact: extended
 #      keys (Shift+Enter survives the tmux layer), OSC 52 clipboard,
 #      truecolor passthrough, mouse-wheel copy-mode scrollback, status-bar
 #      window separator — file-shape only; no tmux binary needed
 #  12. the pi wrapper: `pi` always CREATES a session (never attaches —
 #      rejoining is manual `tmux attach`), names it after the project dir
-#      (-2/-3 on collision) or the sanitized -n topic, and falls through
-#      to plain pi inside tmux / without the binary / from $HOME / for
-#      one-shot -p runs — exercised with fake tmux+pi shims
+#      (-2/-3 on collision) or the sanitized -n topic, passes
+#      --use-theme dotfiles-{light,dark} decided from the VIEWING terminal
+#      (pi cannot ask through the tmux layer; non-tty runs fall back dark),
+#      keeps tmux wrapping for a user-supplied --use-theme (only the
+#      injection is suppressed), and falls through to plain pi inside
+#      tmux / without the binary / from $HOME / for one-shot -p runs —
+#      exercised with fake tmux+pi shims
 #  13. the tmux_wrap setting: "on" (the committed value) renders no env
 #      default and leaves PI_TMUX_WRAP unset; "off" renders
 #      : ${PI_TMUX_WRAP:=never} into ~/.zshrc (second apply against a
@@ -45,6 +53,18 @@
 #      highlighting blocks render after compinit, ghost text uses indexed
 #      color 8 (no hex), and zsh-syntax-highlighting is the LAST source in
 #      ~/.zshrc -- the absent-formula branch is what CI exercises live
+#  15. sparse custom themes: a palette slot the theme never set defaults
+#      to the background -- pi must emit the role's hex, not ride the slot
+#      index (the viewing terminal's own color there would silently
+#      diverge from nvim/lualine's rendering of the same theme)
+#  16. a pinned theme mode (theme = "dark"): PI_THEME_PINNED renders into
+#      ~/.zshrc, pi's settings.json carries the single theme, and the
+#      wrapper wraps WITHOUT --use-theme (the flag beats settings.json
+#      and would silently override the pin)
+#  17. the theme probe itself, on a real pty: the 997;1/2 mapping, the
+#      gamma-corrected luminance threshold (mid-tones classify opposite
+#      to a naive average), every OSC 11 reply shape pi's parser accepts,
+#      typeahead preservation, and the silent-terminal dark fallback
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -245,7 +265,113 @@ for side in light dark; do
       || die "theming.lua $side.$role does not match the $t roles"
   done
 done
-ok "themes resolve, no orphan hexes, roles verbatim"
+# pi themes: the SSH guarantee, checked against the resolver's own
+# output instead of restated constants. bg/fg/accents/grey ride the
+# viewing terminal's slots, shades no slot can carry ride the xterm
+# cube, and a hex that is not one of the two live tints would mean
+# SSH'd pi is back to showing the rendering machine's opinion.
+# Provenance: each accent role IS its palette entry, and pi rides that
+# same slot -- if derive_roles ever maps a role from a different entry,
+# pi and nvim/lualine silently disagree and this fails. The rendered
+# themes are then loaded as JSON and every colors reference resolved
+# against the vars block: the old per-key templating failed `chezmoi
+# apply` loudly on a bad name, the vars indirection renders fine -- pi
+# would silently fall back to its built-in theme.
+if ! python3 - "$LTHEME" "$DTHEME" "$NEWHOME" "$SOURCE" <<'PY'
+import json, subprocess, sys
+ltheme, dtheme, home, src = sys.argv[1:5]
+py, script = "python3", src + "/scripts/ghostty-theme.py"
+
+def run(*args):
+    return subprocess.run([py, script, *args], capture_output=True,
+                          text=True, check=True).stdout
+
+def parse_hex(h):
+    h = h.lstrip("#")
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+ACCENT_SLOTS = {"red": 1, "green": 2, "yellow": 3,
+                "blue": 4, "purple": 5, "aqua": 6}
+for side, theme in (("light", ltheme), ("dark", dtheme)):
+    data = json.loads(run(theme))
+    term, roles = data["terminal"], data["roles"]
+    piv = json.loads(run("--pi", theme))
+    if piv["bg"] != "" or piv["fg"] != "":
+        sys.exit("pi vars: bg/fg must ride the terminal defaults")
+    for role, slot in ACCENT_SLOTS.items():
+        if parse_hex(term["palette_%d" % slot]) != parse_hex(roles[role]):
+            sys.exit("%s: roles.%s drifted from palette_%d -- pi and "
+                     "nvim/lualine would disagree" % (theme, role, slot))
+        if piv[role] != slot:
+            sys.exit("%s: pi var %s no longer rides its slot" % (theme, role))
+    # grey family: slot 8 is the theme author's muted color by design
+    # (roles.grey is a blend -- no identity to assert, just the slot)
+    for k in ("grey", "grey_neutral", "grey_soft"):
+        if piv[k] != 8:
+            sys.exit("%s: pi var %s must ride slot 8" % (theme, k))
+    # fg_bright: slot 15 on dark (verbatim palette_15), cube on light
+    if piv["fg_bright"] == 15:
+        if parse_hex(term["palette_15"]) != parse_hex(roles["fg_bright"]):
+            sys.exit("%s: roles.fg_bright drifted from palette_15" % theme)
+    elif not (isinstance(piv["fg_bright"], int) and 16 <= piv["fg_bright"] <= 255):
+        sys.exit("%s: fg_bright must be slot 15 or a cube index" % theme)
+    for k in ("grey_dim", "surface", "orange"):
+        if not (isinstance(piv[k], int) and 16 <= piv[k] <= 255):
+            sys.exit("%s: pi var %s must ride the xterm cube" % (theme, k))
+    for k in ("tint_green", "tint_red"):
+        if piv[k] != roles[k]:
+            sys.exit("%s: pi var %s must stay the live-derived hex" % (theme, k))
+    # the rendered theme file: valid JSON, vars exactly the --pi block,
+    # every colors value a var name ("" = the terminal default)
+    f = "%s/.pi/agent/themes/dotfiles-%s.json" % (home, side)
+    t = json.load(open(f))
+    if t["vars"] != piv:
+        sys.exit("%s: rendered vars differ from the --pi output" % f)
+    names = set(t["vars"]) | {""}
+    for k, v in t["colors"].items():
+        if v not in names:
+            sys.exit("%s: colors.%s references unknown var %r -- pi would "
+                     "silently fall back to its built-in theme" % (f, k, v))
+    print("  ok  %s: slots + provenance verified; dotfiles-%s refs resolve"
+          % (theme, side))
+PY
+then
+  die "pi vars left the slot/cube/tint discipline, or a theme ref dangles (see above)"
+fi
+for side in light dark; do
+  f="$NEWHOME/.pi/agent/themes/dotfiles-$side.json"
+  for want in '"bg": ""' '"red": 1' '"grey": 8'; do
+    grep -qF "$want" "$f" || die "$f: slot $want did not render"
+  done
+done
+ok "themes resolve, no orphan hexes, roles verbatim, pi follows the terminal"
+
+step "pi vars: sparse custom themes ride hexes, not defaulted slots"
+# Every catalog theme ships a full 16-color palette, but a hand-written
+# theme (DOTFILES_GHOSTTY_THEMES) can leave slots out -- the resolver
+# defaults them to the background hex. Riding such a slot as an index
+# would show the VIEWING terminal's own color there while nvim/lualine
+# render the derived roles: a silent divergence between the apps.
+sparse="$WORK/sparse-themes"; mkdir -p "$sparse"
+cat > "$sparse/SparseTest" <<'CONF'
+background = #101010
+foreground = #e0e0e0
+palette = 0=#101010
+palette = 2=#00cc00
+CONF
+spiv="$(DOTFILES_GHOSTTY_THEMES="$sparse" \
+  python3 "$SOURCE/scripts/ghostty-theme.py" --pi SparseTest)"
+grep -qF '"green": 2' <<<"$spiv" \
+  || die "sparse theme: a defined slot (green/2) must still ride the index"
+grep -qF '"red": "#101010"' <<<"$spiv" \
+  || die "sparse theme: a defaulted slot (red/1) must emit the role hex"
+grep -qF '"fg_bright": "#101010"' <<<"$spiv" \
+  || die "sparse theme: defaulted palette_15 must emit the role hex"
+sred="$(DOTFILES_GHOSTTY_THEMES="$sparse" \
+  python3 "$SOURCE/scripts/ghostty-theme.py" --get SparseTest roles.red)"
+[[ "$sred" == "#101010" ]] \
+  || die "sparse theme: roles.red should be the defaulted background hex"
+ok "sparse themes: defined slots ride indices, defaulted slots ride hexes"
 
 step "fresh login shell (new terminal window)"
 out="$(fresh_zsh '
@@ -408,7 +534,9 @@ step "pi wrapper: new sessions only, named after the project or topic"
 # around a new pi conversation -- rejoining is explicit `tmux attach -t`,
 # which lands straight inside the running pi. Fake tmux/pi shims stand in
 # for the real binaries; PI_TMUX_WRAP=force substitutes for the tty this
-# harness cannot provide (that one branch runs for real in manual use).
+# harness cannot provide (that one branch runs for real in manual use;
+# the probe itself gets a real pty in its own step below). Non-tty runs
+# fall back dark, so every wrapped case here expects dotfiles-dark.
 wbin="$WORK/wbin"; mkdir -p "$wbin"
 SESS="$WORK/wrap-sessions"; TLOG="$WORK/wrap-tmux.log"; PLOG="$WORK/wrap-pi.log"
 : > "$SESS"; : > "$TLOG"; : > "$PLOG"
@@ -442,7 +570,7 @@ proj="$WORK/demoproj"; mkdir -p "$proj"
 # 1. topic-named session, args passed through, hint printed
 rc=0; out="$(wrap_zsh "$proj" "-n 'Auth Refactor'")" \
   || { rc=$?; die "case-1 inner zsh exited $rc -- output: $out"; }
-grep -qF 'new-session -s auth-refactor command pi -n Auth\ Refactor' "$TLOG" \
+grep -qF 'new-session -s auth-refactor command pi --use-theme dotfiles-dark -n Auth\ Refactor' "$TLOG" \
   || die "topic naming/passthrough wrong: $(tail -1 "$TLOG")"
 grep -qxF auth-refactor "$SESS" || die "topic session not minted"
 [[ "$(cat "$PLOG")" == "" ]] || die "fake pi must not run at wrapper time"
@@ -451,7 +579,7 @@ grep -qxF auth-refactor "$SESS" || die "topic session not minted"
 : > "$TLOG"; printf 'demoproj\ndemoproj-2\n' > "$SESS"
 rc=0; out2="$(wrap_zsh "$proj" "")" \
   || { rc=$?; die "case-2 inner zsh exited $rc -- output: $out2"; }
-grep -qF 'new-session -s demoproj-3 command pi' "$TLOG" \
+grep -qF 'new-session -s demoproj-3 command pi --use-theme dotfiles-dark' "$TLOG" \
   || die "collision numbering wrong: $(tail -1 "$TLOG")"
 # 3. an explicitly taken topic refuses -- nothing silently renamed
 : > "$TLOG"; printf 'auth-refactor\n' > "$SESS"
@@ -459,6 +587,16 @@ rc=0; out="$(wrap_zsh "$proj" '-n auth-refactor')" || rc=$?
 (( rc != 0 )) || die "taken topic should exit nonzero"
 [[ ! -s "$TLOG" ]] || die "taken topic must not create a session"
 [[ "$out" == *'tmux attach -t auth-refactor'* ]] || die "rejoin hint missing: $out"
+# 3b. a user-supplied --use-theme is an interactive-run flag: the session
+# still wraps (it is not one-shot like -p/--help), but the wrapper must
+# not stack its own detected theme on top of the user's choice
+: > "$TLOG"; printf 'demoproj\n' > "$SESS"
+rc=0; out="$(wrap_zsh "$proj" '--use-theme my-theme')" \
+  || { rc=$?; die "case-3b inner zsh exited $rc -- output: $out"; }
+grep -qF 'new-session -s demoproj-2 command pi --use-theme my-theme' "$TLOG" \
+  || die "user --use-theme must wrap exactly as given: $(tail -1 "$TLOG")"
+grep -qF 'dotfiles-' "$TLOG" \
+  && die "user --use-theme must suppress the detected theme injection"
 # 4. guards: all fall through to plain pi, never touching tmux
 guard_plain() {  # $1 = extra env, $2 = pi args
   : > "$TLOG"; : > "$PLOG"
@@ -530,5 +668,170 @@ DOTFILES_SETTINGS_FILE="$badsettings" \
   python3 "$SOURCE/scripts/ghostty-theme.py" --setting tmux_wrap >/dev/null 2>&1 \
   && die "resolver: an invalid tmux_wrap value must fail loudly"
 ok "on leaves the env alone; off defaults it to never; invalid fails apply"
+
+step "pinned theme mode: the wrapper never overrides the pin"
+# theme = "light"|"dark" in settings.toml renders the single theme into
+# pi's settings.json -- and --use-theme beats settings.json, so the
+# wrapper must not inject one. The pin renders PI_THEME_PINNED into
+# ~/.zshrc and the probe is skipped entirely: the pin wins no matter
+# what the viewing terminal reports. (Committed settings stay system,
+# so the main HOME must carry no pin.)
+pinnedsettings="$WORK/settings-pinned.toml"
+sed 's/^theme = "system"/theme = "dark"/' "$SOURCE/settings.toml" > "$pinnedsettings"
+pinnedhome="$WORK/home-pinned"; mkdir -p "$pinnedhome"
+DOTFILES_SETTINGS_FILE="$pinnedsettings" \
+  chezmoi --source "$SOURCE" --destination "$pinnedhome" apply \
+  || die "theme=dark: apply failed"
+grep -qF 'PI_THEME_PINNED="dark"' "$pinnedhome/.zshrc" \
+  || die 'theme=dark must render PI_THEME_PINNED="dark" into ~/.zshrc'
+[[ "$(sed -n 's/.*"theme": "\([^"]*\)".*/\1/p' "$pinnedhome/.pi/agent/settings.json")" == "dotfiles-dark" ]] \
+  || die "theme=dark: pi settings.json must carry the single dark theme"
+grep -qF ': ${PI_TMUX_WRAP:=never}' "$pinnedhome/.zshrc" \
+  && die "tmux_wrap=on must stay silent even when the theme is pinned"
+: > "$TLOG"; : > "$SESS"; : > "$PLOG"
+rc=0; out="$(env -i HOME="$pinnedhome" TERM=xterm-256color SHELL=/bin/zsh \
+      PATH="$wbin:/usr/bin:/bin" FAKE_SESS="$SESS" FAKE_LOG="$TLOG" \
+      FAKE_PI="$PLOG" PI_TMUX_WRAP=force \
+      /bin/zsh -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$proj' && pi" 2>&1)" \
+  || { rc=$?; die "pinned wrapper run exited $rc -- output: $out"; }
+grep -qF 'new-session -s demoproj command pi' "$TLOG" \
+  || die "pinned mode must still wrap in tmux: $(tail -1 "$TLOG")"
+grep -qF -- '--use-theme' "$TLOG" \
+  && die "pinned mode must not inject --use-theme (it would beat the pin)"
+! grep -qF 'PI_THEME_PINNED=' "$NEWHOME/.zshrc" \
+  || die "theme=system (committed) must not render a pin into ~/.zshrc"
+ok "pin renders, wraps without --use-theme; system mode stays unpinned"
+
+step "theme probe: reply parsing on a real pty"
+# __pi_theme_side needs a tty, so wrap_zsh above cannot exercise it --
+# and the tty is exactly where its bugs live: the 997;1/2 mapping, the
+# gamma-corrected luminance threshold, the OSC 11 reply formats, and
+# typeahead preservation. Drive the applied ~/.zshrc's own function from
+# a pty (python stdlib), answering its queries the way a terminal would:
+# an inverted mapping, a naive /255 average, a narrow rgb: regex, or an
+# 'n'-terminated read loop each fail a case below.
+if ! python3 -u - "$NEWHOME" <<'PY'
+import os, pty, re, select, signal, sys, time
+signal.alarm(240)
+home = sys.argv[1]
+
+# GitHub's runner images ship zsh fpath dirs owned by neither root nor
+# the job's uid, so on a tty (this harness is the one place the test
+# tree gets one) compinit asks "Ignore insecure directories and continue
+# [y] or abort compinit [n]?" and blocks the shell before the probe
+# ever runs -- the same quirk AGENTS.md documents for the -u branch.
+# The runner asks TWICE (its /etc/zsh/zshrc runs a compinit that then
+# fails, so the applied .zshrc's own call audits again), so answer
+# every occurrence, not just the first: count prompts seen against
+# answers given. On real machines the prompt never appears. One 'y'
+# per prompt, no newline: each is a read -k1.
+COMPINIT_PROMPT = b"[y] or abort compinit [n]"
+
+def run_case(name, dsr_feed, osc_feed, want, want_typed=None, timeout=15):
+    pid, fd = pty.fork()
+    if pid == 0:
+        env = {"HOME": home, "TERM": "xterm-256color",
+               "PATH": "/usr/bin:/bin", "LC_ALL": "C.UTF-8"}
+        os.execve("/bin/zsh", ["/bin/zsh", "-i", "-c",
+                  '__pi_theme_side; print -r -- "RESULT=$REPLY"; '
+                  'print -r -- "TYPED=${__pi_typed}"'], env)
+    buf = b""
+    fed_dsr = fed_osc = False
+    compinit_answers = 0
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        r, _, _ = select.select([fd], [], [], 0.2)
+        if not r:
+            continue
+        try:
+            chunk = os.read(fd, 4096)
+        except OSError:
+            break
+        if not chunk:
+            break
+        buf += chunk
+        # split-safe (matched against everything read so far); one 'y'
+        # per occurrence, however many compinits end up asking
+        pending = buf.count(COMPINIT_PROMPT) - compinit_answers
+        if pending > 0:
+            os.write(fd, b"y" * pending)
+            compinit_answers += pending
+        if not fed_dsr and b"\x1b[?996n" in buf:
+            fed_dsr = True
+            if dsr_feed is not None:
+                os.write(fd, dsr_feed)   # typeahead first, then the reply
+        if not fed_osc and b"\x1b]11;?" in buf:
+            fed_osc = True
+            if osc_feed is not None:
+                os.write(fd, osc_feed)
+        if b"TYPED=" in buf:
+            break
+    try:
+        os.kill(pid, 9); os.waitpid(pid, 0)
+    except Exception:
+        pass
+    try:
+        os.close(fd)
+    except OSError:
+        pass
+    text = buf.decode("utf-8", "replace")
+    m = re.search(r"RESULT=(\w+)", text)
+    got = m.group(1) if m else None
+    typed = None
+    if "TYPED=" in text:
+        typed = text.split("TYPED=", 1)[1].split("\r")[0].split("\n")[0]
+    if got != want or (want_typed is not None and typed != want_typed):
+        # Diagnostics for exactly the situation that once failed this
+        # step silently on CI: what did the child print, and is it
+        # alive, stopped, or gone? /proc is linux-only; guarded for macOS.
+        state = "?"
+        try:
+            with open("/proc/%d/status" % pid) as f:
+                ms = re.search(r"State:\s+(\S+)", f.read())
+                state = ms.group(1) if ms else "?"
+        except OSError:
+            pass
+        print("  FAIL %s: result=%r typed=%r (want %r/%r) child=%s buflen=%d"
+              % (name, got, typed, want, want_typed, state, len(buf)))
+        print("       raw tail: %r" % buf[-300:])
+        return False
+    print("  ok  %s" % name)
+    return True
+
+G = b"\x1b[?997;9n"   # scheme report naming no known side -> OSC fallback
+cases = [
+    # kitty-spec mapping: 997;1 = dark, 997;2 = light (the branch under
+    # review shipped this inverted -- every reporting terminal got the
+    # wrong theme, and the OSC fallback never ran to correct it)
+    ("scheme report 997;1 -> dark",   b"\x1b[?997;1n", None, "dark", ""),
+    ("scheme report 997;2 -> light",  b"\x1b[?997;2n", None, "light", ""),
+    # OSC 11 replies in every shape pi's own parser accepts
+    ("OSC #RRGGBB light",             G, b"\x1b]11;#ffffff\x07", "light", ""),
+    ("OSC #RRGGBB dark",              G, b"\x1b]11;#000000\x07", "dark", ""),
+    ("OSC rgb:16-bit light",          G, b"\x1b]11;rgb:ffff/ffff/ffff\x07", "light", ""),
+    ("OSC rgb:16-bit dark, ST-ended", G, b"\x1b]11;rgb:0000/0000/0000\x1b\\", "dark", ""),
+    ("OSC #RRRRGGGGBBBB light",       G, b"\x1b]11;#ffffffffffff\x07", "light", ""),
+    ("OSC rgba:, alpha ignored",      G, b"\x1b]11;rgba:ffff/ffff/ffff/ffff\x07", "light", ""),
+    # pi's luminance is gamma-corrected: these mid-tones are DARK even
+    # though a naive weighted-average of /255 calls them light
+    ("OSC #999999 -> dark (gamma)",   G, b"\x1b]11;rgb:9999/9999/9999\x07", "dark", ""),
+    ("OSC #b4b4b4 -> dark (gamma)",   G, b"\x1b]11;#b4b4b4\x07", "dark", ""),
+    ("OSC #c8c8c8 -> light",          G, b"\x1b]11;#c8c8c8\x07", "light", ""),
+    # keystrokes during the probe are preserved verbatim and re-injected
+    # into the session -- including 'n's, which must not end the reply
+    # read, and arrow keys, which must not be mistaken for reports
+    ("typeahead 'n's + arrow kept",   b"nn\x1b[D\x1b[?997;2n", None, "light", "nn\x1b[D"),
+    ("arrow key before reply kept",   b"\x1b[A\x1b[?997;1n", None, "dark", "\x1b[A"),
+    ("typeahead between queries",     G, b"hi\x1b]11;#ffffff\x07", "light", "hi"),
+    # a terminal that answers nothing keeps pi's own fallback
+    ("no reply -> dark fallback",     None, None, "dark", ""),
+]
+if not all([run_case(*c) for c in cases]):
+    sys.exit(1)
+PY
+then
+  die "theme probe misparsed a reply (see above)"
+fi
+ok "997 mapping, gamma threshold, OSC formats, typeahead all correct"
 
 printf '\nALL PASS\n'
