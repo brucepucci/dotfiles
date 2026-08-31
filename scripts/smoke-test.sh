@@ -37,9 +37,11 @@
 #      window separator — file-shape only; no tmux binary needed
 #  12. the pi wrapper: `pi` always CREATES a session (never attaches —
 #      rejoining is manual `tmux attach`), names it after the project dir
-#      (-2/-3 on collision) or the sanitized -n topic, and falls through
-#      to plain pi inside tmux / without the binary / from $HOME / for
-#      one-shot -p runs — exercised with fake tmux+pi shims
+#      (-2/-3 on collision) or the sanitized -n topic, passes
+#      --use-theme dotfiles-{light,dark} decided from the VIEWING terminal
+#      (pi cannot ask through the tmux layer; non-tty runs fall back dark),
+#      and falls through to plain pi inside tmux / without the binary /
+#      from $HOME / for one-shot -p runs — exercised with fake tmux+pi shims
 #  13. the tmux_wrap setting: "on" (the committed value) renders no env
 #      default and leaves PI_TMUX_WRAP unset; "off" renders
 #      : ${PI_TMUX_WRAP:=never} into ~/.zshrc (second apply against a
@@ -484,7 +486,7 @@ proj="$WORK/demoproj"; mkdir -p "$proj"
 # 1. topic-named session, args passed through, hint printed
 rc=0; out="$(wrap_zsh "$proj" "-n 'Auth Refactor'")" \
   || { rc=$?; die "case-1 inner zsh exited $rc -- output: $out"; }
-grep -qF 'new-session -s auth-refactor command pi -n Auth\ Refactor' "$TLOG" \
+grep -qF 'new-session -s auth-refactor command pi --use-theme dotfiles-dark -n Auth\ Refactor' "$TLOG" \
   || die "topic naming/passthrough wrong: $(tail -1 "$TLOG")"
 grep -qxF auth-refactor "$SESS" || die "topic session not minted"
 [[ "$(cat "$PLOG")" == "" ]] || die "fake pi must not run at wrapper time"
@@ -493,7 +495,7 @@ grep -qxF auth-refactor "$SESS" || die "topic session not minted"
 : > "$TLOG"; printf 'demoproj\ndemoproj-2\n' > "$SESS"
 rc=0; out2="$(wrap_zsh "$proj" "")" \
   || { rc=$?; die "case-2 inner zsh exited $rc -- output: $out2"; }
-grep -qF 'new-session -s demoproj-3 command pi' "$TLOG" \
+grep -qF 'new-session -s demoproj-3 command pi --use-theme dotfiles-dark' "$TLOG" \
   || die "collision numbering wrong: $(tail -1 "$TLOG")"
 # 3. an explicitly taken topic refuses -- nothing silently renamed
 : > "$TLOG"; printf 'auth-refactor\n' > "$SESS"

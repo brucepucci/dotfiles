@@ -176,6 +176,54 @@ __pi_tmux_name() {
   printf '%s' "${${s#-}%-}"
 }
 
+# Which side of the dotfiles-{light,dark} pair this conversation runs.
+# pi cannot ask the terminal itself once the wrapper puts it under tmux:
+# its OSC 11 / CSI ?996n queries stop at the tmux layer, COLORFGBG never
+# crosses SSH, and pi's fallback is "dark" -- so without this, every
+# conversation rendered the dark pair no matter what the terminal in
+# front of you actually looked like (most visible when SSH-ing from a
+# light-mode machine: pi's conversation panels stayed dark). Here, before
+# the session exists, the query travels the raw pipe -- SSH included --
+# to the VIEWING terminal. Sets REPLY to light|dark; terminals that
+# answer neither query keep pi's own fallback, dark. Scheme report first
+# (CSI ?996n -> ?997;1n light / ?997;2n dark), then OSC 11 background
+# color with pi's >=0.5 luminance threshold. Echo is off during the
+# exchange so the reply does not paint the screen; stdin+stdout must be
+# the terminal itself (the wrapper's own guards ensure that in practice).
+__pi_theme_side() {
+  emulate -L zsh
+  REPLY=dark
+  [[ -t 0 && -t 1 ]] || return
+  local saved; saved=$(command stty -g 2>/dev/null) || return
+  command stty -echo -icanon 2>/dev/null
+  local resp='' c i result=''
+  print -n -- $'\e[?996n'
+  for (( i=0; i<40; i++ )); do
+    IFS= read -r -k 1 -t 0.15 c || break
+    resp+=$c; [[ $c == n ]] && break
+  done
+  [[ $resp == *'997;1'* ]] && result=light
+  [[ -z $result && $resp == *'997;2'* ]] && result=dark
+  if [[ -z $result ]]; then
+    print -n -- $'\e]11;?\a'
+    resp=''
+    for (( i=0; i<48; i++ )); do
+      IFS= read -r -k 1 -t 0.15 c || break
+      resp+=$c; [[ $c == $'\a' || $resp == *$'\e\\' ]] && break
+    done
+    # rgb:RRRR/GGGG/BBBB (16-bit) or rgb:RR/GGG/BBB (8-bit): the first two
+    # hex digits of each channel are the 8-bit value either way.
+    local r g b
+    if [[ $resp =~ 'rgb:([0-9a-fA-F]{2})[0-9a-fA-F]*/([0-9a-fA-F]{2})[0-9a-fA-F]*/([0-9a-fA-F]{2})' ]]; then
+      r=$(( 16#${match[1]} )); g=$(( 16#${match[2]} )); b=$(( 16#${match[3]} ))
+      (( (0.2126*r + 0.7152*g + 0.0722*b) / 255 >= 0.5 )) && result=light
+    fi
+  fi
+  command stty "$saved" 2>/dev/null
+  [[ -n $result ]] && REPLY=$result
+  return 0
+}
+
 pi() {
   emulate -L zsh
   local arg i name=""
@@ -187,7 +235,7 @@ pi() {
   # The -n/--name topic rides along in the same pass (passed to pi verbatim).
   for (( i=1; i<=${#a}; i++ )); do
     case "${a[i]}" in
-      -h|--help|-v|--version|-p|--print|--mode|--mode=*|--list-models)
+      -h|--help|-v|--version|-p|--print|--mode|--mode=*|--list-models|--use-theme|--use-theme=*)
         command pi "$@"; return ;;
       -n|--name)    name="${a[i+1]:-}" ;;
       --name=*)     name="${${a[i]}#--name=}" ;;
@@ -224,8 +272,12 @@ pi() {
     sess="${base}-${n}"; (( n++ ))
   done
   for arg in "$@"; do quoted+=("${(q)arg}"); done
+  # Ask the viewing terminal which side to run (see __pi_theme_side):
+  # decided here, passed explicitly -- inside the session pi cannot see
+  # the terminal anymore.
+  __pi_theme_side; local side=$REPLY
   print -r -- "pi: tmux session \"$sess\" (detach Ctrl-b d; rejoin: tmux attach -t $sess)"
-  command tmux new-session -s "$sess" "command pi ${(j: :)quoted}"
+  command tmux new-session -s "$sess" "command pi --use-theme dotfiles-$side ${(j: :)quoted}"
 }
 
 # --- Secrets ----------------------------------------------------------------

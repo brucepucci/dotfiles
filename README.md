@@ -399,7 +399,11 @@ and `settings.json` picks the pair — or a single theme when the mode is
 pinned. The vars are terminal-indexed colors, not hexes: bg/fg/accents/grey
 map to the palette slots 0-15 that the **viewing** terminal resolves, so
 SSH'd pi matches the machine you are sitting at (the two tool tints are the
-only live hexes — the xterm cube has no muted olive/rust worth using).
+only live hexes — the xterm cube has no muted olive/rust worth using). The
+wrapper decides which side of the pair each conversation runs: it asks the
+terminal (color-scheme report, falling back to a background query) *before*
+creating the tmux session, because pi's own detection cannot see through
+the tmux layer — over SSH it silently fell back to dark.
 
 ## Updating plugins
 
