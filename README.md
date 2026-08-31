@@ -158,7 +158,7 @@ non-Homebrew install.
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts | [git.md](docs/git.md) |
 | `~/.config/lazygit/config.yml` | delta as lazygit's diff renderer | [git.md](docs/git.md) |
 | `~/.local/bin/delta-theme` | Appearance-aware delta wrapper | [git.md](docs/git.md) |
-| `~/.pi/agent/settings.json`, `~/.pi/agent/themes/` | pi's settings and generated theme pair | [pi.md](docs/pi.md) |
+| `~/.pi/agent/settings.json`, `~/.pi/agent/themes/` | pi's settings, generated theme pair, and the `/skill:runbook` verification skill (generated from AGENTS.md) | [pi.md](docs/pi.md) |
 
 Repo-level files that are **never installed** (see `.chezmoiignore`):
 this README, `AGENTS.md`, `Brewfile`, `scripts/`, `settings.toml`, and
