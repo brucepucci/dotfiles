@@ -81,7 +81,10 @@ Load-bearing for setup rather than daily work: this dotfiles repo is
 **private**, so `chezmoi init` needs credentials — `gh auth login`
 (choose HTTPS) plus `gh auth setup-git` installs the git credential
 helper that makes the clone work. No SSH key is registered on the account,
-so `--ssh` is not a fallback. Beyond setup, `gh` is what opens PRs for
+so `--ssh` is not a fallback. (That setup-git write gets wiped by the next
+`chezmoi apply` — this repo owns `~/.gitconfig` — so the helper is baked
+into `dot_gitconfig.tmpl`, resolved at apply time; it exists to carry the
+initial clone and agent/SSH pushes.) Beyond setup, `gh` is what opens PRs for
 this repo's own workflow (see [developing.md](developing.md)).
 
 ## The workflow these pieces serve

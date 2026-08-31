@@ -24,3 +24,16 @@
 	colorMoved = default
 [push]
 	autoSetupRemote = true
+{{- $gh := lookPath "gh" }}
+{{ if $gh }}
+# HTTPS auth for this private repo, provided by gh. `gh auth setup-git`
+# writes exactly this pair into ~/.gitconfig on a new machine -- but this
+# repo owns that file, so apply would wipe it; rendered here instead, with
+# gh's path resolved at apply time. The empty value first resets helpers
+# inherited from lower scopes (Homebrew's system-level osxkeychain): the
+# keychain cannot serve agent/SSH contexts, where git aborts with
+# "could not read Username for 'https://github.com'".
+[credential "https://github.com"]
+	helper =
+	helper = !{{ $gh }} auth git-credential
+{{ end -}}

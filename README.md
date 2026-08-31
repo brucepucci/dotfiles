@@ -93,6 +93,8 @@ Six commands on macOS. Order matters — see the notes.
 brew install chezmoi gh
 gh auth login            # choose HTTPS
 gh auth setup-git        # installs the git credential helper
+#    (needed for the initial private clone; apply re-provides the helper
+#    from dot_gitconfig.tmpl afterwards, keychain-free)
 
 # 2. Clone the repo (do NOT apply yet -- the color system reads Ghostty's
 #    own theme catalog at apply time, so Ghostty must land first)

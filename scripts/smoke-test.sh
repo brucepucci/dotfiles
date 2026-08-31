@@ -129,6 +129,21 @@ for f in .zshrc .zprofile .config/zsh/ps1.zsh \
          .tmux.conf; do
   [[ -f "$NEWHOME/$f" ]] || die "missing $f"
 done
+# The gitconfig renders gh's credential helper when gh is on the applying
+# machine's PATH (lookPath at apply time). The empty `helper =` resets
+# helpers inherited from lower scopes (Homebrew's system osxkeychain)
+# before adding gh's -- the keychain cannot serve agent/SSH contexts, and
+# gh auth setup-git's own write to ~/.gitconfig would be wiped by the
+# next apply anyway (this repo owns the file).
+if command -v gh >/dev/null 2>&1; then
+  grep -qE '^\thelper =$' "$NEWHOME/.gitconfig" \
+    || die "~/.gitconfig: gh present but the empty helper reset line is missing"
+  grep -qF 'auth git-credential' "$NEWHOME/.gitconfig" \
+    || die "~/.gitconfig: gh present but its credential helper did not render"
+else
+  grep -q 'auth git-credential' "$NEWHOME/.gitconfig" \
+    && die "~/.gitconfig: gh absent but a credential helper rendered anyway"
+fi
 # tmux.conf carries pi's documented requirements (docs/tmux.md bundled with
 # the agent) plus the passthrough settings the color system needs under
 # tmux. Checked by shape so CI needs no tmux binary.
