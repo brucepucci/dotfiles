@@ -268,6 +268,56 @@ config, setting by setting, plus the keys and the SSH setup).
 | Health check | `:checkhealth`, `:Lazy check` |
 | The maintainer's guide | [docs/developing.md](docs/developing.md) |
 
+## Maintenance
+
+The setup is self-maintaining by construction — themes resolve at apply time,
+the lockfile pins plugins, the smoke test guards drift — so there is no
+patch treadmill. A few things still deserve a calendar:
+
+### Quarterly
+
+```vim
+:checkhealth       " nvim's own audit. Expected noise: snacks' magick /
+                   " ghostscript / tectonic (image modules unused) — anything
+                   " else is yours
+:Lazy check        " plugin updates available
+```
+
+This is what would have caught the old config's silently-dead LSP; silence
+means healthy (missing servers warn by name at startup). And pi can run the
+whole verification runbook for you, any time: `/skill:runbook`.
+
+### After updating things
+
+- **Plugins** — updates are deliberate, never automatic. In nvim:
+  `:Lazy update`, test, then `chezmoi re-add ~/.config/nvim/lazy-lock.json`
+  and commit — the runbook is in
+  [docs/developing.md](docs/developing.md#update-plugins).
+- **pi** — unpinned npm package; `pi update` lands the latest (plus its
+  model catalogs). Its `lastChangelogVersion` self-bump shows as one
+  drifting field in `chezmoi diff` — harmless. Model defaults saved via
+  `/model` + Ctrl+S must be folded into the template by hand:
+  [docs/developing.md](docs/developing.md#pi-self-bumps).
+- **Ghostty** — new themes ship with updates and work the moment you type
+  their name in `settings.toml` (nothing is cached here). Re-run
+  `chezmoi apply` after the upgrade so every surface re-renders.
+- **Homebrew** — `brew bundle --file="$(chezmoi source-path)/Brewfile"`
+  reinstalls anything an OS migration dropped; `brew bundle check` (same
+  file) reports drift; `brew upgrade` for the rest.
+
+### As needed
+
+- **Big behavioral change coming?** Tier-2 it first: a disposable macOS
+  VM via tart, run the new-machine steps inside —
+  [docs/developing.md](docs/developing.md)'s test pyramid.
+- **Rotated keys** in `~/.zsh/secrets.zsh`? Panes inherit the tmux
+  *server's* environment, snapshotted at server start: `tmux kill-server`
+  (ends live conversations), then start fresh.
+- **chezmoi behaving oddly?** `chezmoi doctor`.
+
+Rollback paths are in the next section; the full task runbooks live in
+[docs/developing.md](docs/developing.md).
+
 ## Rollback
 
 The pre-migration config is kept at `~/.config/nvim-old` and runs side by

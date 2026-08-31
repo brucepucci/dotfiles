@@ -261,6 +261,10 @@ If one of these breaks, the intended replacement is already decided:
 
 ## Health check & rollback
 
+The cadence summary (what to do quarterly / after updates / as needed)
+lives in the README's "Maintenance" section; this is the long-form
+version.
+
 Quarterly: `:checkhealth`, `:Lazy check` in nvim. This is what would have
 caught the old config's dead LSP.
 
