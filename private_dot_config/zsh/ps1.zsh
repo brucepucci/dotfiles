@@ -113,7 +113,12 @@ alias clear='command clear; unset _gb_had_command'
 # unpredictably; constant segments (path, prompt char) stay plain.
 # ---------------------------------------------------------------------------
 GB_HOST=''
-[[ -n $SSH_CONNECTION ]] && GB_HOST="%F{$GB_ORANGE}${GB_SERVER_ICON}%n@%m%f "
+# The space after the server icon is load-bearing, same reasoning as the
+# git markers' leading spaces: the U+F233 glyph's ink is wider than its
+# one-cell advance, so without it the icon overpaints the first character
+# of the username. Only visible over SSH -- locally GB_HOST stays empty,
+# which is why this never shows up in a Ghostty window at the desk.
+[[ -n $SSH_CONNECTION ]] && GB_HOST="%F{$GB_ORANGE}${GB_SERVER_ICON} %n@%m%f "
 
 # %(4~|…/%3~|%~) — full path until 4 components deep, then elide the front
 PROMPT="${GB_HOST}%B%F{$GB_BLUE}%(4~|…/%3~|%~)%f%b"
