@@ -123,6 +123,37 @@ fi
 if [[ -r $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
   ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
   source $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+  # Suggestion shortcuts, on byte sequences terminals already send -- plus
+  # one remap. Option+Enter is remapped in the Ghostty config to its own
+  # kitty-protocol bytes (esc [ 13 ; 3 u -- what kitty-aware apps like pi
+  # already receive for it), which frees plain esc+cr for
+  # Option+Shift+Enter (shift is invisible on enter in the legacy
+  # encoding, so the two are otherwise identical). In terminals without
+  # the remap both chords arrive as esc+cr, which binds to the SAFE
+  # action: accept, never run. ctrl+enter is byte-identical to enter and
+  # stays unbound. The replaced stock bindings -- self-insert-unmeta on
+  # esc+cr/esc+lf -- insert the raw byte, which nothing uses. Inside this
+  # guard because the plugin's widgets don't exist without the formula.
+  #
+  # ZSH_AUTOSUGGEST_IGNORE_WIDGETS is load-bearing for run-suggestion:
+  # the plugin's deferred rebinder (at the first prompt) wraps every user
+  # widget in its "modify" action, which clears POSTDISPLAY before the
+  # widget body runs -- without the exemption the guard below would
+  # never see a suggestion. autosuggest-accept needs no wrapper: it is
+  # the plugin's own widget and already no-ops with no suggestion or a
+  # mid-line cursor.
+  ZSH_AUTOSUGGEST_IGNORE_WIDGETS+='run-suggestion'
+  run-suggestion() {
+    # Execute only a FULL suggestion with the cursor at the end; every
+    # other state is a no-op -- never run a half-typed line.
+    if [[ -n $POSTDISPLAY && $CURSOR -eq $#BUFFER ]]; then
+      zle autosuggest-execute
+    fi
+  }
+  zle -N run-suggestion
+  bindkey '^[[13;3u' run-suggestion   # option+enter: accept and run as-is
+  bindkey '^[^M' autosuggest-accept   # option+shift+enter: accept, no run
+  bindkey '^[^J' autosuggest-accept   # same, terminals sending esc+lf
 fi
 
 # --- Aliases ----------------------------------------------------------------

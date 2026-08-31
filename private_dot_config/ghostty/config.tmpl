@@ -5,10 +5,11 @@
 # Ghostty reads both on macOS and only this one on Linux. Note it MERGES the
 # two when both exist, so keep only this one.
 #
-# TERMINAL APPEARANCE ONLY. The shell itself — prompt, history, aliases,
-# completion, secrets — is global: every terminal and SSH session reads
-# ~/.zshrc and ~/.zprofile. Nothing shell-related is set here, so there is
-# exactly one obvious place to change the shell: the dotfiles repo's dot_zshrc.
+# TERMINAL APPEARANCE ONLY -- with one deliberate exception below. The
+# shell itself -- prompt, history, aliases, completion, secrets -- is
+# global: every terminal and SSH session reads ~/.zshrc and ~/.zprofile.
+# Nothing shell-related is SET here, so there is exactly one obvious
+# place to change the shell: the dotfiles repo's dot_zshrc.
 #
 {{ $a := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "appearance" | trim | fromJson -}}
 # The theme names and the light/dark mode are not set here at all: they come
@@ -26,3 +27,15 @@ light:{{ $a.light_theme }},dark:{{ $a.dark_theme }}
 {{- else -}}
 {{ $a.dark_theme }}
 {{- end }}
+
+# The one exception to appearance-only: remap Option+Enter to the exact
+# byte sequence the Kitty keyboard protocol would send for it anyway
+# (esc [ 13 ; 3 u). Kitty-aware apps like pi already receive Option+Enter
+# as those bytes, so this changes nothing for them; legacy apps like zsh
+# normally get a bare carriage return -- indistinguishable from Enter --
+# and this gives ~/.zshrc a byte-distinct key to bind (it runs the
+# autosuggestion as-is; esc+cr stays free for Option+Shift+Enter to
+# accept without running). No terminal-side fallback is lost: in
+# terminals without this remap both chords collapse to esc+cr, which
+# ~/.zshrc binds to the safe action (accept, never run).
+keybind = opt+enter=text:\x1b[13;3u

@@ -65,6 +65,12 @@
 #      gamma-corrected luminance threshold (mid-tones classify opposite
 #      to a naive average), every OSC 11 reply shape pi's parser accepts,
 #      typeahead preservation, and the silent-terminal dark fallback
+#  18. the suggestion keys: option+enter (kitty bytes esc[13;3u, remapped
+#      in the ghostty config) runs the suggestion as-is, esc+cr
+#      (option+shift+enter) accepts without running, both no-ops
+#      otherwise; stock motion defaults stay untouched (ctrl-w kills a
+#      word, ctrl-b moves a char, ctrl-l clears) -- live bindings
+#      asserted only where the formula exists, shape always
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see the "Testing changes" section
@@ -428,6 +434,38 @@ last_source="$(grep -E '^[^#]*[[:space:]]source [^[:space:]]' "$zrc" | tail -1 |
 [[ "$last_source" == *zsh-syntax-highlighting* ]] \
   || die "~/.zshrc: zsh-syntax-highlighting must be the last source (got: $last_source)"
 ok "all three render after compinit; ghost text indexed; highlighting last"
+
+step "suggestion keys: option+enter runs, option+shift+enter accepts; defaults untouched"
+# The ghostty config remaps option+enter to the kitty-protocol bytes
+# (esc[13;3u) so zsh gets a byte-distinct run key; esc+cr (which
+# option+shift+enter also produces -- shift is invisible on enter in the
+# legacy encoding) accepts without running. The safe action owns the
+# bytes every terminal sends: without the remap both chords collapse to
+# accept, never run. The stock motion defaults must remain exactly
+# stock, and the suggestion keys only exist where the formula does:
+# rendered binds are asserted always, live bindings only where the
+# plugin is installed.
+grep -qF 'keybind = opt+enter=text:\x1b[13;3u' "$NEWHOME/.config/ghostty/config" \
+  || die "ghostty: option+enter must be remapped to the kitty bytes for run-suggestion"
+out="$(fresh_zsh 'bindkey "^W"; bindkey "^B"; bindkey "^L"; bindkey "^[[13;3u"; bindkey "^[^M"; [[ ${+widgets[autosuggest-accept]} == 1 ]] && print plugin=yes || print plugin=no' || true)"
+[[ "$out" == *'"^W" backward-kill-word'* ]] || die "~/.zshrc: ctrl-w must keep the stock backward-kill-word"
+[[ "$out" == *'"^B" backward-char'* ]] || die "~/.zshrc: ctrl-b must keep the stock backward-char"
+[[ "$out" == *'"^L" clear-screen'* ]] || die "~/.zshrc: ctrl-l must keep the stock clear-screen"
+grep -qF "bindkey '^[[13;3u' run-suggestion" "$NEWHOME/.zshrc" \
+  || die "~/.zshrc: option+enter (kitty bytes) must run the suggestion as-is"
+grep -qF "bindkey '^[^M' autosuggest-accept" "$NEWHOME/.zshrc" \
+  || die "~/.zshrc: esc+cr (option+shift+enter) must accept the suggestion"
+grep -qF "ZSH_AUTOSUGGEST_IGNORE_WIDGETS+='run-suggestion'" "$NEWHOME/.zshrc" \
+  || die "~/.zshrc: run-suggestion must be exempted from the plugin's modify-wrapping (which clears POSTDISPLAY before the body runs)"
+if [[ "$out" == *plugin=yes* ]]; then
+  [[ "$out" == *'"^[[13;3u" run-suggestion'* ]] \
+    || die "~/.zshrc: option+enter must run the suggestion as-is (live)"
+  [[ "$out" == *'"^[^M" autosuggest-accept'* ]] \
+    || die "~/.zshrc: esc+cr must accept the suggestion (live)"
+  ok "stock ctrl-w/ctrl-b/ctrl-l preserved; option+enter runs, option+shift+enter accepts"
+else
+  ok "absent-formula branch: binds render, motion defaults stock, live bindings skipped"
+fi
 
 step "legacy ZDOTDIR guard (pre-unification Ghostty window)"
 # A Ghostty still running from before the unification exports ZDOTDIR at
