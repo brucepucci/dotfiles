@@ -111,7 +111,9 @@ resolver or read it via `bruce.core.theming`. Surfaces that travel over
 SSH (the prompt, pi's TUI) avoid hexes entirely: they render in the
 terminal's indexed slots, which the *viewing* terminal maps through its
 own palette — pi's only hexes are the two live-derived tool tints, where
-the fixed xterm cube has no honest match. In nvim, only
+the fixed xterm cube has no honest match (a sparse custom theme whose
+slots the author left out also falls back to role hexes — see `pi_vars`).
+In nvim, only
 `core/theming.lua` is generated; the rest is static Lua. The smoke test's
 color-system step is the drift guard (names resolve, no orphan hexes, roles
 verbatim, pi rides the slots). Ghostty must be installed where `chezmoi apply` runs. `chezmoi

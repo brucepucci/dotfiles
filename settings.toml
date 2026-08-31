@@ -35,8 +35,8 @@
 # `chezmoi apply` runs. After editing: `chezmoi diff && chezmoi apply`.
 
 theme = "system"
-light_theme = "Gruvbox Light Hard"
-dark_theme = "Gruvbox Material Dark"
+light_theme = "Flexoki Light"
+dark_theme = "Kanagawa Wave"
 
 # pi conversations in tmux? on = detachable sessions (the feature), off =
 # bare pi. Rendered into ~/.zshrc at apply time; see the header above.
