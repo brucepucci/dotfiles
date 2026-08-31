@@ -713,8 +713,11 @@ home = sys.argv[1]
 # tree gets one) compinit asks "Ignore insecure directories and continue
 # [y] or abort compinit [n]?" and blocks the shell before the probe
 # ever runs -- the same quirk AGENTS.md documents for the -u branch.
-# Answer it the way an interactive user would; on real machines the
-# prompt never appears. Single 'y', no newline: it is a read -k1.
+# The runner asks TWICE (its /etc/zsh/zshrc runs a compinit that then
+# fails, so the applied .zshrc's own call audits again), so answer
+# every occurrence, not just the first: count prompts seen against
+# answers given. On real machines the prompt never appears. One 'y'
+# per prompt, no newline: each is a read -k1.
 COMPINIT_PROMPT = b"[y] or abort compinit [n]"
 
 def run_case(name, dsr_feed, osc_feed, want, want_typed=None, timeout=15):
@@ -726,7 +729,8 @@ def run_case(name, dsr_feed, osc_feed, want, want_typed=None, timeout=15):
                   '__pi_theme_side; print -r -- "RESULT=$REPLY"; '
                   'print -r -- "TYPED=${__pi_typed}"'], env)
     buf = b""
-    fed_dsr = fed_osc = compinit_answered = False
+    fed_dsr = fed_osc = False
+    compinit_answers = 0
     deadline = time.time() + timeout
     while time.time() < deadline:
         r, _, _ = select.select([fd], [], [], 0.2)
@@ -739,10 +743,12 @@ def run_case(name, dsr_feed, osc_feed, want, want_typed=None, timeout=15):
         if not chunk:
             break
         buf += chunk
-        # split-safe: matched against everything read so far, answered once
-        if not compinit_answered and COMPINIT_PROMPT in buf:
-            os.write(fd, b"y")
-            compinit_answered = True
+        # split-safe (matched against everything read so far); one 'y'
+        # per occurrence, however many compinits end up asking
+        pending = buf.count(COMPINIT_PROMPT) - compinit_answers
+        if pending > 0:
+            os.write(fd, b"y" * pending)
+            compinit_answers += pending
         if not fed_dsr and b"\x1b[?996n" in buf:
             fed_dsr = True
             if dsr_feed is not None:
