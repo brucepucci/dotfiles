@@ -403,7 +403,11 @@ only live hexes — the xterm cube has no muted olive/rust worth using). The
 wrapper decides which side of the pair each conversation runs: it asks the
 terminal (color-scheme report, falling back to a background query) *before*
 creating the tmux session, because pi's own detection cannot see through
-the tmux layer — over SSH it silently fell back to dark.
+the tmux layer — over SSH it silently fell back to dark. A pinned mode
+(`theme = "light"/"dark"`) skips the ask entirely: `settings.json` already
+carries the single theme and `--use-theme` would override the pin. An
+explicit `pi --use-theme <name>` is passed through untouched, wrapped in
+tmux like any interactive run.
 
 ## Updating plugins
 

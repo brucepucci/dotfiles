@@ -147,6 +147,7 @@ def find_ghostty_dir():
 
 def parse_ghostty_theme(path):
     term = {}
+    defined = set()          # palette entries the theme file actually sets
     with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -157,6 +158,7 @@ def parse_ghostty_theme(path):
             m = re.fullmatch(r"palette\s*=\s*(\d+)\s*=\s*(\S+)", line)
             if m:
                 term["palette_%s" % m.group(1)] = m.group(2)
+                defined.add(int(m.group(1)))
                 continue
             key, _, value = line.partition("=")
             key, value = key.strip(), value.strip()
@@ -170,6 +172,10 @@ def parse_ghostty_theme(path):
     term.setdefault("selection-foreground", term["background"])
     for i in range(16):
         term.setdefault("palette_%d" % i, term["background"])
+    # Internal (resolve() does not pass it through): which palette slots are
+    # real. A defaulted slot holds the background hex, NOT a color the theme
+    # author chose -- pi must not ride it as an index (see pi_vars).
+    term["_palette_defined"] = frozenset(defined)
     return term
 
 
@@ -240,28 +246,37 @@ PI_VARS = [
 def pi_vars(term, roles):
     dark = luminance(parse_hex(term["foreground"])) > \
         luminance(parse_hex(term["background"]))
+    defined = term.get("_palette_defined", frozenset())
 
     def cube(role):
         return nearest_256(parse_hex(roles[role]))
+
+    # Ride the terminal's slot only when the theme actually defines it. A
+    # sparse custom theme leaves unset slots defaulted to the background
+    # hex -- riding the index would show the VIEWING terminal's own color
+    # there, silently diverging from the roles nvim/lualine render from the
+    # same theme. Emit the concrete hex instead.
+    def ride(idx, role):
+        return idx if idx in defined else roles[role]
 
     v = {
         "bg": "",
         "fg": "",
         # dark themes: palette_15 is exactly what derive_roles picked; light
         # themes have no brighter slot (15 ~= the background), so cube it
-        "fg_bright": 15 if dark else cube("fg_bright"),
-        "grey": 8,
+        "fg_bright": ride(15, "fg_bright") if dark else cube("fg_bright"),
+        "grey": ride(8, "grey"),
         "grey_dim": cube("grey_dim"),
-        "grey_neutral": 8,
-        "grey_soft": 8,
+        "grey_neutral": ride(8, "grey_neutral"),
+        "grey_soft": ride(8, "grey_soft"),
         "surface": cube("surface"),
-        "red": 1,
+        "red": ride(1, "red"),
         "orange": cube("orange"),
-        "yellow": 3,
-        "green": 2,
-        "aqua": 6,
-        "blue": 4,
-        "purple": 5,
+        "yellow": ride(3, "yellow"),
+        "green": ride(2, "green"),
+        "aqua": ride(6, "aqua"),
+        "blue": ride(4, "blue"),
+        "purple": ride(5, "purple"),
         "tint_green": roles["tint_green"],
         "tint_red": roles["tint_red"],
     }
@@ -332,6 +347,9 @@ def resolve(name):
         "terminal": {key: term[key] for key in TERMINAL_KEYS}
         | {"palette_%d" % i: term["palette_%d" % i] for i in range(16)},
         "roles": {key: roles[key] for key in ROLE_ORDER},
+        # the raw parse (carries _palette_defined); used by --pi, popped
+        # before anything is printed
+        "_term": term,
         "apps": {
             # no curated per-app themes: neutral fallbacks, so every app
             # follows the terminal's own palette
@@ -359,6 +377,7 @@ def main():
         out["mode"] = settings["theme"]  # templates read .mode
         for side in ("light", "dark"):
             out[side] = resolve(settings[side + "_theme"])
+            out[side].pop("_term", None)
         print(json.dumps(out, sort_keys=True))
         return
 
@@ -366,7 +385,7 @@ def main():
         if len(args) != 2:
             die("usage: --pi <theme>")
         data = resolve(args[1])
-        block = json.dumps(pi_vars(data["terminal"], data["roles"]),
+        block = json.dumps(pi_vars(data["_term"], data["roles"]),
                            indent=4)
         print(block.replace("\n}", "\n  }"))
         return
@@ -397,7 +416,9 @@ def main():
 
     if len(args) != 1:
         die("expected exactly one theme name (quote names with spaces)")
-    print(json.dumps(resolve(args[0]), sort_keys=True))
+    data = resolve(args[0])
+    data.pop("_term", None)
+    print(json.dumps(data, sort_keys=True))
 
 
 if __name__ == "__main__":

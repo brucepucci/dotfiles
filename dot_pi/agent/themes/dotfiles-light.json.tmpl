@@ -21,13 +21,13 @@
 
      colors (Layer 3) reference only the vars above; that mapping is
      decided here, per surface. */ -}}
-{{ $a := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "appearance" | trim | fromJson }}
-{{ $pi := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--pi" $a.light_theme | trim }}
+{{ $lightName := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--setting" "light_theme" | trim -}}
+{{ $pi := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--pi" $lightName | trim }}
   "name": "dotfiles-light",
   "vars": {{ $pi }},
   "colors": {
     "accent": "blue",
-    "border": "grey",
+    "border": "grey_dim",
     "borderAccent": "blue",
     "borderMuted": "surface",
     "success": "green",
@@ -49,17 +49,17 @@
     "toolPendingBg": "bg",
     "toolSuccessBg": "tint_green",
     "toolErrorBg": "tint_red",
-    "toolTitle": "fg_bright",
+    "toolTitle": "fg",
     "toolOutput": "",
     "mdHeading": "yellow",
     "mdLink": "blue",
     "mdLinkUrl": "grey",
     "mdCode": "aqua",
     "mdCodeBlock": "fg",
-    "mdCodeBlockBorder": "grey",
+    "mdCodeBlockBorder": "grey_dim",
     "mdQuote": "fg",
-    "mdQuoteBorder": "grey",
-    "mdHr": "grey",
+    "mdQuoteBorder": "grey_dim",
+    "mdHr": "grey_dim",
     "mdListBullet": "aqua",
     "toolDiffAdded": "green",
     "toolDiffRemoved": "red",
@@ -76,7 +76,7 @@
     "thinkingOff": "grey_soft",
     "thinkingMinimal": "grey_dim",
     "thinkingLow": "grey",
-    "thinkingMedium": "green",
+    "thinkingMedium": "aqua",
     "thinkingHigh": "yellow",
     "thinkingXhigh": "orange",
     "thinkingMax": "red",

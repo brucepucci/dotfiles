@@ -21,8 +21,8 @@
 
      colors (Layer 3) reference only the vars above; that mapping is
      decided here, per surface. */ -}}
-{{ $a := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "appearance" | trim | fromJson }}
-{{ $pi := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--pi" $a.dark_theme | trim }}
+{{ $darkName := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--setting" "dark_theme" | trim -}}
+{{ $pi := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--pi" $darkName | trim }}
   "name": "dotfiles-dark",
   "vars": {{ $pi }},
   "colors": {
