@@ -130,6 +130,10 @@ Everything rendered is a build artifact; edit `settings.toml`, never these:
 - `dot_pi/agent/themes/dotfiles-{light,dark}.json.tmpl` → pi's theme pair
   (stable file names regardless of which themes are active — a theme swap
   never renames anything)
+- `dot_pi/agent/settings.json.tmpl` → pi's `settings.json`. Only the
+  `theme` field is generated (from the mode); the provider/model fields
+  are static and *are* edited here — this is the fold-in target for pi's
+  self-bumps (see [developing.md](developing.md))
 - `dot_local/bin/executable_delta-theme.tmpl` → the delta wrapper
 - `dot_gitconfig.tmpl` → the delta fallback lines
 - `private_dot_config/ghostty/config.tmpl` → Ghostty's theme line

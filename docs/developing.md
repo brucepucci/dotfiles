@@ -30,7 +30,8 @@ cross-agent convention). The two should not drift apart; update both.
    one reviewable file.
 5. **Prefer built-ins.** Neovim 0.12 already provides commenting,
    LSP keymaps, and the LSP framework. Don't add plugins for those. The
-   "used to be plugins" table in `docs/nvim.md` is the reminder.
+   "used to be plugins" table in the in-editor tools doc
+   (`private_dot_config/nvim/docs/tools.md`) is the reminder.
 6. **Colors: no hardcoded hex or theme name in a managed file, ever.**
    Render from the resolver or read the generated module. See
    [theming.md](theming.md) — the smoke test enforces this.
@@ -54,7 +55,7 @@ scripts/smoke-test.sh      # ~1s; after EVERY change
 ```
 
 `chezmoi doctor` diagnoses chezmoi itself when something's odd;
-`chezmoi manage` shows what's tracked.
+`chezmoi managed` lists what's tracked.
 
 ## chezmoi source naming (the part that bites)
 
@@ -208,9 +209,12 @@ windows pick it up; existing ones need a restart.
 ### Keep the docs honest
 - Repo docs (`docs/`) — this folder; ignored by chezmoi; edit freely.
 - In-editor docs (`private_dot_config/nvim/docs/`) — installed to
-  `~/.config/nvim/docs/`, reachable via `<leader>?`; they must be
-  re-added with `chezmoi re-add` after edits (they're verbatim-copied, so
-  re-add works normally).
+  `~/.config/nvim/docs/`, reachable via `<leader>?`. Edit the **source**
+  copy and follow the normal loop: `chezmoi diff && chezmoi apply`. Do
+  **not** `chezmoi re-add` these: re-add copies the *target* over the
+  source, so run against an un-applied source edit it silently reverts
+  the edit. `re-add` is only for files a tool rewrites in the target
+  (`lazy-lock.json`); source-edited files get `apply`.
 - The nvim docs' own rule: which-key and `<leader>fk` read the live
   config and are the source of truth over any written table. Same spirit
   applies here — when docs and code disagree, fix the docs (or the code),

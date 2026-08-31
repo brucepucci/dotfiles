@@ -1,6 +1,6 @@
 name: smoke
 
-# Tier 1 of the test pyramid (see README "Testing changes"): apply the repo
+# Tier 1 of the test pyramid (see docs/developing.md): apply the repo
 # into a pristine HOME on a clean macOS runner and exercise the shell the
 # way real sessions do. The repo targets macOS only, so CI runs there too.
 # Ghostty itself is installed (as a cask -- just the app bundle, nothing

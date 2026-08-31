@@ -30,7 +30,7 @@ Deliberately small:
 
 ## delta + the `delta-theme` wrapper
 
-[delta](https://github.com/dandav/delta) renders side-by-side, navigable
+[delta](https://github.com/dandavison/delta) renders side-by-side, navigable
 diffs with line numbers. The interesting part is the wrapper:
 `~/.local/bin/delta-theme` execs `delta` with the light/dark flag chosen
 per invocation —

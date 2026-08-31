@@ -29,10 +29,15 @@ New to the repo? Each tool has its own page in [docs/](docs/):
 | pi | [docs/pi.md](docs/pi.md) | the coding agent: settings, themes, the tmux wrapper, keys |
 | Maintaining this repo | [docs/developing.md](docs/developing.md) | the developer guide: editing, testing, common tasks, rules |
 
-There is also a set of cheatsheet docs *installed into the editor*
-(`~/.config/nvim/docs/`, opened with `<leader>?` in nvim) — the agent-review
-walkthrough, the keymap reference, the tool inventory, and the tmux
-walkthrough. Repo docs explain the machine; in-editor docs drive it.
+There is also a set of cheatsheet docs *installed into the editor* —
+[getting-started](private_dot_config/nvim/docs/getting-started.md) (the
+agent-review walkthrough), [keymaps](private_dot_config/nvim/docs/keymaps.md)
+(the full cheatsheet), [tools](private_dot_config/nvim/docs/tools.md) (the
+tool inventory), and [tmux](private_dot_config/nvim/docs/tmux.md) (the
+detach/reattach walkthrough). They live at
+`private_dot_config/nvim/docs/`, install to `~/.config/nvim/docs/`, and
+open with `<leader>?` in nvim. Repo docs explain the machine; in-editor
+docs drive it.
 
 ## Why it looks like this
 
@@ -50,9 +55,11 @@ The decisions, so future-you doesn't have to re-derive them:
   sense on another OS doesn't belong here — that surface was removed once
   and shouldn't come back.
 - **Homebrew, not Mason; built-ins, not plugins.** One package manager,
-  versions visible in the `Brewfile`. Neovim 0.12's own commenting, LSP
-  keymaps, and LSP framework are used instead of plugins for them — the
-  plugin count is 17 and shrinking in spirit.
+  versions visible in the `Brewfile`. Neovim's built-in commenting
+  (0.10+), LSP keymaps (0.11+), and LSP framework (0.11+) are used
+  instead of plugins for them; the 0.12 floor below is what the rest of
+  the config needs (`vim.hl`, nvim-treesitter `main`). The plugin count
+  is 17 and shrinking in spirit.
 - **Loud failures.** No `pcall(require, ...)` guards. The previous config
   had a silently dead LSP for months because errors were being swallowed;
   this one names what's missing (missing servers warn by name, the config
@@ -192,10 +199,15 @@ work.
 
 ```bash
 chezmoi cd                  # -> ~/.local/share/chezmoi
-$EDITOR docs/...            # or private_dot_config/nvim/lua/bruce/plugins/foo.lua
+$EDITOR private_dot_config/nvim/lua/bruce/plugins/foo.lua
 chezmoi diff                # review
 chezmoi apply               # install
 ```
+
+Repo-level files (`README.md`, `AGENTS.md`, `docs/`, `Brewfile`,
+`settings.toml`) are chezmoi-ignored and never install — edit and commit,
+nothing to apply. (`settings.toml` is still *read* at apply time — it
+renders every surface.)
 
 Everything else — testing tiers (`scripts/smoke-test.sh`, the macOS VM,
 CI), how to add a plugin or an LSP server, the color-system rules, the
@@ -233,9 +245,12 @@ use Blink Shell or Termius on the phone; put both ends on
 port 22 to the internet**; keep the Mac awake with `caffeinate -dims`
 (a sleeping Mac refuses SSH). Forgot to start under tmux? Every pi
 conversation auto-saves — `pi -c` resumes the latest from any machine.
-The complete walkthrough — phone setup, the handoff choreography,
-troubleshooting — is [docs/tmux.md](docs/tmux.md) (also installed inside
-nvim, `<leader>?` → tmux).
+The complete walkthrough — the mental model, phone-client setup, the
+handoff end to end, troubleshooting — is installed inside nvim
+(`<leader>?` → tmux) and sourced at
+[private_dot_config/nvim/docs/tmux.md](private_dot_config/nvim/docs/tmux.md);
+[docs/tmux.md](docs/tmux.md) is the repo-side reference (the managed
+config, setting by setting, plus the keys and the SSH setup).
 
 ## Quick reference
 

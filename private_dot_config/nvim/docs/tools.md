@@ -54,7 +54,7 @@ Syntax-highlighted, side-by-side `git diff` output **in the terminal**. Nothing
 to do with Neovim — diffview and gitsigns render their own diffs. This improves
 `git diff`/`git show` in the shell and inside lazygit.
 
-Configured by hand in `~/.gitconfig`; see the repo README.
+Configured by hand in `~/.gitconfig`; see the dotfiles repo's `docs/git.md`.
 
 ---
 
@@ -196,8 +196,8 @@ proper tables). Ships a standalone binary; no Node needed.
 
 ### The generated colorscheme
 No plugin — the colorscheme is **generated at `chezmoi apply` time** from the
-active Ghostty theme pair named in the dotfiles repo's `settings.toml`
-(currently Flexoki Light / Kanagawa Wave). `core/theming.lua` (the one
+active Ghostty theme pair named in the dotfiles repo's `settings.toml`.
+`core/theming.lua` (the one
 rendered file) carries both themes' semantic roles; `colors/scheme.lua`
 builds highlight groups from them. The result: the editor matches the
 terminal for *any* theme picked in the settings, by construction.
