@@ -45,6 +45,7 @@ No third-party imports; python3 stdlib only.
 import json
 import os
 import re
+import string
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -76,6 +77,14 @@ ROLE_ORDER = [
 def parse_hex(h):
     h = h.lstrip("#")
     return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def check_hex(path, value):
+    """A theme color must be #rrggbb; die naming the file, not a traceback
+    (a malformed value in a mirrored file must fail apply pointedly)."""
+    h = value.lstrip("#")
+    if len(h) != 6 or any(c not in string.hexdigits for c in h):
+        die("%s: '%s' is not a #rrggbb color" % (path, value))
 
 
 def hex_str(rgb):
@@ -154,12 +163,14 @@ def parse_ghostty_theme(path):
             # the color both sit on the value side of the first `=`
             m = re.fullmatch(r"palette\s*=\s*(\d+)\s*=\s*(\S+)", line)
             if m:
+                check_hex(path, m.group(2))
                 term["palette_%s" % m.group(1)] = m.group(2)
                 defined.add(int(m.group(1)))
                 continue
             key, _, value = line.partition("=")
             key, value = key.strip(), value.strip()
             if key in TERMINAL_KEYS:
+                check_hex(path, value)
                 term[key] = value
     if "background" not in term or "foreground" not in term:
         return None  # not a usable theme (some catalog entries are stubs)
@@ -329,6 +340,12 @@ def die(msg):
 
 def resolve(name):
     """-> {terminal, roles, apps}, or exits nonzero with a pointed message."""
+    # a name is a plain file name in the mirror -- no separators (a '/'
+    # could reach into subdirectories or escape the mirror entirely), no
+    # leading dot
+    if (os.sep in name or name.startswith(".")
+            or name in ("", os.curdir, os.pardir)):
+        die("theme name must be a plain file name in themes/ -- got '%s'" % name)
     dirs = find_themes_dir()
     if not dirs:
         env = os.environ.get("DOTFILES_THEMES")
