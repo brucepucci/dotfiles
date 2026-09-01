@@ -83,6 +83,12 @@
 #      load-bearing command lines whole-line in both the skill and
 #      AGENTS.md (issue #24; replaces an earlier, softer string-match
 #      guard that truncated at Lua's `#` and matched substrings)
+#  20. the clipboard helpers: clipcopy/clippaste -- the oh-my-zsh
+#      commands, reimplemented for the repo's one platform against
+#      pbcopy/pbpaste -- round-trip a pipe and a file argument and fail
+#      loudly on a missing file, exercised with fake pbcopy/pbpaste
+#      shims so a run on the developer's own Mac never touches the real
+#      clipboard
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see docs/developing.md's test
@@ -628,6 +634,37 @@ out="$(printf 'fc -l | grep -q %s && echo found=yes\nexit\n' "$TOKEN" \
           /bin/zsh -l -i 2>/dev/null || true)"
 [[ "$out" == *found=yes* ]] || die "history not shared between shells"
 ok "written in one shell, visible in the next"
+
+step "clipboard helpers: clipcopy/clippaste round-trip"
+# The oh-my-zsh clipboard pair, reimplemented in ~/.zshrc against
+# pbcopy/pbpaste (stock macOS -- the repo's one platform). Hermetic the
+# same way the delta and tmux cases are: fake pbcopy/pbpaste capture to
+# a file, so running the suite never clobbers the developer's real
+# clipboard. PATH is re-asserted INSIDE the payload because the login
+# shell's path_helper rebuilds PATH from /etc/paths and would otherwise
+# bury the shims behind the real /usr/bin/pbcopy (wrap_zsh re-sets PATH
+# for the same reason).
+cbin="$WORK/cbin"; FAKEPB="$WORK/fake-pasteboard"
+mkdir -p "$cbin"
+printf '#!/bin/sh\ncat > "$FAKE_PB"\n' > "$cbin/pbcopy"
+printf '#!/bin/sh\ncat "$FAKE_PB"\n'  > "$cbin/pbpaste"
+chmod +x "$cbin/pbcopy" "$cbin/pbpaste"
+printf 'file-token\n' > "$WORK/clip-file"
+out="$(env -i HOME="$NEWHOME" TERM=xterm-256color \
+      PATH="$cbin:/usr/bin:/bin" FAKE_PB="$FAKEPB" CBIN="$cbin" \
+      CLIPFILE="$WORK/clip-file" \
+      /bin/zsh -l -i -c '
+  PATH="$CBIN:/usr/bin:/bin"
+  print -r -- pipe-token | clipcopy || { echo fail=pipe-copy; exit 1; }
+  [[ "$(clippaste)" == pipe-token ]] || { echo fail=pipe-paste; exit 1; }
+  clipcopy "$CLIPFILE" || { echo fail=file-copy; exit 1; }
+  [[ "$(clippaste)" == file-token ]] || { echo fail=file-paste; exit 1; }
+  clipcopy "$CLIPFILE/no-such" && { echo fail=missing-file-rc; exit 1; }
+  echo round-trip=yes
+' 2>&1 || true)"
+[[ "$out" == *round-trip=yes* && "$out" == *'not readable:'* ]] \
+  || die "clipcopy/clippaste: $out"
+ok "pipe + file round-trip via the shims; missing file fails loudly"
 
 step "one blank line before each prompt after output"
 # Locks in the fix for #4 plus the clear/Ctrl-L refinement. Drive a real

@@ -89,7 +89,8 @@ and PR).** Applies the repo into a pristine throwaway HOME and exercises
 the result the way real sessions do. It covers:
 
 - from-scratch apply; fresh login-shell behavior (prompt, shared HISTFILE,
-  brew PATH, aliases, EDITOR fallback when nvim is absent)
+  brew PATH, aliases, clipboard helpers round-tripped through fake
+  pbcopy/pbpaste shims, EDITOR fallback when nvim is absent)
 - the legacy ZDOTDIR guard repairing a pre-unification Ghostty window
 - the SSH prompt segment; history shared across shells
 - secrets staying out; Ghostty config containing no shell settings

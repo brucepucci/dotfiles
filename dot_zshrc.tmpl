@@ -188,6 +188,42 @@ alias la="ls -lhA $_ls_color"
 unset _ls_color
 alias grep='grep --color=auto'
 
+# --- Clipboard --------------------------------------------------------------
+# clipcopy / clippaste -- the oh-my-zsh clipboard commands, reimplemented
+# for this repo's one platform instead of sourced from omz: macOS ships
+# pbcopy/pbpaste with the OS, so omz's OSTYPE ladder collapses to nothing
+# and the whole thing is ~15 lines we own. Same semantics, one deliberate
+# simplification: an explicit file argument wins over a pipe when both
+# are present ("cmd | clipcopy file" copies the file). They read and
+# write the Mac's own pasteboard -- the same clipboard nvim's yanks use
+# -- from every terminal and over SSH into the Mac alike; the other
+# direction (onto the VIEWING device's clipboard over SSH) stays tmux's
+# OSC 52 copy-mode job (docs/tmux.md).
+#   <command> | clipcopy       copy stdin
+#   clipcopy <file>            copy the file's contents
+#   clippaste                  print the clipboard (redirect to save it)
+clipcopy() {
+  emulate -L zsh
+  local file=$1
+  if [[ -n $file ]]; then
+    if [[ ! -r $file ]]; then
+      print -u2 "clipcopy: not readable: $file"
+      return 1
+    fi
+    pbcopy < "$file"
+  elif [[ ! -t 0 ]]; then
+    pbcopy
+  else
+    print -u2 "usage: <command> | clipcopy  |  clipcopy <file>"
+    return 1
+  fi
+}
+
+clippaste() {
+  emulate -L zsh
+  pbpaste
+}
+
 # --- pi ---------------------------------------------------------------------
 # `pi` always starts a NEW conversation, wrapped in its own tmux session so
 # it survives closing the terminal and can be rejoined from any device

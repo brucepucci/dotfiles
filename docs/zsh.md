@@ -5,7 +5,8 @@ on this machine — Ghostty, Terminal.app, iTerm2 — and every SSH session
 logging in from anywhere reads the same three files. The prompt looks the
 same, history is shared live, and there is exactly one obvious place to
 change shell behavior. oh-my-zsh and powerlevel10k are gone; what they
-provided here is either built in, replaced by three Homebrew formulas, or
+provided here is either built in, replaced by three Homebrew formulas,
+small enough to reimplement outright (`clipcopy`/`clippaste` below), or
 wasn't wanted.
 
 **Managed files** (source in the repo root and `private_dot_config/zsh*/`):
@@ -13,7 +14,7 @@ wasn't wanted.
 | Source file | Installs to | Job |
 |---|---|---|
 | `dot_zprofile` | `~/.zprofile` | login-shell PATH: Homebrew + `~/.local/bin` |
-| `dot_zshrc.tmpl` | `~/.zshrc` | the interactive half: options, history, completion, keybindings, integrations, aliases, the `pi()` wrapper, secrets, prompt |
+| `dot_zshrc.tmpl` | `~/.zshrc` | the interactive half: options, history, completion, keybindings, integrations, aliases, clipboard helpers, the `pi()` wrapper, secrets, prompt |
 | `private_dot_config/zsh/ps1.zsh` | `~/.config/zsh/ps1.zsh` | the prompt |
 | `private_dot_config/zsh-ghostty/dot_zshenv` | `~/.config/zsh-ghostty/.zshenv` | legacy redirect guard (see below) |
 
@@ -111,6 +112,30 @@ before the widget can see it.
 | `la` | `ls -lhA <color>` |
 | `grep` | `grep --color=auto` |
 | `clear` | clear, plus reset the prompt's blank-line flag (defined in ps1.zsh) |
+
+## Clipboard: `clipcopy` / `clippaste`
+
+The one oh-my-zsh convention worth keeping, reimplemented as ~15 lines
+against `pbcopy`/`pbpaste` (stock macOS — the repo's one platform, so
+omz's `OSTYPE` ladder collapses to nothing) instead of sourcing omz for
+it:
+
+| Command | Effect |
+|---|---|
+| `<command> \| clipcopy` | copies stdout to the clipboard |
+| `clipcopy <file>` | copies the file's contents |
+| `clippaste` | prints the clipboard (`clippaste > file` saves it) |
+
+Semantics match omz with one deliberate simplification: an explicit file
+argument wins over a pipe when both are present. A bare `clipcopy` with
+neither a pipe nor a file is a usage error (exit 1), never a silent empty
+copy.
+
+They read and write the **Mac's** pasteboard — the same clipboard nvim's
+yanks land on — from every terminal and over SSH into the Mac alike.
+The other direction, getting tmux copy-mode yanks onto the *viewing*
+device's clipboard over SSH, stays tmux's OSC 52 job (see
+[tmux.md](tmux.md)).
 
 ## The `pi()` wrapper
 
