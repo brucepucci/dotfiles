@@ -13,6 +13,8 @@ Brewfile
 LICENSE
 scripts/
 settings.toml
+themes/
+themes-local/
 docs/
 
 # Generated or private files at $HOME. chezmoi only tracks what is

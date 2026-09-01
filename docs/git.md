@@ -42,7 +42,7 @@ per invocation —
   signal Ghostty and nvim follow (see [theming.md](theming.md)).
 
 And `syntax-theme = none`: bat syntax coloring is disabled, so diffs
-render in the **terminal's own 16-color palette** — the active Ghostty
+render in the **terminal's own 16-color palette** — the active
 theme's colors, by construction, on any machine this config is applied to.
 Deltas stay cohesive with whatever theme is running instead of carrying a
 second, unrelated syntax scheme.

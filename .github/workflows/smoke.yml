@@ -3,10 +3,9 @@ name: smoke
 # Tier 1 of the test pyramid (see docs/developing.md): apply the repo
 # into a pristine HOME on a clean macOS runner and exercise the shell the
 # way real sessions do. The repo targets macOS only, so CI runs there too.
-# Ghostty itself is installed (as a cask -- just the app bundle, nothing
-# GUI runs) because the palette resolver reads Ghostty's bundled theme
-# catalog at apply time: CI resolves theme names against the exact same
-# catalog a local machine has. No pins, no proxy catalog to keep fresh.
+# No Ghostty install: the palettes come from the committed mirror in
+# themes/ (rooted in mbadolato/iTerm2-Color-Schemes), so this runner
+# proving apply green IS the proof that apply needs no Ghostty.
 on:
   push:
     branches: [main]
@@ -18,10 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install chezmoi and Ghostty
-        run: |
-          brew install chezmoi
-          brew install --cask ghostty
+      - name: Install chezmoi
+        run: brew install chezmoi
 
       - name: From-scratch smoke test
         run: scripts/smoke-test.sh

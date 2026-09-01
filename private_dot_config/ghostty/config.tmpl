@@ -10,19 +10,22 @@
 # ~/.zshrc and ~/.zprofile. Nothing shell-related is set here, so there is
 # exactly one obvious place to change the shell: the dotfiles repo's dot_zshrc.
 #
-{{ $a := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "appearance" | trim | fromJson -}}
-# The theme names and the light/dark mode are not set here at all: they come
-# from settings.toml at the repo root (the appearance settings -- browse the names with
-# `ghostty +list-themes`). theme = "system" renders the light:/dark: pair
-# Ghostty auto-switches with the OS; "light"/"dark" pin one theme for the
-# whole stack. The rest of the stack follows the same signal: the zsh prompt
-# uses indexed colors 0-15, Neovim sets 'background' via
-# lua/bruce/core/appearance.lua, and delta-theme (~/.local/bin, wired into
-# git and lazygit) picks the matching syntax theme.
-theme = {{ if eq $a.mode "system" -}}
-light:{{ $a.light_theme }},dark:{{ $a.dark_theme }}
-{{- else if eq $a.mode "light" -}}
-{{ $a.light_theme }}
+{{ $mode := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "theme" | trim -}}
+# The colors are not set here at all: the theme line names two GENERATED
+# user themes -- dotfiles-light and dotfiles-dark in
+# ~/.config/ghostty/themes/ -- rendered at apply time from the same
+# vendored palettes every other surface uses. settings.toml at the repo
+# root picks the theme names (see docs/theming.md); theme = "system"
+# renders the light:/dark: pair Ghostty auto-switches with the OS,
+# "light"/"dark" pin one side for the whole stack. The rest of the stack
+# follows the same signal: the zsh prompt uses indexed colors 0-15, Neovim
+# sets 'background' via lua/bruce/core/appearance.lua, and delta-theme
+# (~/.local/bin, wired into git and lazygit) picks the matching syntax
+# theme.
+theme = {{ if eq $mode "system" -}}
+light:dotfiles-light,dark:dotfiles-dark
+{{- else if eq $mode "light" -}}
+dotfiles-light
 {{- else -}}
-{{ $a.dark_theme }}
+dotfiles-dark
 {{- end }}

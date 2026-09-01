@@ -63,8 +63,9 @@ brew "tmux"
 # The config and the zsh prompt render Nerd Font glyphs (diagnostics,
 # markdown icons, the prompt's git branch mark). Ghostty ships one as its
 # default face, but Terminal.app and iTerm2 do not — without setting the
-# font there by hand, glyphs show as placeholder boxes. Ghostty is also a
-# hard prerequisite for `chezmoi apply` itself: the palette resolver reads
-# its bundled theme catalog (see scripts/ghostty-theme.py).
+# font there by hand, glyphs show as placeholder boxes. Ghostty is the
+# terminal this setup standardizes on; the colors it renders come from
+# this repo's own theme mirror (themes/), so the app is NOT a
+# prerequisite for `chezmoi apply`.
 cask "font-jetbrains-mono-nerd-font"
 cask "ghostty"

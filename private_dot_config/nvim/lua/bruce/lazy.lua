@@ -40,7 +40,7 @@ require("lazy").setup({
     rocks = { enabled = false },
 
     -- No install-time colorscheme is listed: ours is generated from the
-    -- active Ghostty themes (core/appearance + colors/scheme), applied
+    -- active themes (core/appearance + colors/scheme), applied
     -- before lazy even loads, so there is nothing to wait for. lazy's own
     -- "habamax" fallback covers the bootstrap window anyway.
 

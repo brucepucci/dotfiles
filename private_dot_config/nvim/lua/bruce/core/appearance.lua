@@ -6,7 +6,7 @@
 --     OS mid-session needs no restart.
 --   theme = "light"/"dark" -- pin the whole stack, OS be damned.
 --
--- The colorscheme itself is generated from the active Ghostty themes' roles
+-- The colorscheme itself is generated from the active themes' roles
 -- (lua/bruce/colors/scheme.lua), so the editor matches the terminal for any
 -- theme picked in the settings.
 --

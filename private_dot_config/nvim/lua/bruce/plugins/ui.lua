@@ -16,7 +16,7 @@ return {
         event = "VeryLazy",
         opts = {
             options = {
-                -- The statusline colors come from the active Ghostty themes'
+                -- The statusline colors come from the active themes'
                 -- roles (core/theming.lua): segment backgrounds from the
                 -- statusline/surface roles, mode segments from the mode_*
                 -- roles -- so the statusline matches the terminal for any

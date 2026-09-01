@@ -8,8 +8,9 @@
 #                (the default; flips mid-day when the OS does)
 #                "light"  -- light everywhere, always
 #                "dark"   -- dark everywhere, always
-#   light_theme  a Ghostty theme name -- browse with `ghostty +list-themes`
-#   dark_theme   (highlighting a theme there shows its 16-color mapping)
+#   light_theme  a theme name -- browse the gallery in the README of
+#   dark_theme   https://github.com/mbadolato/iTerm2-Color-Schemes (the
+#                names are the mirror's file names in themes/)
 #
 # BEHAVIOR
 #   tmux_wrap    "on"  -- every new pi conversation gets its own detachable
@@ -29,10 +30,11 @@
 #                  the viewing terminal, even over SSH
 #   nvim + lualine a colorscheme generated from the palette's 16 colors
 #
-# The names are resolved at apply time from Ghostty's own catalog by
-# scripts/ghostty-theme.py, so any theme `ghostty +list-themes` lists works,
-# including ones added by a Ghostty update. Ghostty must be installed where
-# `chezmoi apply` runs. After editing: `chezmoi diff && chezmoi apply`.
+# The names are resolved at apply time against the theme mirror committed
+# in themes/ (a verbatim copy of iTerm2-Color-Schemes' ghostty/ directory,
+# refreshed by scripts/themes-sync.sh), so any mirrored name works and
+# `chezmoi apply` needs no network and no Ghostty install. After editing:
+# `chezmoi diff && chezmoi apply`.
 
 theme = "system"
 light_theme = "Flexoki Light"

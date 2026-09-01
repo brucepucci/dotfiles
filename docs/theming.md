@@ -2,10 +2,10 @@
 
 The appearance of everything this repo manages — terminal, shell prompt,
 editor, statusline, diffs, and the pi coding agent's TUI — is derived from
-**two Ghostty theme names**. There are no per-app theme files to keep in
-sync, no hex codes hardcoded anywhere in managed files, and no cached
-palette data that can go stale. What Ghostty ships is what every surface
-renders.
+**two theme names**. There are no per-app theme files to keep in
+sync, no hex codes hardcoded anywhere in managed files, and no palette
+fetches at apply time: the themes are bytes in this repo. What the mirror
+holds is what every surface renders.
 
 This is the part of the repo with the most machinery behind it, so this
 page is the reference. If you only want to change how things look, read
@@ -17,15 +17,18 @@ Four settings, no hex, no per-app themes:
 
 ```toml
 theme = "system"              # "system" | "light" | "dark"
-light_theme = "Flexoki Light" # Ghostty theme names — browse with
-dark_theme = "Kanagawa Wave"  # `ghostty +list-themes`
+light_theme = "Flexoki Light" # theme names — browse the gallery in
+                              # iTerm2-Color-Schemes' README; the names
+                              # are the file names of the mirror in themes/
+dark_theme = "Kanagawa Wave"
 tmux_wrap = "on"              # "on" | "off" — pi in detachable tmux sessions?
 ```
 
-- **`light_theme` / `dark_theme`** are Ghostty theme names, typed exactly
-  as `ghostty +list-themes` shows them. Any theme in Ghostty's catalog
-  works — including ones added by a future Ghostty update — because
-  nothing is pinned here.
+- **`light_theme` / `dark_theme`** are theme names, typed exactly as the
+  mirror's file names in `themes/`. Any mirrored theme works; the mirror
+  is rooted in [mbadolato/iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes)
+  (browse its README gallery — screenshots for every scheme) and refreshed
+  by `scripts/themes-sync.sh`.
 - **`theme`** picks the mode: `system` follows the OS light/dark appearance
   live (Ghostty auto-switches its pair, nvim re-syncs on focus, delta
   detects per invocation); `light`/`dark` pin one look everywhere.
@@ -35,12 +38,13 @@ tmux_wrap = "on"              # "on" | "off" — pi in detachable tmux sessions?
 To change anything: edit `settings.toml`, then `chezmoi diff && chezmoi
 apply`. Every surface follows.
 
-## How it resolves (nothing cached)
+## How it resolves (the committed mirror)
 
 At `chezmoi apply` time, the templates call
-[`scripts/ghostty-theme.py`](../scripts/ghostty-theme.py) through chezmoi's
-`output` function. The script parses each theme straight out of Ghostty's
-own catalog (the files behind `ghostty +list-themes`) and derives
+[`scripts/theme.py`](../scripts/theme.py) through chezmoi's
+`output` function. The script parses each theme straight out of **the
+committed mirror in [`themes/`](../themes)** — a verbatim copy of the
+`ghostty/` directory of mbadolato/iTerm2-Color-Schemes — and derives
 everything from the theme's 16-color palette:
 
 - the raw terminal palette, slots 0–15, kept verbatim;
@@ -50,14 +54,20 @@ everything from the theme's 16-color palette:
   mapped from those same slots;
 - the pi TUI's variables and nvim's generated palette module.
 
-Because resolution happens at apply time from Ghostty itself, the only
-thing that can pin a color value is Ghostty — there is no catalog in this
-repo to keep fresh. Ghostty must therefore be installed wherever
-`chezmoi apply` runs; without it the resolver fails loudly.
+Because the mirror ships inside the repo, resolution needs no network
+and no Ghostty install — the colors are local bytes, versioned and
+bisectable (`git log -p themes/` shows exactly when any palette changed).
+`themes/SOURCE.md` records the upstream commit the mirror was taken from;
+`scripts/themes-sync.sh` refreshes it by hand when you want newer upstream
+themes. Staleness is benign: an out-of-date mirror just means the newest
+upstream names do not resolve yet — the resolver fails loudly with the
+fix in the message. A hand-written palette never lives in `themes/` (the
+sync replaces it wholesale): drop the file in `themes-local/` (repo root,
+chezmoiignored) under the same name and the resolver reads it first.
 
 The script is stdlib-only Python with a query interface
 (`appearance`, `--setting <k>`, `--pi <name>`, `--hexes <name>...`, ...).
-`DOTFILES_GHOSTTY_THEMES` and `DOTFILES_SETTINGS_FILE` let tests point it
+`DOTFILES_THEMES` and `DOTFILES_SETTINGS_FILE` let tests point it
 elsewhere — that's how the smoke test renders off-variants without
 touching the repo's settings.
 
@@ -65,7 +75,7 @@ touching the repo's settings.
 
 | Surface | How it follows the theme |
 |---|---|
-| **Ghostty** | Runs the theme itself (`light:`/`dark:` pair, auto-switched by the OS) |
+| **Ghostty** | Two GENERATED user themes, `~/.config/ghostty/themes/dotfiles-{light,dark}` — the config's theme line runs the pair (`light:`/`dark:`, auto-switched by the OS) |
 | **zsh prompt** | Indexed colors 0–15 — the *viewing* terminal resolves them through its own palette |
 | **nvim + lualine** | A colorscheme **generated** from the theme's roles at apply time (`core/theming.lua` is nvim's only rendered file; everything else is static Lua reading it) |
 | **delta** | `syntax-theme = none` — bat syntax colors off, so diffs render in the theme's own ANSI palette; the `delta-theme` wrapper picks light/dark per invocation |
@@ -109,8 +119,9 @@ The deliberate exceptions in pi's themes:
 
 1. **Never hardcode a hex or theme name in a managed file** — render it
    from the resolver or read it via the generated module.
-2. **Nothing cached**: no theme data lives in the repo; the smoke test
-   fails if a theme name stops resolving.
+2. **One committed mirror**: theme data lives in `themes/` and nowhere
+   else; the smoke test fails if a settings.toml name stops resolving
+   against it.
 3. **No orphan hexes**: the smoke test checks that rendered outputs carry
    only hexes the active themes actually define.
 4. **Roles render verbatim**: nvim's generated module must carry the
@@ -119,7 +130,8 @@ The deliberate exceptions in pi's themes:
 
 These are enforced by `scripts/smoke-test.sh` (the color-system step), so
 drift is a test failure, not a slow aesthetic decay. CI runs the same
-check on every push against a real Ghostty install.
+check on every push — with no Ghostty installed, which is itself part of
+the guarantee.
 
 ## Which files are generated
 
@@ -136,6 +148,10 @@ Everything rendered is a build artifact; edit `settings.toml`, never these:
   self-bumps (see [developing.md](developing.md))
 - `dot_local/bin/executable_delta-theme.tmpl` → the delta wrapper
 - `dot_gitconfig.tmpl` → the delta fallback lines
-- `private_dot_config/ghostty/config.tmpl` → Ghostty's theme line
+- `private_dot_config/ghostty/config.tmpl` → Ghostty's theme line (naming
+  the generated user themes)
+- `private_dot_config/ghostty/themes/dotfiles-{light,dark}.tmpl` → the
+  two generated user theme files Ghostty runs (rendered unconditionally,
+  whatever the mode)
 - `dot_zshrc.tmpl` → two conditional renders (tmux_wrap default, pinned
   theme)
