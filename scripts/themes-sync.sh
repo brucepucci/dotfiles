@@ -80,6 +80,12 @@ old="$REPO/.themes-old.$$"
 mv "$REPO/themes" "$old"
 mv "$stage" "$REPO/themes"
 stage=""   # moved: the trap must not rm the new mirror
+# SOURCE.md is hand-maintained prose around the synced metadata block --
+# it lives IN the directory this script replaces wholesale, so carry it
+# across the swap (the metadata block itself is rewritten below)
+[[ -f "$old/SOURCE.md" ]] \
+  || die "themes/SOURCE.md is missing -- restore it from git before syncing"
+cp "$old/SOURCE.md" "$REPO/themes/SOURCE.md"
 rm -rf "$old"; old=""
 
 # SOURCE.md: rewrite only the metadata block between the synced markers;
@@ -90,9 +96,6 @@ meta="- mirrored from: $UPSTREAM_URL (ghostty/ directory)
 - upstream commit: \`$sha\`
 - mirrored on: $(date +%Y-%m-%d)
 - files: $count"
-if [[ ! -f "$src" ]]; then
-  die "themes/SOURCE.md is missing -- restore it from git before syncing"
-fi
 python3 - "$src" "$meta" <<'PY'
 import sys
 path, meta = sys.argv[1], sys.argv[2]
