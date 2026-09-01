@@ -10,7 +10,7 @@
 # ~/.zshrc and ~/.zprofile. Nothing shell-related is set here, so there is
 # exactly one obvious place to change the shell: the dotfiles repo's dot_zshrc.
 #
-{{ $a := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "appearance" | trim | fromJson -}}
+{{ $mode := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "theme" | trim -}}
 # The colors are not set here at all: the theme line names two GENERATED
 # user themes -- dotfiles-light and dotfiles-dark in
 # ~/.config/ghostty/themes/ -- rendered at apply time from the same
@@ -22,9 +22,9 @@
 # sets 'background' via lua/bruce/core/appearance.lua, and delta-theme
 # (~/.local/bin, wired into git and lazygit) picks the matching syntax
 # theme.
-theme = {{ if eq $a.mode "system" -}}
+theme = {{ if eq $mode "system" -}}
 light:dotfiles-light,dark:dotfiles-dark
-{{- else if eq $a.mode "light" -}}
+{{- else if eq $mode "light" -}}
 dotfiles-light
 {{- else -}}
 dotfiles-dark
