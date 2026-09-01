@@ -23,8 +23,9 @@
 #      theme = "system", single when pinned), nvim's mode module, and the
 #      delta-theme wrapper (exercised with fake `defaults`/`delta` shims,
 #      so no GUI toggling is required)
-#  10. the color system: the chosen theme names resolve from Ghostty's
-#      own catalog (via the same script the templates call), no rendered
+#  10. the color system: the chosen theme names resolve from the
+#      vendored mirror in themes/ (via the same script the templates
+#      call), no rendered
 #      output carries a hex the themes don't define, nvim's generated
 #      data module carries the chosen roles verbatim, and pi's themes
 #      ride the viewing terminal's indexed slots (bg/fg/accents/grey on
@@ -125,6 +126,8 @@ chezmoi --source "$SOURCE" --destination "$NEWHOME" apply
   || die "chezmoi diff is not empty after apply"
 for f in .zshrc .zprofile .config/zsh/ps1.zsh \
          .config/zsh-ghostty/.zshenv .config/ghostty/config \
+         .config/ghostty/themes/dotfiles-light \
+         .config/ghostty/themes/dotfiles-dark \
          .config/nvim/init.lua .zsh/secrets.example.zsh \
          .tmux.conf; do
   [[ -f "$NEWHOME/$f" ]] || die "missing $f"
@@ -179,22 +182,33 @@ ok "no command=/env= lines"
 step "light-mode: the whole stack follows the appearance setting"
 # theme lookup helpers: the same resolver the templates call at apply time.
 # Settings come from settings.toml (the user-facing file at the repo root).
-themeset() { python3 "$SOURCE/scripts/ghostty-theme.py" --setting "$1"; }
-themeget() { python3 "$SOURCE/scripts/ghostty-theme.py" --get "$@"; }
+themeset() { python3 "$SOURCE/scripts/theme.py" --setting "$1"; }
+themeget() { python3 "$SOURCE/scripts/theme.py" --get "$@"; }
 MODE="$(themeset theme)"
 LTHEME="$(themeset light_theme)"
 DTHEME="$(themeset dark_theme)"
 [[ "$MODE" == system || "$MODE" == light || "$MODE" == dark ]] \
   || die "settings.toml: theme must be system|light|dark, got: $MODE"
-# Ghostty is the anchor: one theme line, pair when following the OS, single
-# theme when pinned.
+# Ghostty is the anchor: one theme line naming the GENERATED user themes
+# (~/.config/ghostty/themes/dotfiles-{light,dark}, rendered from the same
+# resolved palettes), pair when following the OS, single when pinned.
 if [[ "$MODE" == system ]]; then
-  want_theme="theme = light:$LTHEME,dark:$DTHEME"
+  want_theme="theme = light:dotfiles-light,dark:dotfiles-dark"
 else
-  want_theme="theme = $([[ $MODE == light ]] && echo "$LTHEME" || echo "$DTHEME")"
+  want_theme="theme = $([[ $MODE == light ]] && echo dotfiles-light || echo dotfiles-dark)"
 fi
 [[ "$(grep '^theme = ' "$NEWHOME/.config/ghostty/config")" == "$want_theme" ]] \
   || die "ghostty theme line does not match the palette settings"
+# The generated user themes must carry the RESOLVED palettes, not just
+# exist: Ghostty shows exactly what the rest of the stack derived.
+for side in light dark; do
+  t="$( [[ $side == light ]] && echo "$LTHEME" || echo "$DTHEME" )"
+  gf="$NEWHOME/.config/ghostty/themes/dotfiles-$side"
+  [[ "$(grep '^background = ' "$gf")" == "background = $(themeget "$t" terminal.background)" ]] \
+    || die "dotfiles-$side: background is not the resolved $t palette"
+  [[ "$(grep '^palette = 1=' "$gf")" == "palette = 1=$(themeget "$t" terminal.palette_1)" ]] \
+    || die "dotfiles-$side: palette slot 1 is not the resolved $t palette"
+done
 # Neovim: 'background' comes from the mode (OS when system) at startup,
 # re-checked on focus.
 [[ -f "$NEWHOME/.config/nvim/lua/bruce/core/appearance.lua" ]] \
@@ -257,22 +271,23 @@ ok "ghostty theme line, nvim mode, delta wrapper, pi pair all match the settings
 
 step "colors: themes resolve on the fly, no orphan hexes"
 # The palette system: the appearance settings (settings.toml, repo root)
-# and NO cached
-# theme data -- templates resolve each name at apply time via
-# scripts/ghostty-theme.py, straight from Ghostty's own catalog. Guards, in order: both names
+# and the committed mirror (themes/, a verbatim copy of
+# iTerm2-Color-Schemes' ghostty/ directory) -- templates resolve each
+# name at apply time via
+# scripts/theme.py. Guards, in order: both names
 # resolve (this is the same call the templates make); every hex in a
 # rendered output is one the resolved themes define (including files that
 # should hold none); rendered surfaces carry the chosen themes' roles
 # verbatim, not strays.
 themeget "$LTHEME" roles.bg >/dev/null \
-  || die "light_theme '$LTHEME' does not resolve (is Ghostty installed?)"
+  || die "light_theme '$LTHEME' does not resolve from themes/ -- run scripts/themes-sync.sh"
 themeget "$DTHEME" roles.bg >/dev/null \
-  || die "dark_theme '$DTHEME' does not resolve (is Ghostty installed?)"
+  || die "dark_theme '$DTHEME' does not resolve from themes/ -- run scripts/themes-sync.sh"
 # Every hex in any color-carrying output must come from the resolved
 # themes -- including files that should hold none today (ps1, ghostty
 # config, gitconfig, delta-theme, the static nvim files): a hardcoded color
 # anywhere defeats the whole single-source design.
-palhex="$(python3 "$SOURCE/scripts/ghostty-theme.py" --hexes "$LTHEME" "$DTHEME")"
+palhex="$(python3 "$SOURCE/scripts/theme.py" --hexes "$LTHEME" "$DTHEME")"
 for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
          "$NEWHOME/.pi/agent/themes/dotfiles-dark.json" \
          "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
@@ -280,6 +295,8 @@ for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
          "$NEWHOME/.config/nvim/lua/bruce/plugins/ui.lua" \
          "$NEWHOME/.config/nvim/lua/bruce/colors/scheme.lua" \
          "$NEWHOME/.config/ghostty/config" \
+         "$NEWHOME/.config/ghostty/themes/dotfiles-light" \
+         "$NEWHOME/.config/ghostty/themes/dotfiles-dark" \
          "$NEWHOME/.gitconfig" \
          "$NEWHOME/.tmux.conf" \
          "$NEWHOME/.local/bin/delta-theme"; do
@@ -313,7 +330,7 @@ done
 if ! python3 - "$LTHEME" "$DTHEME" "$NEWHOME" "$SOURCE" <<'PY'
 import json, subprocess, sys
 ltheme, dtheme, home, src = sys.argv[1:5]
-py, script = "python3", src + "/scripts/ghostty-theme.py"
+py, script = "python3", src + "/scripts/theme.py"
 
 def run(*args):
     return subprocess.run([py, script, *args], capture_output=True,
@@ -379,9 +396,27 @@ for side in light dark; do
 done
 ok "themes resolve, no orphan hexes, roles verbatim, pi follows the terminal"
 
+step "theme mirror: committed, provenance recorded, out of HOME"
+# The mirror is what freed apply from needing Ghostty installed; these
+# guard its three load-bearing properties: it ships with the repo
+# (SOURCE.md names the upstream it is rooted in), it never lands in
+# $HOME (chezmoi-ignored), and the resolver reads ONLY it -- a
+# Ghostty.app/Caskroom path creeping back into scripts/theme.py would
+# silently reintroduce the apply-time dependency CI just proved gone.
+[[ -f "$SOURCE/themes/SOURCE.md" ]] \
+  || die "themes/SOURCE.md is missing -- the mirror's provenance record"
+grep -q "mbadolato/iTerm2-Color-Schemes" "$SOURCE/themes/SOURCE.md" \
+  || die "themes/SOURCE.md does not name the upstream repo"
+[[ ! -e "$NEWHOME/themes" ]] \
+  || die "the theme mirror leaked into \$HOME -- check .chezmoiignore"
+if grep -qE 'Ghostty\.app|Caskroom' "$SOURCE/scripts/theme.py"; then
+  die "scripts/theme.py references Ghostty's app bundle again -- the apply-time dependency is back"
+fi
+ok "mirror present with provenance; never applied; resolver reads only themes/"
+
 step "pi vars: sparse custom themes ride hexes, not defaulted slots"
 # Every catalog theme ships a full 16-color palette, but a hand-written
-# theme (DOTFILES_GHOSTTY_THEMES) can leave slots out -- the resolver
+# theme (DOTFILES_THEMES) can leave slots out -- the resolver
 # defaults them to the background hex. Riding such a slot as an index
 # would show the VIEWING terminal's own color there while nvim/lualine
 # render the derived roles: a silent divergence between the apps.
@@ -392,16 +427,16 @@ foreground = #e0e0e0
 palette = 0=#101010
 palette = 2=#00cc00
 CONF
-spiv="$(DOTFILES_GHOSTTY_THEMES="$sparse" \
-  python3 "$SOURCE/scripts/ghostty-theme.py" --pi SparseTest)"
+spiv="$(DOTFILES_THEMES="$sparse" \
+  python3 "$SOURCE/scripts/theme.py" --pi SparseTest)"
 grep -qF '"green": 2' <<<"$spiv" \
   || die "sparse theme: a defined slot (green/2) must still ride the index"
 grep -qF '"red": "#101010"' <<<"$spiv" \
   || die "sparse theme: a defaulted slot (red/1) must emit the role hex"
 grep -qF '"fg_bright": "#101010"' <<<"$spiv" \
   || die "sparse theme: defaulted palette_15 must emit the role hex"
-sred="$(DOTFILES_GHOSTTY_THEMES="$sparse" \
-  python3 "$SOURCE/scripts/ghostty-theme.py" --get SparseTest roles.red)"
+sred="$(DOTFILES_THEMES="$sparse" \
+  python3 "$SOURCE/scripts/theme.py" --get SparseTest roles.red)"
 [[ "$sred" == "#101010" ]] \
   || die "sparse theme: roles.red should be the defaulted background hex"
 ok "sparse themes: defined slots ride indices, defaulted slots ride hexes"
@@ -724,8 +759,8 @@ step "tmux_wrap setting: on leaves the env alone, off defaults it to never"
 # unset in interactive shells. "off" renders : ${PI_TMUX_WRAP:=never} into
 # ~/.zshrc -- proven with a second apply against a settings file flipped to
 # off (the resolver reads DOTFILES_SETTINGS_FILE, same override pattern as
-# DOTFILES_GHOSTTY_THEMES).
-[[ "$(python3 "$SOURCE/scripts/ghostty-theme.py" --setting tmux_wrap)" == on ]] \
+# DOTFILES_THEMES).
+[[ "$(python3 "$SOURCE/scripts/theme.py" --setting tmux_wrap)" == on ]] \
   || die "resolver: committed tmux_wrap must read 'on'"
 grep -qF ': ${PI_TMUX_WRAP:=never}' "$NEWHOME/.zshrc" \
   && die "tmux_wrap=on must not render a PI_TMUX_WRAP default into ~/.zshrc"
@@ -745,7 +780,7 @@ env -i HOME="$offhome" TERM=xterm-256color PATH="/usr/bin:/bin" \
 badsettings="$WORK/settings-bad.toml"
 sed 's/^tmux_wrap = "on"/tmux_wrap = "sometimes"/' "$SOURCE/settings.toml" > "$badsettings"
 DOTFILES_SETTINGS_FILE="$badsettings" \
-  python3 "$SOURCE/scripts/ghostty-theme.py" --setting tmux_wrap >/dev/null 2>&1 \
+  python3 "$SOURCE/scripts/theme.py" --setting tmux_wrap >/dev/null 2>&1 \
   && die "resolver: an invalid tmux_wrap value must fail loudly"
 ok "on leaves the env alone; off defaults it to never; invalid fails apply"
 

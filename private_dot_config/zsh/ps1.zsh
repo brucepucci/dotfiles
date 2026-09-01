@@ -9,9 +9,10 @@ setopt PROMPT_SUBST
 # ---------------------------------------------------------------------------
 # Palette — indexed colors (0-15), so the prompt follows whatever theme the
 # terminal emulator has set rather than pinning hex. The active theme pair
-# lives in settings.toml at the repo root (browse names with `ghostty
-# +list-themes`); switching it there recolors this prompt automatically, no
-# edit here required. Terminals without theme support just render the
+# lives in settings.toml at the repo root (browse names in the
+# iTerm2-Color-Schemes README gallery); switching it there recolors this
+# prompt automatically, no edit here required. Terminals without theme
+# support just render the
 # indexed colors of their own palette. ANSI has no orange slot, so the
 # "orange" accents borrow yellow (3): still warm, still distinct from the
 # aqua branch and the green/red exit markers.

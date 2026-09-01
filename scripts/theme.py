@@ -1,46 +1,45 @@
 #!/usr/bin/env python3
-"""ghostty-theme.py -- the palette system: settings + Ghostty's catalog.
+"""theme.py -- the palette system: settings + the vendored theme mirror.
 
 Called by the chezmoi templates themselves (via the `output` template
 function) at apply time, so neither the settings nor any theme data
 is served through chezmoi's hidden .chezmoidata machinery:
 
-  ghostty-theme.py appearance     # JSON: mode, both theme names, both
-                                  # themes' full resolved palettes -- what
-                                  # every template renders from
-  ghostty-theme.py --setting <k>  # one of: theme, light_theme, dark_theme,
-                                  # tmux_wrap
-  ghostty-theme.py <name>         # JSON: {terminal, roles} for one theme
-  ghostty-theme.py --get <name> <path>  # one value, e.g. roles.bg
-  ghostty-theme.py --hexes <name>...    # every hex the theme(s) define
-  ghostty-theme.py --pi <name>          # the pi TUI's vars for one theme:
-                                       # terminal slots + xterm cube + the
-                                       # two live tints, as ready-to-embed
-                                       # JSON (indices follow the terminal)
+  theme.py appearance            # JSON: mode, both theme names, both themes'
+                                 # full resolved palettes -- what every
+                                 # template renders from
+  theme.py --setting <k>         # one of: theme, light_theme, dark_theme,
+                                 # tmux_wrap
+  theme.py <name>                # JSON: {terminal, roles} for one theme
+  theme.py --get <name> <path>   # one value, e.g. roles.bg
+  theme.py --hexes <name>...     # every hex the theme(s) define
+  theme.py --pi <name>           # the pi TUI's vars for one theme: terminal
+                                 # slots + xterm cube + the two live tints,
+                                 # as ready-to-embed JSON (indices follow
+                                 # the terminal)
 
 The settings live in settings.toml at the repo root (the user-facing
-file); names are parsed from Ghostty's own catalog (the files behind
-`ghostty +list-themes`) and every derived value is computed from the
-theme's 16-color palette. New Ghostty themes work with zero repo changes;
-nothing here can go stale. Ghostty is therefore a prerequisite for
-`chezmoi apply`.
+file); names resolve against the committed mirror in themes/ -- a verbatim
+copy of the ghostty/ directory of mbadolato/iTerm2-Color-Schemes, refreshed
+on demand by scripts/themes-sync.sh (never by apply). Every derived value
+is computed from the theme's 16-color palette. `chezmoi apply` therefore
+needs no network and no Ghostty install: the colors are bytes in this repo.
 
 Roles derived from the 16 colors map the terminal palette onto what our
 apps need: surfaces (bg/surface/statusline), text (fg/fg_soft/fg_bright),
 greys, accents (red..purple + a blended orange), diff tints, and lualine's
 mode-segment colors.
 
-Set DOTFILES_GHOSTTY_THEMES to point at a themes directory explicitly
-(custom installs, tests). Set DOTFILES_SETTINGS_FILE to read a different
+Set DOTFILES_THEMES to point at a themes directory explicitly (custom
+experiments, tests). Set DOTFILES_SETTINGS_FILE to read a different
 settings file (tests render off-variants without touching the repo's).
 
 Exits nonzero with a pointed message for unknown names, invalid settings,
-or a missing Ghostty install (apply fails loudly).
+or a missing themes directory (apply fails loudly).
 
 No third-party imports; python3 stdlib only.
 """
 
-import glob
 import json
 import os
 import re
@@ -48,12 +47,7 @@ import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-GHOSTTY_THEME_DIRS = [
-    "/Applications/Ghostty.app/Contents/Resources/ghostty/themes",  # the brew cask
-    "/opt/homebrew/Caskroom/ghostty/*/ghostty/themes",              # caskroom, alt prefix
-]
-
-# Keys of a Ghostty theme file we keep, in output order.
+# Keys of a theme file we keep, in output order.
 TERMINAL_KEYS = [
     "background",
     "foreground",
@@ -127,20 +121,16 @@ def nearest_256(rgb):
 
 
 # ---------------------------------------------------------------------------
-# ghostty's own theme file
+# the theme files -- Ghostty's key=value format, as distributed by
+# iTerm2-Color-Schemes' ghostty/ directory and mirrored into themes/
 # ---------------------------------------------------------------------------
 
-def find_ghostty_dir():
-    # explicit override first (also how tests simulate a machine without
-    # Ghostty, e.g. CI)
-    env = os.environ.get("DOTFILES_GHOSTTY_THEMES")
+def find_themes_dir():
+    # explicit override first (also how tests point at fixture catalogs)
+    env = os.environ.get("DOTFILES_THEMES")
     if env:
         return env if os.path.isdir(env) else None
-    for pattern in GHOSTTY_THEME_DIRS:
-        for cand in sorted(glob.glob(pattern), reverse=True):
-            if os.path.isdir(cand):
-                return cand
-    return None
+    return os.path.join(REPO, "themes")
 
 
 def parse_ghostty_theme(path):
@@ -324,22 +314,24 @@ def read_settings():
 # ---------------------------------------------------------------------------
 
 def die(msg):
-    print("ghostty-theme: %s" % msg, file=sys.stderr)
+    print("theme: %s" % msg, file=sys.stderr)
     sys.exit(1)
 
 
 def resolve(name):
     """-> {terminal, roles, apps}, or exits nonzero with a pointed message."""
-    ghostty_dir = find_ghostty_dir()
-    if not ghostty_dir:
-        die("Ghostty's theme catalog was not found (is Ghostty installed?)")
-    path = os.path.join(ghostty_dir, name)
+    themes_dir = find_themes_dir()
+    if not themes_dir:
+        die("the themes directory was not found (DOTFILES_THEMES is set "
+            "but is not a directory)")
+    path = os.path.join(themes_dir, name)
     if not os.path.isfile(path):
-        die("theme '%s' is not in Ghostty's catalog (browse names with "
-            "`ghostty +list-themes`)" % name)
+        die("theme '%s' is not in themes/ -- browse names in the upstream "
+            "gallery (the iTerm2-Color-Schemes README) and refresh the "
+            "mirror with scripts/themes-sync.sh" % name)
     term = parse_ghostty_theme(path)
     if term is None:
-        die("Ghostty's '%s' theme file has no background/foreground" % name)
+        die("the '%s' theme file has no background/foreground" % name)
     roles = derive_roles(term)
     return {
         "terminal": {key: term[key] for key in TERMINAL_KEYS}

@@ -1,4 +1,4 @@
-{{ $mode := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--setting" "theme" | trim -}}
+{{ $mode := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "theme" | trim -}}
 {
   "lastChangelogVersion": "0.84.4",
   "theme": "{{ if eq $mode "system" }}dotfiles-light/dotfiles-dark{{ else if eq $mode "light" }}dotfiles-light{{ else }}dotfiles-dark{{ end }}",

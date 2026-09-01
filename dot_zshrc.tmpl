@@ -1,5 +1,5 @@
-{{- $piWrap := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--setting" "tmux_wrap" | trim -}}
-{{- $piTheme := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--setting" "theme" | trim -}}
+{{- $piWrap := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "tmux_wrap" | trim -}}
+{{- $piTheme := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "theme" | trim -}}
 # ~/.zshrc — the interactive shell config, read by EVERY terminal on this
 # machine: Ghostty, Terminal.app, iTerm2, and SSH sessions alike. Managed by
 # chezmoi (dot_zshrc.tmpl in the dotfiles repo) — edit it there, not here.

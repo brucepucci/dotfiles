@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
-{{- /* GENERATED from settings.toml (the repo root) and Ghostty's catalog by
-     scripts/ghostty-theme.py -- do not hand-edit; change the theme name in
+{{- /* GENERATED from settings.toml (the repo root) and the vendored theme
+     mirror by scripts/theme.py -- do not hand-edit; change the theme name in
      settings.toml and `chezmoi apply`. The file name is stable across theme
      changes.
 
@@ -23,8 +23,8 @@
 
      colors (Layer 3) reference only the vars above; that mapping is
      decided here, per surface. */ -}}
-{{ $lightName := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--setting" "light_theme" | trim -}}
-{{ $pi := output (joinPath .chezmoi.sourceDir "scripts" "ghostty-theme.py") "--pi" $lightName | trim }}
+{{ $lightName := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "light_theme" | trim -}}
+{{ $pi := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--pi" $lightName | trim }}
   "name": "dotfiles-light",
   "vars": {{ $pi }},
   "colors": {

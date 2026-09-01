@@ -22,7 +22,7 @@ New to the repo? Each tool has its own page in [docs/](docs/):
 |---|---|---|
 | Neovim | [docs/nvim.md](docs/nvim.md) | structure, all 17 plugins, every keybinding grouped (git/review, finding, windows, LSP, REPL…) |
 | zsh | [docs/zsh.md](docs/zsh.md) | the one-shell design, history, prompt, shell keybindings & aliases, the pi wrapper, secrets |
-| Ghostty | [docs/ghostty.md](docs/ghostty.md) | the terminal — appearance only, the font, why apply needs Ghostty |
+| Ghostty | [docs/ghostty.md](docs/ghostty.md) | the terminal — appearance only, the font, themes generated from this repo's mirror |
 | Colors | [docs/theming.md](docs/theming.md) | the whole palette system: two theme names drive every surface, nothing cached |
 | tmux + SSH | [docs/tmux.md](docs/tmux.md) | detachable sessions, the phone/SSH workflow, the managed config explained |
 | Git tooling | [docs/git.md](docs/git.md) | gitconfig, delta, lazygit, gh — the shell side |
@@ -63,13 +63,15 @@ The decisions, so future-you doesn't have to re-derive them:
 - **Loud failures.** No `pcall(require, ...)` guards. The previous config
   had a silently dead LSP for months because errors were being swallowed;
   this one names what's missing (missing servers warn by name, the config
-  refuses to load below Neovim 0.12, the theme resolver fails loudly
-  without Ghostty).
-- **One look everywhere, by construction.** Two Ghostty theme names in
+  refuses to load below Neovim 0.12, the theme resolver fails loudly on
+  a name the mirror does not hold).
+- **One look everywhere, by construction.** Two theme names in
   `settings.toml` drive every surface — the terminal, prompt, editor,
-  statusline, diffs, and pi's TUI — resolved from Ghostty's own catalog at
-  apply time with nothing cached. Surfaces that travel over SSH render in
-  the terminal's indexed color slots so the *viewing* terminal decides.
+  statusline, diffs, and pi's TUI — resolved at apply time from a theme
+  mirror committed inside this repo (rooted in iTerm2-Color-Schemes), so
+  apply needs no network and no Ghostty install. Surfaces that travel over
+  SSH render in the terminal's indexed color slots so the *viewing*
+  terminal decides.
   Never a hardcoded hex. See [docs/theming.md](docs/theming.md).
 - **Secrets never enter the repo.** `~/.zsh/secrets.zsh` (unmanaged,
   listed in `.chezmoiignore`) holds the keys; pi's `auth.json` and session
@@ -96,8 +98,8 @@ gh auth setup-git        # installs the git credential helper
 #    (needed for the initial private clone; apply re-provides the helper
 #    from dot_gitconfig.tmpl afterwards, keychain-free)
 
-# 2. Clone the repo (do NOT apply yet -- the color system reads Ghostty's
-#    own theme catalog at apply time, so Ghostty must land first)
+# 2. Clone the repo (the color system reads this repo's own committed
+#    theme mirror at apply time -- nothing needs to be installed first)
 chezmoi init brucepucci
 
 # 3. Everything the config needs: Neovim, language servers, ripgrep, fd,
@@ -132,12 +134,12 @@ change is an edit in this repo plus `chezmoi apply`.
 > `Authentication failed`. No SSH key is registered on this account either, so
 > `--ssh` is not a fallback.
 
-> **Do step 3 before step 4.** Ghostty must be installed before
-> `chezmoi apply` — the palette resolver reads Ghostty's bundled theme
-> files to derive every surface's colors, and apply fails loudly without
-> it. Language servers come from Homebrew too, not Mason: launching Neovim
-> earlier is not fatal — it warns and names what is missing — but
-> `Lazy! restore` also needs `tree-sitter` to build parsers.
+> **Do step 3 before step 4.** The Brewfile step must land before apply
+> for the pieces Neovim and the shell need: language servers come from
+> Homebrew too, not Mason — launching Neovim earlier is not fatal — it
+> warns and names what is missing — but `Lazy! restore` also needs
+> `tree-sitter` to build parsers. (The colors are no longer part of this
+> ordering: they resolve from the theme mirror committed in the repo.)
 
 > **Not using Ghostty?** The Nerd Font is installed by step 3, but only
 > Ghostty picks it up automatically. In Terminal.app or iTerm2, set the
@@ -155,7 +157,7 @@ non-Homebrew install.
 |---|---|---|
 | `~/.zshrc`, `~/.zprofile`, `~/.config/zsh/ps1.zsh` | The shell — every terminal, every SSH session | [zsh.md](docs/zsh.md) |
 | `~/.config/nvim/` | The editor (17 plugins, pinned) | [nvim.md](docs/nvim.md) |
-| `~/.config/ghostty/config` | The terminal's appearance — nothing shell-related | [ghostty.md](docs/ghostty.md) |
+| `~/.config/ghostty/config` + `~/.config/ghostty/themes/` | The terminal's appearance — nothing shell-related; two theme files generated from the mirror | [ghostty.md](docs/ghostty.md) |
 | `~/.tmux.conf` | Detachable sessions: pi's extended-keys, OSC 52 clipboard, truecolor | [tmux.md](docs/tmux.md) |
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts | [git.md](docs/git.md) |
 | `~/.config/lazygit/config.yml` | delta as lazygit's diff renderer | [git.md](docs/git.md) |
@@ -185,13 +187,14 @@ dark_theme = "Kanagawa Wave"
 tmux_wrap = "on"                   # "on" | "off": pi in detachable tmux sessions?
 ```
 
-`light_theme`/`dark_theme` are Ghostty theme names (browse with `ghostty
-+list-themes`); `theme` picks follow-the-OS vs pinned; `tmux_wrap` is the
+`light_theme`/`dark_theme` are theme names resolved against the mirror
+committed in `themes/` (browse the gallery in
+[iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes)'
+README); `theme` picks follow-the-OS vs pinned; `tmux_wrap` is the
 one behavior knob. Edit, `chezmoi diff && chezmoi apply`, and every
-surface follows — the full explanation, including what renders where and
-why nothing is cached, is in [docs/theming.md](docs/theming.md). The one
-prerequisite: **Ghostty must be installed wherever you run
-`chezmoi apply`.**
+surface follows — the full explanation, including what renders where,
+is in [docs/theming.md](docs/theming.md). No prerequisites: the palettes
+live in this repo, so apply needs neither network nor Ghostty.
 
 ## Editing this config
 
@@ -298,9 +301,10 @@ whole verification runbook for you, any time: `/skill:runbook`.
   drifting field in `chezmoi diff` — harmless. Model defaults saved via
   `/model` + Ctrl+S must be folded into the template by hand:
   [docs/developing.md](docs/developing.md#pi-self-bumps).
-- **Ghostty** — new themes ship with updates and work the moment you type
-  their name in `settings.toml` (nothing is cached here). Re-run
-  `chezmoi apply` after the upgrade so every surface re-renders.
+- **Themes** — the mirror in `themes/` is a snapshot: upstream
+  iTerm2-Color-Schemes keeps adding schemes, and they work the moment you
+  run `scripts/themes-sync.sh` and type their name in `settings.toml`.
+  Re-run `chezmoi apply` so every surface re-renders.
 - **Homebrew** — `brew bundle --file="$(chezmoi source-path)/Brewfile"`
   reinstalls anything an OS migration dropped; `brew bundle check` (same
   file) reports drift; `brew upgrade` for the rest.

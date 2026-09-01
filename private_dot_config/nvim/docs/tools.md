@@ -196,7 +196,7 @@ proper tables). Ships a standalone binary; no Node needed.
 
 ### The generated colorscheme
 No plugin — the colorscheme is **generated at `chezmoi apply` time** from the
-active Ghostty theme pair named in the dotfiles repo's `settings.toml`.
+active theme pair named in the dotfiles repo's `settings.toml`.
 `core/theming.lua` (the one
 rendered file) carries both themes' semantic roles; `colors/scheme.lua`
 builds highlight groups from them. The result: the editor matches the

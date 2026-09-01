@@ -61,14 +61,19 @@ dot_tmux.conf              # tmux, minimal on purpose: pi's extended-keys
 private_dot_zsh/secrets.example.zsh   # template for ~/.zsh/secrets.zsh
 settings.toml              # THE SETTINGS users edit, visible at the repo
                             # root: theme (light|dark|system), light_theme,
-                            # dark_theme -- Ghostty theme names, browsable with
-                            # `ghostty +list-themes` -- and tmux_wrap (on|off):
+                            # dark_theme -- names resolved against themes/,
+                            # browsed in the iTerm2-Color-Schemes README
+                            # gallery -- and tmux_wrap (on|off):
                             # whether pi conversations get tmux sessions
-scripts/ghostty-theme.py   # the resolver templates call at apply time (via
+themes/                    # the committed theme mirror (never installed):
+                            # a verbatim copy of iTerm2-Color-Schemes'
+                            # ghostty/ directory; themes/SOURCE.md records
+                            # the upstream SHA; scripts/themes-sync.sh
+                            # refreshes it (by hand, never at apply time)
+scripts/theme.py           # the resolver templates call at apply time (via
                             # chezmoi's `output`): parse+derive each theme
-                            # from Ghostty's own catalog -- nothing cached,
-                            # nothing goes stale; Ghostty is a prerequisite
-                            # for `chezmoi apply` (CI installs the cask)
+                            # from the vendored mirror -- no network, no
+                            # Ghostty install needed for `chezmoi apply`
 private_dot_config/nvim/
 ├── init.lua              # sets mapleader, syncs appearance, then requires
 │                         # core.* and bruce.lazy
@@ -84,7 +89,11 @@ private_dot_config/zsh/ps1.zsh       # the prompt (git state, duration, exit
                             # code); fully indexed colors 0-15 -- static, follows
                             # whatever theme the terminal runs
 private_dot_config/ghostty/config.tmpl # terminal appearance only — no shell settings;
-                            # theme line from the settings (pair or single)
+                            # theme line names two GENERATED user themes in
+                            # ~/.config/ghostty/themes/dotfiles-{light,dark}
+                            # (pair or single, from the settings)
+private_dot_config/ghostty/themes/      # those two theme files, rendered from
+                            # the same resolved palettes every surface uses
 dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # .json.tmpl — the pi TUI's themes, generated from
                             # the active themes' roles (stable file names);
@@ -125,13 +134,16 @@ was broken for months with no error shown. Let failures be loud.
 `pcall` is fine where failure is genuinely expected and not exceptional (e.g.
 `vim.treesitter.start` on a filetype with no parser).
 
-**Colors: three appearance settings, zero cached theme data.** Appearance
+**Colors: three appearance settings, one committed mirror.** Appearance
 is edited only via `settings.toml` at the repo root (`theme`,
-`light_theme`, `dark_theme` — Ghostty
-theme names; `ghostty +list-themes` is the browser). Templates resolve each
-name at apply time via `scripts/ghostty-theme.py` (chezmoi `output`),
-parsed + derived from Ghostty's own catalog — no overrides, nothing pinned:
-what Ghostty ships is what every surface renders (delta falls back to the
+`light_theme`, `dark_theme` — theme names resolved against the vendored
+mirror in `themes/`, rooted in mbadolato/iTerm2-Color-Schemes; the
+upstream README gallery is the browser; `scripts/themes-sync.sh`
+refreshes the mirror by hand). Templates resolve each
+name at apply time via `scripts/theme.py` (chezmoi `output`),
+parsed + derived from the mirror — no network, no Ghostty install
+needed for apply: what the mirror holds is what every surface renders
+(delta falls back to the
 terminal's own palette; nvim/lualine use a scheme generated from the roles).
 Never hardcode a hex or theme name in a managed file — render it from the
 resolver or read it via `bruce.core.theming`. Surfaces that travel over
@@ -143,7 +155,7 @@ slots the author left out also falls back to role hexes — see `pi_vars`).
 In nvim, only
 `core/theming.lua` is generated; the rest is static Lua. The smoke test's
 color-system step is the drift guard (names resolve, no orphan hexes, roles
-verbatim, pi rides the slots). Ghostty must be installed where `chezmoi apply` runs. `chezmoi
+verbatim, pi rides the slots). `chezmoi
 re-add` skips
 template-sourced files (e.g. pi's `settings.json.tmpl`): fold pi's
 self-bumps in by hand. See docs/developing.md ("pi self-bumps") for the

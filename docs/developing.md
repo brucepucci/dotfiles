@@ -78,7 +78,7 @@ scripts/smoke-test.sh      # ~1s; after EVERY change
   transcripts (all listed there).
 - `.chezmoidata`/`.chezmoiignore` aside, no settings travel through
   chezmoi's data machinery: templates call
-  `scripts/ghostty-theme.py` via the `output` function instead, which is
+  `scripts/theme.py` via the `output` function instead, which is
   why `settings.toml` can sit at the repo root, editable, and never be
   installed.
 
@@ -96,8 +96,8 @@ the result the way real sessions do. It covers:
 - the prompt's git-marker spacing and blank-line rules
 - light/dark mode wiring (Ghostty theme line, nvim mode module, the
   delta-theme wrapper exercised with fake `defaults`/`delta` shims)
-- the color system end to end (names resolve from Ghostty's catalog, no
-  orphan hexes, roles verbatim, pi rides the indexed slots)
+- the color system end to end (names resolve from the committed mirror,
+  no orphan hexes, roles verbatim, pi rides the indexed slots)
 - the tmux config's shape (extended keys, clipboard, truecolor — file
   shape only, no tmux binary needed)
 - the pi→tmux wrapper with fake tmux+pi shims (creates named sessions,
@@ -115,9 +115,10 @@ the result the way real sessions do. It covers:
   load-bearing command lines intact in both files
 
 `--nvim` additionally restores plugins in the throwaway HOME (~2 min) for
-plugin-level checks. CI runs tier 1 on `macos-latest` with the Ghostty
-cask installed, so the resolver reads the same real catalog a local
-machine does.
+plugin-level checks. CI runs tier 1 on `macos-latest` with no Ghostty
+installed — the theme mirror is committed in the repo, so a green run
+there is the standing proof that apply needs neither the app nor the
+network.
 
 **Tier 2 — a real macOS VM, for big changes** (new-machine runs, GUI apps,
 `brew bundle` itself):
@@ -180,10 +181,12 @@ is documentation as much as machinery — someone (you, later) should be
 able to read why each line exists.
 
 ### Change how things look
-Edit `settings.toml` at the repo root (theme names from `ghostty
-+list-themes`), `chezmoi diff && chezmoi apply`. Never edit a generated
-file — theming.md lists which files are artifacts. Ghostty must be
-installed where apply runs.
+Edit `settings.toml` at the repo root (theme names are the file names of
+the committed mirror in `themes/` — browse
+[iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes)'
+README gallery; `scripts/themes-sync.sh` refreshes the mirror), then
+`chezmoi diff && chezmoi apply`. Never edit a generated
+file — theming.md lists which files are artifacts.
 
 ### Add a secret
 Add a variable to `~/.zsh/secrets.zsh` (unmanaged; template:
@@ -236,9 +239,11 @@ by design). The smoke test checks the render and the frontmatter.
 The one-look-everywhere property is enforced, not hoped for. For details
 see [theming.md](theming.md). Contributor-facing summary:
 
-- `settings.toml` is the only appearance input; `scripts/ghostty-theme.py`
-  resolves names against Ghostty's own catalog at apply time. Nothing
-  cached — new Ghostty themes work by typing their name.
+- `settings.toml` is the only appearance input; `scripts/theme.py`
+  resolves names against the committed mirror in `themes/` at apply time
+  (rooted in iTerm2-Color-Schemes, refreshed by
+  `scripts/themes-sync.sh`) — no network, no Ghostty install needed.
+  New themes work by syncing the mirror and typing their name.
 - New surfaces follow the SSH rule: render in terminal-indexed colors
   (0–15) so the *viewing* terminal resolves them; the xterm cube (16–255)
   only for shades every terminal renders identically; live hexes only

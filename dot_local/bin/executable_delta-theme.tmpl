@@ -13,9 +13,9 @@
 #          light mode the key does not exist and it exits nonzero.
 #   theme  always "none": bat syntax colors are disabled, so diffs render
 #          in the terminal's own 16-color palette -- cohesive with
-#          whatever Ghostty theme is active, by construction.
+#          whatever theme the terminal runs, by construction.
 
-MODE='{{ output (joinPath .chezmoi.sourceDir "scripts/ghostty-theme.py") "--setting" "theme" | trim }}'
+MODE='{{ output (joinPath .chezmoi.sourceDir "scripts/theme.py") "--setting" "theme" | trim }}'
 
 case "$MODE" in
 light|dark) mode=$MODE ;;

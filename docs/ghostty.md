@@ -7,21 +7,31 @@ no command — because the shell is global by design (see [zsh.md](zsh.md)).
 If you ever want to change shell behavior, there is exactly one obvious
 place to look, and it is not here.
 
-**Managed file**: `private_dot_config/ghostty/config.tmpl` →
-`~/.config/ghostty/config`.
+**Managed files**: `private_dot_config/ghostty/config.tmpl` →
+`~/.config/ghostty/config`, plus
+`private_dot_config/ghostty/themes/dotfiles-{light,dark}.tmpl` → the two
+generated theme files in `~/.config/ghostty/themes/`.
 
 ## What's in the config
 
 Almost nothing, on purpose:
 
 - **The theme line** — the only setting, rendered at `chezmoi apply` time
-  from `settings.toml`. `theme = "system"` (the default) renders the
-  `light:<name>,dark:<name>` pair, which Ghostty auto-switches with the OS
-  appearance live — flip the Mac to dark and every Ghostty window follows
-  without a restart. A pinned mode (`theme = "light"` or `"dark"`) renders
-  the single theme. Everything else in the stack follows the same signal
-  (see [theming.md](theming.md)).
+  from `settings.toml`. It names the two generated user themes,
+  `dotfiles-light` and `dotfiles-dark`, which chezmoi renders into
+  `~/.config/ghostty/themes/` from the same vendored palettes every other
+  surface uses (see [theming.md](theming.md)). `theme = "system"` (the
+  default) writes the `light:dotfiles-light,dark:dotfiles-dark` pair,
+  which Ghostty auto-switches with the OS appearance live — flip the Mac
+  to dark and every Ghostty window follows without a restart. A pinned
+  mode (`theme = "light"` or `"dark"`) renders the single name. The
+  terminal therefore shows exactly the palette nvim, lualine, and pi
+  derived from the same theme files — and no Ghostty install is needed
+  to *apply* the config: the palettes come from this repo's mirror.
 - Everything else — font, window chrome, keybindings — is Ghostty defaults.
+- Browsing themes happens upstream, not in the terminal: the gallery in
+  [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes)'
+  README shows every scheme the mirror can hold.
 
 ## Why the XDG path
 
@@ -42,18 +52,16 @@ terminals too — but Terminal.app and iTerm2 do not pick it up
 automatically. If you use one of those, set the font by hand or icons
 render as placeholder boxes. The shell itself needs nothing.
 
-## Ghostty is a prerequisite for `chezmoi apply`
+## The theme mirror (why apply needs no Ghostty)
 
-The palette resolver (`scripts/ghostty-theme.py`) reads Ghostty's bundled
-theme catalog — the files behind `ghostty +list-themes` — to derive every
-surface's colors at apply time. Nothing is cached in this repo, which
-means Ghostty must be installed wherever apply runs. This is why the
-new-machine steps install the Brewfile **before** applying, and why CI
-installs the cask on every runner. Browse themes with:
-
-```bash
-ghostty +list-themes      # highlighting a theme previews its 16-color mapping
-```
+The colors Ghostty renders are generated *by this repo*: the resolver
+(`scripts/theme.py`) derives every surface's palettes from the committed
+mirror in `themes/` (rooted in iTerm2-Color-Schemes) at apply time —
+including the `dotfiles-{light,dark}` theme files Ghostty loads from its
+config themes directory. Ghostty the app is the terminal, never a
+prerequisite: a machine without it can still `chezmoi apply` (which is
+exactly what CI does), and the Brewfile ordering no longer matters for
+the colors.
 
 ## Keybindings worth knowing
 

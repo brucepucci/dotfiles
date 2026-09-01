@@ -1,0 +1,33 @@
+{{- /* GENERATED at apply time -- do not hand-edit. This is settings.toml's
+     dark_theme rendered in Ghostty's theme-file format by scripts/theme.py,
+     from the vendored mirror (themes/, a copy of iTerm2-Color-Schemes'
+     ghostty/ directory). Ghostty loads it as a user theme from this
+     directory (~/.config/ghostty/themes/); the config's theme = line names
+     it. Rendered unconditionally, whatever the mode -- appearance always
+     resolves both sides. Changing the theme means editing settings.toml
+     and `chezmoi apply`, never this file. */ -}}
+{{ $a := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "appearance" | trim | fromJson -}}
+{{ $t := $a.dark.terminal -}}
+# dotfiles-dark -- {{ $a.dark_theme }}
+palette = 0={{ $t.palette_0 }}
+palette = 1={{ $t.palette_1 }}
+palette = 2={{ $t.palette_2 }}
+palette = 3={{ $t.palette_3 }}
+palette = 4={{ $t.palette_4 }}
+palette = 5={{ $t.palette_5 }}
+palette = 6={{ $t.palette_6 }}
+palette = 7={{ $t.palette_7 }}
+palette = 8={{ $t.palette_8 }}
+palette = 9={{ $t.palette_9 }}
+palette = 10={{ $t.palette_10 }}
+palette = 11={{ $t.palette_11 }}
+palette = 12={{ $t.palette_12 }}
+palette = 13={{ $t.palette_13 }}
+palette = 14={{ $t.palette_14 }}
+palette = 15={{ $t.palette_15 }}
+background = {{ $t.background }}
+foreground = {{ $t.foreground }}
+cursor-color = {{ index $t "cursor-color" }}
+cursor-text = {{ index $t "cursor-text" }}
+selection-background = {{ index $t "selection-background" }}
+selection-foreground = {{ index $t "selection-foreground" }}
