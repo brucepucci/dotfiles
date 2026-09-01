@@ -5,7 +5,8 @@ on this machine — Ghostty, Terminal.app, iTerm2 — and every SSH session
 logging in from anywhere reads the same three files. The prompt looks the
 same, history is shared live, and there is exactly one obvious place to
 change shell behavior. oh-my-zsh and powerlevel10k are gone; what they
-provided here is either built in, replaced by three Homebrew formulas, or
+provided here is either built in, replaced by three Homebrew formulas,
+small enough to reimplement outright (`clipcopy`/`clippaste` below), or
 wasn't wanted.
 
 **Managed files** (source in the repo root and `private_dot_config/zsh*/`):
@@ -13,7 +14,7 @@ wasn't wanted.
 | Source file | Installs to | Job |
 |---|---|---|
 | `dot_zprofile` | `~/.zprofile` | login-shell PATH: Homebrew + `~/.local/bin` |
-| `dot_zshrc.tmpl` | `~/.zshrc` | the interactive half: options, history, completion, keybindings, integrations, aliases, the `pi()` wrapper, secrets, prompt |
+| `dot_zshrc.tmpl` | `~/.zshrc` | the interactive half: options, history, completion, keybindings, integrations, aliases, clipboard helpers, the `pi()` wrapper, secrets, prompt |
 | `private_dot_config/zsh/ps1.zsh` | `~/.config/zsh/ps1.zsh` | the prompt |
 | `private_dot_config/zsh-ghostty/dot_zshenv` | `~/.config/zsh-ghostty/.zshenv` | legacy redirect guard (see below) |
 
@@ -111,6 +112,47 @@ before the widget can see it.
 | `la` | `ls -lhA <color>` |
 | `grep` | `grep --color=auto` |
 | `clear` | clear, plus reset the prompt's blank-line flag (defined in ps1.zsh) |
+
+## Clipboard: `clipcopy` / `clippaste`
+
+The one oh-my-zsh convention worth keeping, reimplemented as ~30 owned
+lines against `pbcopy`/`pbpaste` (stock macOS — the repo's one platform,
+so omz's `OSTYPE` ladder collapses to nothing) instead of sourcing omz
+for it:
+
+| Command | Effect |
+|---|---|
+| `<command> \| clipcopy` | copies piped stdout to the clipboard |
+| `clipcopy <file>` | copies one file's contents |
+| `clippaste` | prints the clipboard (`clippaste > file` saves it) |
+
+Where they deliberately differ from omz's darwin branch (`cat
+"${1:-/dev/stdin}" \| pbcopy`):
+
+- **A bare `clipcopy` is a usage error** (exit 1), never a silent copy.
+  Stdin is read only when it is genuinely a pipe (`-p /dev/stdin`), so a
+  `clipcopy` under `</dev/null`, inside a redirected `while read` loop,
+  or behind any other redirect cannot quietly blank the clipboard or
+  drain the loop's input. `clipcopy < f` is therefore not a form — name
+  the file.
+- **Bad paths die at the shell, not inside pbcopy**: a directory is
+  refused with a clean message (raw `pbcopy < dir` aborts with an ObjC
+  stack trace), an unreadable path is named, and more than one file
+  argument is an error (`clipcopy *.log` fails rather than copying only
+  the first). `-h`/`--help` prints the usage line.
+
+An explicit file argument still wins when both a pipe and a file arrive
+(`cmd | clipcopy file` copies the file) — shared with omz.
+
+They read and write the **Mac's** pasteboard — the same clipboard nvim's
+yanks land on. As `~/.zshrc` functions their reach is interactive
+shells: every terminal and every interactive SSH session into the Mac
+(the repo's remote story). A scripted `ssh host clipcopy < file` runs a
+non-interactive shell that sources no `.zshrc` (and this repo ships no
+`~/.zshenv` to put anything on that shell's PATH) — use `pbcopy` there.
+The other direction, getting tmux copy-mode yanks onto the *viewing*
+device's clipboard over SSH, stays tmux's OSC 52 job (see
+[tmux.md](tmux.md)).
 
 ## The `pi()` wrapper
 

@@ -90,6 +90,9 @@ the result the way real sessions do. It covers:
 
 - from-scratch apply; fresh login-shell behavior (prompt, shared HISTFILE,
   brew PATH, aliases, EDITOR fallback when nvim is absent)
+- the clipboard helpers (`clipcopy`/`clippaste`) — byte-exact round-trip
+  through fake pbcopy/pbpaste shims, with the usage-error, directory,
+  multi-argument, missing-file, and `--help` branches all exercised
 - the legacy ZDOTDIR guard repairing a pre-unification Ghostty window
 - the SSH prompt segment; history shared across shells
 - secrets staying out; Ghostty config containing no shell settings

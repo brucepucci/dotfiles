@@ -188,6 +188,64 @@ alias la="ls -lhA $_ls_color"
 unset _ls_color
 alias grep='grep --color=auto'
 
+# --- Clipboard --------------------------------------------------------------
+# clipcopy / clippaste -- the oh-my-zsh clipboard commands, reimplemented
+# for this repo's one platform instead of sourced from omz (whose darwin
+# branch is `cat "${1:-/dev/stdin}" | pbcopy`): macOS ships pbcopy/
+# pbpaste with the OS, so omz's OSTYPE ladder collapses to nothing and
+# the whole thing is about 30 lines we own. Contract:
+#   <command> | clipcopy       copy piped stdin
+#   clipcopy <file>            copy one file's contents
+#   clippaste                  print the clipboard (redirect to save it)
+# Deliberate deltas from omz: bare clipcopy with neither a pipe nor a
+# file is a usage error, never a silent copy -- stdin is read only when
+# it is genuinely a pipe (-p /dev/stdin), so </dev/null, a redirected
+# `while read` loop, or any other redirect cannot quietly blank the
+# clipboard or drain the loop ("clipcopy < f" is not a form; name the
+# file). Bad paths die at the shell with a clean message instead of
+# inside pbcopy: a directory is refused (raw `pbcopy < dir` aborts with
+# an ObjC stack trace), an unreadable path is named, more than one file
+# argument is an error. As with omz, an explicit file argument wins when
+# a pipe and a file both arrive. They are interactive-shell functions:
+# every terminal and interactive SSH session into the Mac has them (a
+# scripted `ssh host clipcopy` runs a shell that sources no .zshrc --
+# use pbcopy there). They read and write the Mac's own pasteboard -- the
+# same clipboard nvim's yanks use; the other direction (onto the VIEWING
+# device's clipboard over SSH) stays tmux's OSC 52 copy-mode job
+# (docs/tmux.md).
+clipcopy() {
+  emulate -L zsh
+  local usage="usage: <command> | clipcopy  |  clipcopy <file>"
+  case $1 in
+    -h|--help) print -ru2 -- "$usage"; return 0 ;;
+  esac
+  if (( $# > 1 )); then
+    print -ru2 -- "clipcopy: one file at a time"
+    print -ru2 -- "$usage"
+    return 1
+  fi
+  local file=$1
+  if [[ -n $file ]]; then
+    if [[ -d $file ]]; then
+      print -ru2 -- "clipcopy: is a directory: $file"
+      return 1
+    elif [[ ! -r $file ]]; then
+      print -ru2 -- "clipcopy: not readable: $file"
+      return 1
+    fi
+    pbcopy < "$file"
+  elif [[ -p /dev/stdin ]]; then
+    pbcopy
+  else
+    print -ru2 -- "$usage"
+    return 1
+  fi
+}
+
+clippaste() {
+  pbpaste
+}
+
 # --- pi ---------------------------------------------------------------------
 # `pi` always starts a NEW conversation, wrapped in its own tmux session so
 # it survives closing the terminal and can be rejoined from any device

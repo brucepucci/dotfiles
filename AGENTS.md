@@ -33,8 +33,10 @@ not be reintroduced.
 ## Architecture
 
 ```
-dot_zshrc.tmpl              # interactive shell: options, history, aliases, prompt;
-                            # the pi() wrapper -- every new conversation gets
+dot_zshrc.tmpl              # interactive shell: options, history, aliases,
+                            # clipboard helpers (clipcopy/clippaste, over
+                            # pbcopy/pbpaste), prompt; the pi() wrapper --
+                            # every new conversation gets
                             # its own named tmux session (never attaches) and
                             # probes the viewing terminal for the theme side.
                             # TWO conditional renders: tmux_wrap=off defaults
