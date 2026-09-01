@@ -31,11 +31,13 @@ greys, accents (red..purple + a blended orange), diff tints, and lualine's
 mode-segment colors.
 
 Set DOTFILES_THEMES to point at a themes directory explicitly (custom
-experiments, tests). Set DOTFILES_SETTINGS_FILE to read a different
+experiments, tests) -- it replaces the whole lookup. Otherwise names
+resolve against themes-local/ (hand-written overrides) and then themes/
+(the committed mirror). Set DOTFILES_SETTINGS_FILE to read a different
 settings file (tests render off-variants without touching the repo's).
 
 Exits nonzero with a pointed message for unknown names, invalid settings,
-or a missing themes directory (apply fails loudly).
+or a missing mirror (apply fails loudly).
 
 No third-party imports; python3 stdlib only.
 """
@@ -126,11 +128,18 @@ def nearest_256(rgb):
 # ---------------------------------------------------------------------------
 
 def find_themes_dir():
-    # explicit override first (also how tests point at fixture catalogs)
+    # the lookup order: DOTFILES_THEMES (a single explicit directory --
+    # how tests point at fixture catalogs) wins outright; otherwise
+    # themes-local/ (hand-written overrides; scripts/themes-sync.sh never
+    # touches it) ahead of themes/ (the committed mirror)
     env = os.environ.get("DOTFILES_THEMES")
     if env:
-        return env if os.path.isdir(env) else None
-    return os.path.join(REPO, "themes")
+        return [env] if os.path.isdir(env) else None
+    mirror = os.path.join(REPO, "themes")
+    if not os.path.isdir(mirror):
+        return None
+    local = os.path.join(REPO, "themes-local")
+    return [local, mirror] if os.path.isdir(local) else [mirror]
 
 
 def parse_ghostty_theme(path):
@@ -320,15 +329,24 @@ def die(msg):
 
 def resolve(name):
     """-> {terminal, roles, apps}, or exits nonzero with a pointed message."""
-    themes_dir = find_themes_dir()
-    if not themes_dir:
-        die("the themes directory was not found (DOTFILES_THEMES is set "
-            "but is not a directory)")
-    path = os.path.join(themes_dir, name)
-    if not os.path.isfile(path):
-        die("theme '%s' is not in themes/ -- browse names in the upstream "
-            "gallery (the iTerm2-Color-Schemes README) and refresh the "
-            "mirror with scripts/themes-sync.sh" % name)
+    dirs = find_themes_dir()
+    if not dirs:
+        env = os.environ.get("DOTFILES_THEMES")
+        if env:
+            die("DOTFILES_THEMES is set but is not a directory: '%s'" % env)
+        die("the themes mirror is missing (no themes/ directory) -- restore "
+            "it with `git checkout -- themes` or run scripts/themes-sync.sh")
+    path = None
+    for d in dirs:
+        cand = os.path.join(d, name)
+        if os.path.isfile(cand):
+            path = cand
+            break
+    if path is None:
+        die("theme '%s' is not in themes/ (or themes-local/) -- browse names "
+            "in the upstream gallery (the iTerm2-Color-Schemes README), "
+            "refresh the mirror with scripts/themes-sync.sh, or drop a "
+            "hand-written file in themes-local/" % name)
     term = parse_ghostty_theme(path)
     if term is None:
         die("the '%s' theme file has no background/foreground" % name)

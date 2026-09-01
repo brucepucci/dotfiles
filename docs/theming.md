@@ -61,8 +61,9 @@ bisectable (`git log -p themes/` shows exactly when any palette changed).
 `scripts/themes-sync.sh` refreshes it by hand when you want newer upstream
 themes. Staleness is benign: an out-of-date mirror just means the newest
 upstream names do not resolve yet — the resolver fails loudly with the
-fix in the message. A hand-written file dropped into `themes/` under a
-name overrides the mirrored one, if a palette ever needs pinning.
+fix in the message. A hand-written palette never lives in `themes/` (the
+sync replaces it wholesale): drop the file in `themes-local/` (repo root,
+chezmoiignored) under the same name and the resolver reads it first.
 
 The script is stdlib-only Python with a query interface
 (`appearance`, `--setting <k>`, `--pi <name>`, `--hexes <name>...`, ...).
