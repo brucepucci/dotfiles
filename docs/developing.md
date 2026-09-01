@@ -117,8 +117,11 @@ the result the way real sessions do. It covers:
 `--nvim` additionally restores plugins in the throwaway HOME (~2 min) for
 plugin-level checks. CI runs tier 1 on `macos-latest` with no Ghostty
 installed — the theme mirror is committed in the repo, so a green run
-there is the standing proof that apply needs neither the app nor the
-network.
+there is the standing proof that apply needs no Ghostty. (The resolver's
+palette input is the mirror and nothing else — tier 1 guards that
+behaviorally by resolving with themes/ absent — but the runner still has
+network, so "reads no network at apply time" is a property of the code,
+not something CI enforces.)
 
 **Tier 2 — a real macOS VM, for big changes** (new-machine runs, GUI apps,
 `brew bundle` itself):
