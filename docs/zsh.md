@@ -115,24 +115,41 @@ before the widget can see it.
 
 ## Clipboard: `clipcopy` / `clippaste`
 
-The one oh-my-zsh convention worth keeping, reimplemented as ~15 lines
-against `pbcopy`/`pbpaste` (stock macOS — the repo's one platform, so
-omz's `OSTYPE` ladder collapses to nothing) instead of sourcing omz for
-it:
+The one oh-my-zsh convention worth keeping, reimplemented as ~30 owned
+lines against `pbcopy`/`pbpaste` (stock macOS — the repo's one platform,
+so omz's `OSTYPE` ladder collapses to nothing) instead of sourcing omz
+for it:
 
 | Command | Effect |
 |---|---|
-| `<command> \| clipcopy` | copies stdout to the clipboard |
-| `clipcopy <file>` | copies the file's contents |
+| `<command> \| clipcopy` | copies piped stdout to the clipboard |
+| `clipcopy <file>` | copies one file's contents |
 | `clippaste` | prints the clipboard (`clippaste > file` saves it) |
 
-Semantics match omz with one deliberate simplification: an explicit file
-argument wins over a pipe when both are present. A bare `clipcopy` with
-neither a pipe nor a file is a usage error (exit 1), never a silent empty
-copy.
+Where they deliberately differ from omz's darwin branch (`cat
+"${1:-/dev/stdin}" \| pbcopy`):
+
+- **A bare `clipcopy` is a usage error** (exit 1), never a silent copy.
+  Stdin is read only when it is genuinely a pipe (`-p /dev/stdin`), so a
+  `clipcopy` under `</dev/null`, inside a redirected `while read` loop,
+  or behind any other redirect cannot quietly blank the clipboard or
+  drain the loop's input. `clipcopy < f` is therefore not a form — name
+  the file.
+- **Bad paths die at the shell, not inside pbcopy**: a directory is
+  refused with a clean message (raw `pbcopy < dir` aborts with an ObjC
+  stack trace), an unreadable path is named, and more than one file
+  argument is an error (`clipcopy *.log` fails rather than copying only
+  the first). `-h`/`--help` prints the usage line.
+
+An explicit file argument still wins when both a pipe and a file arrive
+(`cmd | clipcopy file` copies the file) — shared with omz.
 
 They read and write the **Mac's** pasteboard — the same clipboard nvim's
-yanks land on — from every terminal and over SSH into the Mac alike.
+yanks land on. As `~/.zshrc` functions their reach is interactive
+shells: every terminal and every interactive SSH session into the Mac
+(the repo's remote story). A scripted `ssh host clipcopy < file` runs a
+non-interactive shell that sources no `.zshrc` (and this repo ships no
+`~/.zshenv` to put anything on that shell's PATH) — use `pbcopy` there.
 The other direction, getting tmux copy-mode yanks onto the *viewing*
 device's clipboard over SSH, stays tmux's OSC 52 job (see
 [tmux.md](tmux.md)).
