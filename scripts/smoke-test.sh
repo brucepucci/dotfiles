@@ -199,16 +199,11 @@ else
 fi
 [[ "$(grep '^theme = ' "$NEWHOME/.config/ghostty/config")" == "$want_theme" ]] \
   || die "ghostty theme line does not match the palette settings"
-# The generated user themes must carry the RESOLVED palettes, not just
-# exist: Ghostty shows exactly what the rest of the stack derived.
-for side in light dark; do
-  t="$( [[ $side == light ]] && echo "$LTHEME" || echo "$DTHEME" )"
-  gf="$NEWHOME/.config/ghostty/themes/dotfiles-$side"
-  [[ "$(grep '^background = ' "$gf")" == "background = $(themeget "$t" terminal.background)" ]] \
-    || die "dotfiles-$side: background is not the resolved $t palette"
-  [[ "$(grep '^palette = 1=' "$gf")" == "palette = 1=$(themeget "$t" terminal.palette_1)" ]] \
-    || die "dotfiles-$side: palette slot 1 is not the resolved $t palette"
-done
+# The generated user themes carry the RESOLVED palettes -- every one of
+# their 22 lines, compared against the resolver's own output in the
+# colors step below. (A spot-check of two lines is not enough: a swapped
+# slot rides the orphan-hex guard, because the wrong hex is still a hex
+# the theme defines.)
 # Neovim: 'background' comes from the mode (OS when system) at startup,
 # re-checked on focus.
 [[ -f "$NEWHOME/.config/nvim/lua/bruce/core/appearance.lua" ]] \
@@ -382,6 +377,20 @@ for side, theme in (("light", ltheme), ("dark", dtheme)):
         if v not in names:
             sys.exit("%s: colors.%s references unknown var %r -- pi would "
                      "silently fall back to its built-in theme" % (f, k, v))
+    # the generated Ghostty user theme: EVERY line must be the resolved
+    # palette (the shell used to spot-check 2 of 22 lines; a swapped slot
+    # rode the orphan-hex guard because the wrong hex was still a theme
+    # hex -- and Ghostty would render it while nvim/lualine/pi rendered
+    # the true one, the exact divergence this step exists to prevent)
+    f = "%s/.config/ghostty/themes/dotfiles-%s" % (home, side)
+    want = ["palette = %d=%s" % (i, term["palette_%d" % i]) for i in range(16)]
+    want += ["%s = %s" % (k, term[k]) for k in (
+        "background", "foreground", "cursor-color", "cursor-text",
+        "selection-background", "selection-foreground")]
+    got = [l.rstrip("\n") for l in open(f) if not l.startswith("#")]
+    if got != want:
+        sys.exit("%s: not the resolved %s palette\n  got:  %r\n  want: %r"
+                 % (f, theme, got, want))
     print("  ok  %s: slots + provenance verified; dotfiles-%s refs resolve"
           % (theme, side))
 PY
@@ -397,22 +406,29 @@ done
 ok "themes resolve, no orphan hexes, roles verbatim, pi follows the terminal"
 
 step "theme mirror: committed, provenance recorded, out of HOME"
-# The mirror is what freed apply from needing Ghostty installed; these
-# guard its three load-bearing properties: it ships with the repo
-# (SOURCE.md names the upstream it is rooted in), it never lands in
-# $HOME (chezmoi-ignored), and the resolver reads ONLY it -- a
-# Ghostty.app/Caskroom path creeping back into scripts/theme.py would
-# silently reintroduce the apply-time dependency CI just proved gone.
+# The mirror is what freed apply from needing Ghostty installed. Guards:
+# it ships with the repo (SOURCE.md names the upstream it is rooted in),
+# it never lands in $HOME, and -- behaviorally, not by grepping the
+# resolver for path strings -- the resolver consults NOTHING but the
+# mirror: with themes/ absent it must fail with the pointed
+# missing-mirror message. A resolver that reached for Ghostty's app
+# bundle, an XDG config dir, or the network instead of a missing mirror
+# would sail past a string match; it cannot sail past a missing input it
+# actually needed.
 [[ -f "$SOURCE/themes/SOURCE.md" ]] \
   || die "themes/SOURCE.md is missing -- the mirror's provenance record"
 grep -q "mbadolato/iTerm2-Color-Schemes" "$SOURCE/themes/SOURCE.md" \
   || die "themes/SOURCE.md does not name the upstream repo"
 [[ ! -e "$NEWHOME/themes" ]] \
   || die "the theme mirror leaked into \$HOME -- check .chezmoiignore"
-if grep -qE 'Ghostty\.app|Caskroom' "$SOURCE/scripts/theme.py"; then
-  die "scripts/theme.py references Ghostty's app bundle again -- the apply-time dependency is back"
-fi
-ok "mirror present with provenance; never applied; resolver reads only themes/"
+aside="$SOURCE/.themes-aside.$$"
+mv "$SOURCE/themes" "$aside"
+rc=0; out="$(python3 "$SOURCE/scripts/theme.py" "Flexoki Light" 2>&1)" || rc=$?
+mv "$aside" "$SOURCE/themes"
+[[ $rc -ne 0 ]] || die "resolver succeeded with themes/ absent"
+[[ "$out" == *"mirror is missing"* ]] \
+  || die "missing-mirror failure is not the pointed message: $out"
+ok "mirror present with provenance; never applied; resolver needs nothing else"
 
 step "pi vars: sparse custom themes ride hexes, not defaulted slots"
 # Every catalog theme ships a full 16-color palette, but a hand-written
