@@ -76,6 +76,48 @@ vim.api.nvim_create_autocmd("FileType", {
     end,
 })
 
+-- ---------------------------------------------------------------------------
+-- Application exit
+--
+-- `:q` from the LAST ordinary editing window should exit Neovim even when
+-- auxiliary UI (the explorer, pickers, prompts) is still open -- the user
+-- must not have to quit each helper window separately.
+--
+-- This counts WINDOWS, not buffers: a saved hidden buffer is closed along
+-- with everything else, while another visible editing window -- in a split
+-- or another tab -- keeps the application open. An auxiliary window is any
+-- window whose buffer is not a normal file (buftype ~= ""), so the check
+-- needs no knowledge of which plugin owns which window; it keeps working
+-- when Snacks reshuffles its internal layout.
+--
+-- QuitPre fires before Neovim decides whether `:quit` closes one window or
+-- exits. It is non-recursive, so the nested quitall cannot re-trigger this
+-- handler. quitall (never quitall!) preserves the modified-buffer checks:
+-- an unsaved hidden buffer still blocks exit with the usual E37 warning.
+-- ---------------------------------------------------------------------------
+vim.api.nvim_create_autocmd("QuitPre", {
+    group = aug,
+    desc = ":q from the last ordinary window exits instead of stranding auxiliary UI",
+    callback = function()
+        local ordinary = {} -- windows showing a normal-file buffer
+        for _, win in ipairs(vim.api.nvim_list_wins()) do
+            if vim.bo[vim.api.nvim_win_get_buf(win)].buftype == "" then
+                table.insert(ordinary, win)
+            end
+        end
+        -- Only when auxiliary windows are what would remain: more than one
+        -- window total, this is the last ordinary one, and it is the one
+        -- being quit. Anything else keeps Neovim's normal `:q` behavior.
+        if
+            #vim.api.nvim_list_wins() > 1
+            and #ordinary == 1
+            and ordinary[1] == vim.api.nvim_get_current_win()
+        then
+            vim.cmd("quitall")
+        end
+    end,
+})
+
 -- Brief highlight on yank, so it is obvious what landed in the register.
 vim.api.nvim_create_autocmd("TextYankPost", {
     group = aug,

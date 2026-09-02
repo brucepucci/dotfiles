@@ -123,6 +123,11 @@ In the explorer: `l` opens, `h` closes, `a` adds, `d` deletes, `r` renames,
 | `<leader>tl` / `<leader>th` | Next / previous tab |
 | `<leader>bd` | Delete buffer |
 
+`:q` from the last ordinary editing window exits Neovim, closing the
+explorer/picker windows beside it — no need to quit each one. Another
+*visible* editor (split or tab) keeps Neovim open; saved hidden buffers do
+not. Unsaved buffers still block with the usual warning.
+
 In terminal mode, `<C-k>` / `<C-h>` / `<C-l>` escape back to your code. There's
 no `<C-j>` — the REPL is the bottom split, so there's nothing below it.
 

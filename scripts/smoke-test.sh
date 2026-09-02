@@ -91,6 +91,16 @@
 #      arguments, plus -h/--help printing usage -- exercised with fake
 #      pbcopy/pbpaste shims so a run on the developer's own Mac never
 #      touches the real clipboard
+#  21. the nvim exit rule: `:q` from the last ordinary editing window
+#      closes auxiliary UI and exits Neovim, while another visible
+#      editor (split or tab) keeps the app open. The QuitPre handler in
+#      core/autocmds.lua is tested headlessly against the APPLIED file,
+#      with buftype=nofile splits standing in for the explorer so the
+#      tests never couple to Snacks' current window layout: last editor
+#      + aux exits, saved hidden buffers do not keep the app open,
+#      unsaved hidden buffers still block with E37, two editors / an
+#      editor in another tab survive, and `:q` from an auxiliary window
+#      is never promoted to an application exit
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see docs/developing.md's test
@@ -186,6 +196,162 @@ if grep -E '^[[:space:]]*(command|env)[[:space:]]*=' "$NEWHOME/.config/ghostty/c
   die "ghostty config sets a shell command/env line"
 fi
 ok "no command=/env= lines"
+
+step "nvim exit: :q from the last ordinary editing window"
+# core/autocmds.lua installs a QuitPre handler: quitting the LAST
+# ordinary window (a normal-file buffer, buftype == "") with auxiliary
+# UI still open runs :quitall so one :q leaves the app, instead of
+# stranding the explorer/picker windows. Counted by WINDOWS, not
+# buffers: saved hidden buffers are closed too, another visible editor
+# (split or tab) keeps the app open, and :quitall (never quitall!)
+# keeps the modified-buffer checks -- an unsaved hidden buffer still
+# refuses with E37.
+#
+# These tests run headlessly against the APPLIED autocmds.lua, with
+# buftype=nofile splits standing in for Snacks' explorer/prompt
+# windows: no plugins, no network, no coupling to Snacks' current
+# internal layout. :q is driven as its own Ex command in the command
+# queue -- the same path a typed :q takes (from inside a Lua chunk,
+# Neovim defers the nested exit). A trailing +cquit 99 is the sentinel:
+# it only ever runs if :q failed to exit, turning "did the process
+# leave" into the exit code. Cases that must SURVIVE assert window
+# layout after :q and leave a marker; the marker doubles as proof the
+# process was still alive.
+#
+# Hermetic like every headless run here: -u NONE -i NONE, scrubbed env,
+# HOME/XDG dirs under $WORK (a stray nvim.log must never land in the
+# chezmoi source tree). Skipped with a notice when nvim is absent --
+# the same host-adapting branch the EDITOR fallback takes.
+if ! command -v nvim >/dev/null 2>&1; then
+  ok "skipped: no nvim on PATH (behavioral branch runs where nvim lives)"
+else
+  NVQ="$WORK/nvim-q"; mkdir -p "$NVQ"/{home/cache,home/state,home/data,files,payload,err,marks}
+  printf 'a\n' > "$NVQ/files/f1.txt"; printf 'b\n' > "$NVQ/files/f2.txt"
+  NVQ_BINPATH="$(dirname "$(command -v nvim)"):/usr/bin:/bin:/usr/sbin:/sbin"
+  nvq() {  # $@ = nvim args; hermetic headless nvim in the applied-file test bed
+    ( cd "$NVQ/files" && env -i HOME="$NVQ/home" TERM=xterm-256color \
+        PATH="$NVQ_BINPATH" \
+        XDG_CACHE_HOME="$NVQ/home/cache" XDG_STATE_HOME="$NVQ/home/state" \
+        XDG_DATA_HOME="$NVQ/home/data" \
+        NVQ_AUTOCMDS="$NEWHOME/.config/nvim/lua/bruce/core/autocmds.lua" \
+        NVQ_LIB="$NVQ/payload/lib.lua" \
+        nvim --headless -u NONE -i NONE "$@" )
+  }
+  nvq_die() { die "nvim exit tests: $1 -- $(cat "$NVQ/err/$2.err" 2>/dev/null)"; }
+  cat > "$NVQ/payload/lib.lua" <<'LUA'
+-- An ordinary window is one whose buffer is a normal file (buftype
+-- ""), exactly as the QuitPre handler classifies. open_aux_vsplit
+-- fakes one auxiliary window the way Snacks' pickers/prompts look to
+-- the handler: its own buffer, buftype=nofile. 'splitright' is off by
+-- default (the new window opens LEFT), so focus is restored by window
+-- id, never by direction.
+function ordinary_wins()
+  local t = {}
+  for _, w in ipairs(vim.api.nvim_list_wins()) do
+    if vim.bo[vim.api.nvim_win_get_buf(w)].buftype == "" then t[#t + 1] = w end
+  end
+  return t
+end
+function open_aux_vsplit()
+  local editor = vim.api.nvim_get_current_win()
+  vim.cmd("vnew")
+  vim.bo.buftype = "nofile"
+  vim.api.nvim_set_current_win(editor)
+end
+LUA
+  case_setup() {  # $1 = case name, $2 = setup lua (after autocmds+lib)
+    { echo 'dofile(os.getenv("NVQ_AUTOCMDS"))'
+      echo 'dofile(os.getenv("NVQ_LIB"))'
+      echo "$2"; } > "$NVQ/payload/$1.lua"
+  }
+  case_assert() {  # $1 = case name, $2 = assertion lua (lib preloaded)
+    { echo 'dofile(os.getenv("NVQ_LIB"))'
+      echo "$2"; } > "$NVQ/payload/$1-assert.lua"
+  }
+  # exit case: setup, then :q, then a sentinel that fails the run if
+  # the process was still alive to execute it
+  expect_exit() {  # $1 = case name, $2 = failure message
+    local rc=0
+    nvq "+luafile $NVQ/payload/$1.lua" "+q" "+cquit 99" \
+      2> "$NVQ/err/$1.err" || rc=$?
+    (( rc == 0 )) || nvq_die "$2 (rc=$rc, sentinel ran -- :q did not exit)" "$1"
+  }
+  # survive case: setup, :q, assert layout from a process that must
+  # still be running, write the marker, clean exit
+  expect_survive() {  # $1 = case name, $2 = failure message
+    local rc=0
+    nvq "+luafile $NVQ/payload/$1.lua" "+q" \
+      "+luafile $NVQ/payload/$1-assert.lua" \
+      "+call writefile(['ok'],'$NVQ/marks/$1')" "+qa!" \
+      2> "$NVQ/err/$1.err" || rc=$?
+    [[ -f "$NVQ/marks/$1" ]] \
+      || nvq_die "$2 (marker missing -- nvim exited at :q or an assert failed; rc=$rc)" "$1"
+  }
+
+  # plain :q, no auxiliary windows: stock behavior, handler inert
+  case_setup c0 'vim.cmd("edit f1.txt")'
+  expect_exit c0 "plain :q with no auxiliary UI must exit normally"
+  # one editor + auxiliary UI: one :q leaves the app
+  case_setup c1 'vim.cmd("edit f1.txt")
+open_aux_vsplit()'
+  expect_exit c1 ":q from the last ordinary window must exit"
+  # saved hidden buffers are windows-not-buffers: they do not hold it open
+  case_setup c3 'vim.cmd("set hidden")
+vim.cmd("edit f1.txt")
+vim.cmd("edit f2.txt")   -- f1 now loaded, hidden, SAVED
+open_aux_vsplit()'
+  expect_exit c3 "saved hidden buffers must not keep the app open"
+  # two visible editors: the first :q closes only that window
+  case_setup c2 'vim.cmd("edit f1.txt")
+local a = vim.api.nvim_get_current_win()
+open_aux_vsplit()
+vim.cmd("split")
+vim.cmd("edit f2.txt")
+vim.api.nvim_set_current_win(a)   -- :q from one of TWO editors'
+  case_assert c2 'local wins = vim.api.nvim_list_wins()
+local ordinary = ordinary_wins()
+assert(#wins == 2, "want 2 windows left (editor + aux), got " .. #wins)
+assert(#ordinary == 1, "want exactly 1 ordinary window, got " .. #ordinary)
+assert(vim.api.nvim_win_get_buf(ordinary[1]) == vim.fn.bufnr("f2.txt"),
+  "the wrong editor window survived")'
+  expect_survive c2 "two editors: :q must close only the current window"
+  # an editor in another tab keeps the app open
+  case_setup c4 'vim.cmd("edit f1.txt")
+open_aux_vsplit()
+vim.cmd("tabnew f2.txt")   -- second tab, ordinary editor
+vim.cmd("tabprevious")'
+  case_assert c4 'local tabs = vim.api.nvim_list_tabpages()
+assert(#tabs == 2, "editor in another tab must survive :q (tabs: " .. #tabs .. ")")
+local ordinary = ordinary_wins()
+assert(#ordinary == 1, "want the other tab editor as the only ordinary window, got " .. #ordinary)
+assert(vim.api.nvim_win_get_buf(ordinary[1]) == vim.fn.bufnr("f2.txt"),
+  "the editor of the other tab did not survive")'
+  expect_survive c4 "an editor in another tab must prevent application exit"
+  # unsaved hidden buffer: E37, sentinel after :q runs, buffer intact
+  case_setup c5 'vim.cmd("set hidden")
+vim.cmd("edit f1.txt")
+vim.cmd("normal! iunsaved")   -- modified, never written
+vim.cmd("edit f2.txt")        -- f1 hidden AND modified
+open_aux_vsplit()'
+  case_assert c5 'local b = vim.fn.bufnr("f1.txt")
+assert(b > 0 and vim.fn.bufexists(b) == 1, "the modified hidden buffer vanished")
+assert(vim.bo[b].modified, "the modified buffer lost its modified flag")
+assert(#ordinary_wins() >= 1, "no ordinary editing window left standing")'
+  expect_survive c5 "unsaved hidden buffer must block exit"
+  grep -q "E37" "$NVQ/err/c5.err" \
+    || nvq_die "the blocked exit must fail with E37, not some other path" c5
+  # :q from an auxiliary window is never promoted to an application exit
+  case_setup c6 'vim.cmd("edit f1.txt")
+vim.cmd("vnew")   -- focus STAYS on this nofile window
+vim.bo.buftype = "nofile"'
+  case_assert c6 'local wins = vim.api.nvim_list_wins()
+assert(#wins == 1, "quitting aux UI must close one window, got " .. #wins)
+assert(#ordinary_wins() == 1, "the ordinary editor must remain")
+assert(vim.api.nvim_win_get_buf(wins[1]) == vim.fn.bufnr("f1.txt"),
+  "the surviving window is not the editor")'
+  expect_survive c6 ":q from an auxiliary window must not exit the app"
+  ok "exit fires from the last editor only; splits/tabs/E37/aux-quit all guarded"
+fi
 
 step "light-mode: the whole stack follows the appearance setting"
 # theme lookup helpers: the same resolver the templates call at apply time.
