@@ -7,6 +7,13 @@
 //
 // Needs node >= 20.3 (AbortSignal.any). jiti is resolved from pi's install
 // so the TypeScript extension loads exactly the way pi loads it.
+//
+// Principle: fakes for pi objects must match the real object's CALL
+// MECHANICS, not just its shape. Theme#fg is a prototype method reading
+// this.fgColors, so the theme fake is a class (an arrow fake cannot catch
+// an unbound extraction). Status text goes through sanitizeStatusText
+// because the footer collapses space runs. Round-1 #2 and round-2 B-1
+// both slipped past shape-only fakes.
 
 import { createRequire } from "node:module";
 
@@ -44,6 +51,17 @@ const check = (name, cond, extra = "") => {
 // pi's own footer transform (dist/modes/interactive/components/footer.js) --
 // what extension statuses actually pass through before display.
 const sanitizeStatusText = (text) => text.replace(/[\r\n\t]/g, " ").replace(/ +/g, " ").trim();
+
+// pi's Theme#fg is a prototype method that reads this.fgColors -- this fake
+// throws the same way if the extension ever extracts it unbound.
+class FakeTheme {
+	constructor() {
+		this.marker = "<";
+	}
+	fg(n, t) {
+		return `${this.marker}${n}>${t}`;
+	}
+}
 
 const DAY = 24 * 3600e3;
 const NOW = Date.parse("2026-09-03T12:00:00Z");
@@ -142,14 +160,15 @@ globalThis.fetch = async (_url, opts) => {
 	};
 };
 
-const makeCtx = (provider, hasUI = true) => ({
+const makeCtx = (provider, hasUI = true, authResult = { auth: { apiKey: "test-key" }, source: "OAuth" }) => ({
 	hasUI,
 	ui: {
 		setStatus: (k, v) => statuses.set(k, v),
-		theme: { fg: (n, t) => `<${n}>${t}` },
+		notify: () => {},
+		theme: new FakeTheme(),
 	},
 	model: { provider },
-	modelRegistry: { getProviderAuth: async () => ({ auth: { apiKey: "test-key" } }) },
+	modelRegistry: { getProviderAuth: async () => authResult },
 });
 
 const handlers = {};
@@ -175,6 +194,7 @@ mod.default(pi);
 await handlers.session_start({}, makeCtx("zai"));
 await settle();
 check("z.ai row rendered (plan + windows)", (statuses.get("provider-usage") ?? "").includes("z.ai pro"), statuses.get("provider-usage"));
+check("theme.fg invoked with receiver (B-1)", (statuses.get("provider-usage") ?? "").includes("<dim>z.ai pro"), statuses.get("provider-usage"));
 check("no tok/s before first response", !statuses.get("provider-usage").includes("tok/s"));
 
 // Response with a TTFT gap: anchor must be the first streamed token, not start.
@@ -225,6 +245,55 @@ await settle();
 check("aged-out quota hides, tok/s remains", (statuses.get("provider-usage") ?? "").includes("tok/s") && !(statuses.get("provider-usage") ?? "").includes("5h"), statuses.get("provider-usage"));
 Date.now = () => realNow;
 fetchMode = "ok";
+
+// M-1: Anthropic API-key auth must be skipped (no plan quota; would 401
+// forever); only OAuth-sourced credentials may hit the usage endpoint.
+{
+	const before = claudeCalls;
+	const h = {};
+	const st = new Map();
+	mod.default({ on: (n, f) => (h[n] = f), ui: { setStatus: (k, v) => st.set(k, v) } });
+	await h.session_start({}, makeCtx("anthropic", true, { auth: { apiKey: "sk-ant-api" }, source: "ANTHROPIC_API_KEY" }));
+	await settle();
+	check("M-1: API-key anthropic skipped", claudeCalls === before && statuses.get("provider-usage") === undefined, `claudeCalls=${claudeCalls - before}`);
+}
+{
+	const before = claudeCalls;
+	const h = {};
+	const st = new Map();
+	mod.default({ on: (n, f) => (h[n] = f), ui: { setStatus: (k, v) => st.set(k, v) } });
+	await h.session_start({}, makeCtx("anthropic", true, { auth: { apiKey: "oauth-token" }, source: "OAuth" }));
+	await settle();
+	check("M-1: OAuth anthropic still fetched", claudeCalls === before + 1 && (statuses.get("provider-usage") ?? "").includes("claude"), `claudeCalls=+${claudeCalls - before}`);
+}
+
+// A render() that throws must not take the session down, and must not
+// spam notifications on every poll (round-2 B-1 hardening).
+{
+	const h = {};
+	const notifications = [];
+	const throwCtx = {
+		hasUI: true,
+		ui: {
+			setStatus: () => {
+				throw new Error("boom");
+			},
+			notify: (m) => notifications.push(m),
+			theme: new FakeTheme(),
+		},
+		model: { provider: "zai" },
+		modelRegistry: { getProviderAuth: async () => ({ auth: { apiKey: "k" }, source: "stored" }) },
+	};
+	mod.default({ on: (n, f) => (h[n] = f), ui: { setStatus: () => {} } });
+	await h.session_start({}, throwCtx);
+	await settle();
+	check("render throw survives, notifies once", notifications.length === 1, JSON.stringify(notifications));
+	shiftClock(31_000);
+	await h.model_select({ model: { provider: "zai" } }, throwCtx);
+	await settle();
+	check("render failure notifies once, not per poll", notifications.length === 1);
+	Date.now = () => realNow;
+}
 
 // Teardown while a fetch is in flight: aborted, and settling must not crash
 // (stale ctx must never be touched after session_shutdown).

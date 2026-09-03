@@ -157,9 +157,14 @@ async function fetchClaude(apiKey: string, signal: AbortSignal): Promise<Quota |
 
 // ---------- provider table (the single place a provider is spelled out) ----------
 
-const PROVIDERS: Record<string, { head: string; fetch: (apiKey: string, signal: AbortSignal) => Promise<Quota | null> }> = {
+const PROVIDERS: Record<
+	string,
+	{ head: string; oauthOnly?: boolean; fetch: (apiKey: string, signal: AbortSignal) => Promise<Quota | null> }
+> = {
 	zai: { head: "z.ai", fetch: fetchZai },
-	anthropic: { head: "claude", fetch: fetchClaude },
+	// The OAuth usage endpoint rejects plain API keys; only Claude Pro/Max
+	// logins (AuthResult.source === "OAuth") have plan quota to show.
+	anthropic: { head: "claude", oauthOnly: true, fetch: fetchClaude },
 };
 
 // ---------- extension ----------
@@ -173,6 +178,7 @@ export default function (pi: ExtensionAPI) {
 	let awaitingFirstToken = false;
 	let started = false;
 	let live = false;
+	let renderFailureNotified = false;
 	let timer: ReturnType<typeof setInterval> | null = null;
 	let ctx: ExtensionContext | null = null;
 
@@ -185,19 +191,38 @@ export default function (pi: ExtensionAPI) {
 		// `live` gates stale contexts: after session_shutdown the extension
 		// context is disposed and every property getter throws. In-flight
 		// fetches settle afterwards, so render() must not touch `ctx` then.
-		if (!live || !ctx?.hasUI) return;
-		const p = provider();
-		if (!p) return;
-		const quota = caches[p];
-		const windows = quota && Date.now() - quota.fetchedAt < MAX_AGE_MS ? quota.windows : [];
-		const tokPerSec = genMs > 0 ? Math.round(outputTokens / (genMs / 1000)) : null;
-		if (!windows.length && tokPerSec === null) {
-			ctx.ui.setStatus("provider-usage", undefined);
-			return;
+		//
+		// The try/catch keeps a rendering bug from taking the session down:
+		// render() runs from promise chains where a throw would escape as an
+		// unhandled rejection and crash pi. The user is told once (loudly)
+		// instead; the row is retried on every poll.
+		try {
+			if (!live || !ctx?.hasUI) return;
+			const p = provider();
+			if (!p) return;
+			const quota = caches[p];
+			const windows = quota && Date.now() - quota.fetchedAt < MAX_AGE_MS ? quota.windows : [];
+			const tokPerSec = genMs > 0 ? Math.round(outputTokens / (genMs / 1000)) : null;
+			if (!windows.length && tokPerSec === null) {
+				ctx.ui.setStatus("provider-usage", undefined);
+				return;
+			}
+			const spec = PROVIDERS[p]!;
+			const head = quota?.plan ? `${spec.head} ${quota.plan}` : spec.head;
+			const theme = ctx.ui.theme;
+			// fg is a prototype method that reads `this.fgColors` -- it must be
+			// called on the receiver, never extracted (passes unbound => throws).
+			ctx.ui.setStatus("provider-usage", formatRow({ head, windows, tokPerSec, fg: (n, t) => theme.fg(n, t) }));
+		} catch (error) {
+			if (!renderFailureNotified && live && ctx?.hasUI) {
+				renderFailureNotified = true;
+				try {
+					ctx.ui.notify(`provider-usage: ${error instanceof Error ? error.message : "render failed"}`, "warning");
+				} catch {
+					// the row is cosmetic; never crash the session over it
+				}
+			}
 		}
-		const spec = PROVIDERS[p]!;
-		const head = quota?.plan ? `${spec.head} ${quota.plan}` : spec.head;
-		ctx.ui.setStatus("provider-usage", formatRow({ head, windows, tokPerSec, fg: ctx.ui.theme.fg }));
 	}
 
 	function clear(): void {
@@ -218,17 +243,24 @@ export default function (pi: ExtensionAPI) {
 			// Resolves the stored/env credential like pi's own requests do,
 			// refreshing OAuth tokens when expired. undefined -> not configured.
 			const auth = await ctx.modelRegistry.getProviderAuth(p).catch(() => undefined);
+			// Anthropic: only OAuth logins carry plan quota; an API key would
+			// 401 forever against the usage endpoint.
+			if (PROVIDERS[p]!.oauthOnly && auth?.source !== "OAuth") return null;
 			const apiKey = auth?.auth.apiKey;
 			if (!apiKey) return null;
 			return PROVIDERS[p]!.fetch(apiKey, signal);
 		})()
 			.then((quota) => {
-				// A failed or empty poll keeps the last known-good quota (#blips).
+				// A failed or empty poll keeps the last known-good quota.
 				if (quota) caches[p] = quota;
-				render();
 			})
-			.catch(() => render())
-			.finally(() => aborts.delete(ac));
+			.catch(() => {})
+			// render() here -- success or failure -- and never from a rejection
+			// handler, so a throw cannot chase its own tail through .catch.
+			.finally(() => {
+				aborts.delete(ac);
+				render();
+			});
 	}
 
 	function refreshActive(): void {
