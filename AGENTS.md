@@ -101,7 +101,9 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # the active themes' roles (stable file names);
                             # skills/runbook/SKILL.md — this runbook as a pi
                             # skill (/skill:runbook), smoke-guarded against
-                            # this file
+                            # this file; extensions/provider-usage.ts — a
+                            # footer row with plan quota (z.ai + Claude Pro
+                            # OAuth) and output tok/s for the active provider
 docs/                      # repo-level docs, never installed: one page per
                             # tool + developing.md (the maintainer guide)
 ```
