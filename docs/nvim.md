@@ -23,7 +23,8 @@ lua/bruce/
 │   ├── options.lua      settings (relativenumber, 4-space indent, clipboard…)
 │   ├── keymaps.lua      the load-bearing custom keys (see below)
 │   ├── autocmds.lua     external-write reloads, appearance sync, treesitter,
-│   │                     one-:q exit (see Windows, splits, tabs, buffers)
+│   │                     prose wrap (md/txt), one-:q exit (see Windows,
+│   │                     splits, tabs, buffers)
 │   ├── appearance.lua   light/dark mode: detect, set 'background', apply scheme
 │   ├── maximize.lua     40-line window maximize (replaced vim-maximizer)
 │   └── theming.lua.tmpl GENERATED at apply time — the palette data (see
@@ -145,6 +146,9 @@ which plugin owns which window).
 `viwP` replaced the old `gr` mapping, which collided with Neovim's
 built-in `gr` LSP prefix.
 
+Prose files (`.md`, `.txt`) soft-wrap automatically — *The invisible parts*
+below has the details.
+
 ### LSP (built-in since 0.11 — no plugin needed for the keys)
 
 | Key | Action |
@@ -250,6 +254,14 @@ below it.
   Neovim's own rules (see *Windows, splits, tabs, buffers* above).
 - **Permanent sign column** — gitsigns marks and diagnostics appearing
   never shift the text sideways.
+- **Prose wraps, code doesn't** — `.md` and `.txt` buffers soft-wrap
+  (dotted variants like `markdown.pandoc` count too); every other filetype
+  keeps the global `nowrap`. Every window showing the buffer follows — in
+  any tab — whenever its filetype is set or it enters a window, and the rule
+  only ever unwraps windows it wrapped itself: the runtime ftplugins that
+  manage their own wrapping (`checkhealth`, `:Man`) and a manual `:set wrap`
+  survive buffer switches. Display-only — `textwidth` is untouched; nothing
+  ever rewrites the file.
 - **System clipboard** — `y` and `p` use it directly, no `"+` prefix.
 - **Loud failures** — this config deliberately avoids the
   `pcall(require, ...)` guard pattern that turns fixable startup errors
