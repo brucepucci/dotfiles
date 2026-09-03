@@ -151,6 +151,10 @@ no `<C-j>` — the REPL is the bottom split, so there's nothing below it.
 > `gr` LSP prefix. Capital `P` in visual mode pastes without taking the
 > replaced text into the register.
 
+Prose files — `.md` and `.txt` — soft-wrap; code stays unwrapped. It's
+display-only (`textwidth` untouched), and `:setlocal wrap!` toggles the
+current window if you want the opposite for one buffer.
+
 ---
 
 ## LSP

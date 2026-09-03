@@ -104,6 +104,16 @@
 #      Snacks' layout; the harness provably fails on a failed assert
 #      (the marker is the assertion chunk's last statement) and on
 #      unexpected stderr
+#  22. the prose-wrap rule: autocmds.lua soft-wraps markdown/text
+#      buffers and unwraps only windows it wrapped itself -- FileType
+#      and BufWinEnter both re-sync, a window switching from prose to
+#      code cannot keep the setting, a filetype set on a hidden buffer
+#      touches nothing visible, and runtime ftplugins that manage their
+#      own 'wrap' (checkhealth, man) plus a manual :set wrap survive.
+#      Asserted headlessly against the APPLIED autocmds.lua with
+#      filetype detection and ftplugins ON (the .md/.txt mapping is
+#      proven, not assumed), one process per case so one window-local
+#      value cannot hide a leak
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see docs/developing.md's test
@@ -427,6 +437,128 @@ assert(vim.bo[vim.api.nvim_win_get_buf(wins[1])].buftype == "nofile",
   "the surviving tab is not the aux one")'
   expect_survive c9 "an aux-only tab must not turn a tab :q into app exit"
   ok "exit fires from the last holding window only; bang/E37/terminal/tab/float all stock-or-better"
+fi
+
+step "nvim prose wrap: md/txt wrap; code unwraps; ftplugins and :set wrap survive"
+# core/autocmds.lua maps filetypes to the window-local 'wrap': markdown
+# and text soft-wrap, every other filetype is left alone (the global
+# nowrap from core/options.lua stands). The map must re-sync on BOTH
+# FileType and BufWinEnter -- FileType covers detection, BufWinEnter
+# re-applies when an already-typed buffer enters a window. Three failure
+# shapes this step exists to catch, none visible to a source grep:
+#   leak     a window that showed markdown then displays a code buffer
+#            must come back to nowrap (md-then-lua)
+#   clobber  runtime ftplugins manage their own 'wrap' (checkhealth and
+#            man both `setlocal wrap breakindent linebreak`) and a manual
+#            :set wrap must survive buffer switches -- the rule unwraps
+#            only windows it wrapped itself (checkhealth case)
+#   strays   a filetype set on a hidden buffer must not touch the
+#            visible window (hidden-guard)
+# The harness runs with `filetype plugin on` registered BEFORE the module
+# under test (mirroring stock startup order), so the basic cases ride real
+# filetype detection -- the .md/.txt -> markdown/text mapping is asserted,
+# not assumed -- and the runtime ftplugins are present to be survived.
+# Each case is its own headless process against the APPLIED autocmds.lua,
+# so one window-local value cannot hide a leak in another. Harness
+# discipline is the nvim exit step's: the marker write is the payload's
+# LAST statement (a failed assert leaves no marker -- a -c error does not
+# stop later +cmds), rc must be 0, and stderr must be empty. Hermetic
+# like every headless run here: scrubbed env, HOME/XDG dirs under $WORK
+# (a stray nvim.log must never land in the chezmoi source tree). Skipped
+# with a notice when nvim is absent.
+if ! command -v nvim >/dev/null 2>&1; then
+  ok "skipped: no nvim on PATH (behavioral branch runs where nvim lives)"
+else
+  NVWRAP="$WORK/nvim-wrap"
+  mkdir -p "$NVWRAP"/{home/cache,home/state,home/data,files,payload,marks}
+  printf 'note\n' > "$NVWRAP/files/note.md"
+  printf 'note\n' > "$NVWRAP/files/note.txt"
+  printf -- '-- code\n' > "$NVWRAP/files/code.lua"
+  printf 'x = 1\n' > "$NVWRAP/files/code.py"
+  nvwrap_die() { die "nvim wrap tests: $1 -- $(cat "$NVWRAP/$2.err" 2>/dev/null)"; }
+  nvwrap_case() {  # $1 = case name, $2 = test lua (after the preamble)
+    { echo 'vim.g.loaded_python3_provider = 0  -- keep ftplugin/python.vim from provider-hunting'
+      # vim.opt (not vim.go): :set semantics -- vim.go would leave the
+      # initial window's local wrap=true (the stock default) standing
+      echo 'vim.opt.wrap = false'
+      echo 'dofile(os.getenv("NVWRAP_AUTOCMDS"))'
+      echo "$2"
+      echo "vim.fn.writefile({'ok'}, os.getenv('NVWRAP_MARK'))"; } \
+      > "$NVWRAP/payload/$1.lua"
+    local rc=0
+    ( cd "$NVWRAP/files" && env -i HOME="$NVWRAP/home" TERM=xterm-256color \
+        PATH="$(dirname "$(command -v nvim)"):/usr/bin:/bin:/usr/sbin:/sbin" \
+        XDG_CACHE_HOME="$NVWRAP/home/cache" XDG_STATE_HOME="$NVWRAP/home/state" \
+        XDG_DATA_HOME="$NVWRAP/home/data" \
+        NVWRAP_AUTOCMDS="$NEWHOME/.config/nvim/lua/bruce/core/autocmds.lua" \
+        NVWRAP_MARK="$NVWRAP/marks/$1" \
+        nvim --headless -n -u NONE -i NONE \
+        --cmd "filetype plugin on" \
+        --cmd "lua package.path='$NEWHOME/.config/nvim/lua/?.lua;'..package.path" \
+        "+luafile $NVWRAP/payload/$1.lua" +qa! \
+        </dev/null >/dev/null ) 2> "$NVWRAP/$1.err" || rc=$?
+    (( rc == 0 )) || nvwrap_die "case $1 (rc=$rc)" "$1"
+    [[ -f "$NVWRAP/marks/$1" ]] \
+      || nvwrap_die "case $1 (marker missing -- an assert failed)" "$1"
+    [[ ! -s "$NVWRAP/$1.err" ]] || nvwrap_die "case $1 (unexpected stderr)" "$1"
+  }
+  # the basic cases: real detection, one fresh process each
+  nvwrap_case md 'vim.cmd("edit note.md")
+assert(vim.bo.filetype == "markdown", "detection: .md must map to markdown")
+assert(vim.wo.wrap == true, "markdown must wrap")
+assert(vim.go.wrap == false, "wrapping must stay window-local")'
+  nvwrap_case txt 'vim.cmd("edit note.txt")
+assert(vim.bo.filetype == "text", "detection: .txt must map to text")
+assert(vim.wo.wrap == true, "text must wrap")
+assert(vim.go.wrap == false, "wrapping must stay window-local")'
+  nvwrap_case code 'vim.cmd("edit code.lua")
+assert(vim.bo.filetype == "lua", "detection: .lua must map to lua")
+assert(vim.wo.wrap == false, "lua must keep nowrap")
+vim.cmd("edit code.py")
+assert(vim.bo.filetype == "python", "detection: .py must map to python")
+assert(vim.wo.wrap == false, "python must keep nowrap")
+assert(vim.go.wrap == false, "the global default must stay off")'
+  # the clobber case: the checkhealth ftplugin's own wrap/linebreak/
+  # breakindent must survive the rule (its wrap comes from
+  # $VIMRUNTIME/ftplugin/checkhealth.vim, not from us) -- and prose
+  # still wraps beside it
+  nvwrap_case checkhealth 'vim.cmd("enew")
+vim.bo.filetype = "checkhealth"
+assert(vim.wo.wrap == true, "checkhealth ftplugin wrap must survive the rule")
+assert(vim.wo.linebreak == true, "checkhealth ftplugin linebreak must survive")
+assert(vim.wo.breakindent == true, "checkhealth ftplugin breakindent must survive")
+vim.cmd("edit note.md")
+assert(vim.bo.filetype == "markdown" and vim.wo.wrap == true,
+  "prose must still wrap beside ftplugins")'
+  # the leak cases: one window, one process, both directions
+  nvwrap_case md-then-lua 'vim.cmd("edit note.md")
+assert(vim.wo.wrap == true, "markdown must wrap first")
+vim.cmd("edit code.lua")   -- same window, now a code buffer
+assert(vim.wo.wrap == false, "the window must unwrap for lua")'
+  nvwrap_case lua-then-text 'vim.cmd("edit code.lua")
+assert(vim.wo.wrap == false, "lua must start unwrapped")
+vim.cmd("edit note.txt")   -- same window, now prose
+assert(vim.wo.wrap == true, "the window must wrap for text")'
+  # the stray case: a filetype set on a hidden buffer (tooling-style)
+  # must not touch the window showing an unrelated buffer
+  nvwrap_case hidden-guard 'vim.cmd("edit code.lua")
+assert(vim.wo.wrap == false, "the visible window must start unwrapped")
+local hidden = vim.fn.bufadd("note.md")
+vim.fn.bufload(hidden)
+vim.bo[hidden].filetype = "markdown"
+assert(vim.fn.win_findbuf(hidden)[1] == nil, "the md buffer must be hidden")
+assert(vim.wo.wrap == false,
+  "a filetype set on a hidden buffer must not touch the visible window")'
+  # the second-window case: an already-loaded md buffer entering a
+  # window that has never shown it
+  nvwrap_case second-window 'vim.cmd("edit note.md")
+assert(vim.wo.wrap == true, "markdown must wrap first")
+vim.cmd("edit code.lua")   -- note.md is now hidden but loaded
+assert(vim.wo.wrap == false, "the code window must be unwrapped")
+vim.cmd("vnew")
+vim.cmd("buffer " .. vim.fn.bufnr("note.md"))
+assert(vim.wo.wrap == true, "the second window must wrap for the md buffer")'
+  ok "md/txt wrap; leaks unwrap; checkhealth ftplugin and hidden-buffer strays intact"
 fi
 
 step "light-mode: the whole stack follows the appearance setting"

@@ -77,6 +77,74 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 -- ---------------------------------------------------------------------------
+-- Prose wrapping
+--
+-- 'wrap' is window-local and the global default is off (core/options.lua):
+-- code wants long lines visible in full. Prose wants the opposite -- a
+-- sentence truncated at the window edge is unreadable. So: markdown and
+-- plain text wrap, every other filetype is left alone. The rule must run
+-- on the way OUT of prose too -- a positive-only hook would leak wrap=true
+-- into whatever code buffer the window shows next.
+--
+-- Both events, because neither covers the whole story alone:
+--   FileType     detection -- opening a file, :set filetype=.
+--   BufWinEnter  an already-typed buffer entering a window; without it a
+--                second window (or one that switched away and back) misses
+--                the setting. Firing twice on a fresh open is fine: the
+--                callback is idempotent.
+--
+-- The rule only ever unwraps a window IT wrapped (flagged below). Runtime
+-- ftplugins that manage their own 'wrap' (checkhealth, man) and a manual
+-- `:set wrap` in windows this rule never touched must survive buffer
+-- switches -- an unconditional else-branch would clobber both, and leave
+-- the ftplugin's linebreak/breakindent half-applied underneath. Residual
+-- edge, accepted: a window we wrapped that later shows such a buffer gets
+-- unwrapped by us (rare -- checkhealth opens its own tab).
+-- ---------------------------------------------------------------------------
+local WRAPPED_FILETYPES = { markdown = true, text = true }
+
+-- Dotted composite filetypes (markdown.pandoc, text.foo -- plugins set
+-- these routinely) count as prose when any component is, mirroring how
+-- Neovim itself dispatches ftplugins for dotted names.
+local function wants_wrap(ft)
+    if WRAPPED_FILETYPES[ft] then
+        return true
+    end
+    for _, part in ipairs(vim.split(ft, ".", { plain = true })) do
+        if WRAPPED_FILETYPES[part] then
+            return true
+        end
+    end
+    return false
+end
+
+vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
+    group = aug,
+    desc = "Soft-wrap prose buffers; unwrap only windows this rule wrapped",
+    callback = function(ev)
+        local wrap = wants_wrap(vim.bo[ev.buf].filetype)
+        -- Every window showing the buffer, in any tabpage. A hidden buffer
+        -- matches no window, so a filetype tooling sets on a buffer nothing
+        -- displays touches nothing.
+        for _, win in ipairs(vim.fn.win_findbuf(ev.buf)) do
+            if wrap then
+                -- scope="local" is load-bearing: vim.wo[win].wrap (like
+                -- :set) would ALSO rewrite the global default, re-wrapping
+                -- every future window in the editor.
+                vim.api.nvim_set_option_value("wrap", true, { win = win, scope = "local" })
+                vim.w[win].bruce_prose_wrap = true
+            elseif vim.w[win].bruce_prose_wrap then
+                -- Unwrap only a window this rule wrapped: ftplugins that
+                -- manage their own 'wrap' (checkhealth, man) and the user's
+                -- manual :set wrap in windows we never touched must survive.
+                vim.api.nvim_set_option_value("wrap", false, { win = win, scope = "local" })
+                vim.w[win].bruce_prose_wrap = nil
+            end
+        end
+    end,
+})
+
+-- ---------------------------------------------------------------------------
 -- Application exit
 --
 -- `:q` from the last session-holding window should leave the app in one
