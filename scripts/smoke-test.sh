@@ -614,6 +614,12 @@ for t in dotfiles-light dotfiles-dark; do
   [[ -f "$NEWHOME/.pi/agent/themes/$t.json" ]] \
     || die "pi theme $t.json missing from ~/.pi/agent/themes"
 done
+# pi extension: installed, and its unit harness passes (pure helpers +
+# lifecycle against a fake pi, through pi's own status sanitizer).
+[[ -f "$NEWHOME/.pi/agent/extensions/provider-usage.ts" ]] \
+  || die "provider-usage.ts missing from ~/.pi/agent/extensions"
+node "$SOURCE/scripts/test-provider-usage.mjs" \
+  || die "provider-usage unit harness failed"
 out="$(fresh_zsh '[[ $path[(r)$HOME/.local/bin] ]] && echo lbin=yes')"
 [[ "$out" == *lbin=yes* ]] || die "login PATH does not include ~/.local/bin"
 # The wrapper itself, hermetically: fake `defaults` + fake `delta`, both

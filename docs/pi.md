@@ -105,12 +105,13 @@ auto-discovers `~/.pi/agent/extensions/`) that adds one footer row below
 pi's built-in stats, for whichever provider owns the active model:
 
 ```
-z.ai pro  5h 3% (resets 14:32)  week 28% (resets Sat 09:07)  37 tok/s
+z.ai pro · 5h 3% (resets 14:32) · week 28% (resets Sat 09:07) · 37 tok/s
 ```
 
 - **tok/s** is output tokens per second — session average (generated
-tokens ÷ generation time, the usual convention), accumulated from pi's
-message events. Appears after the first response.
+tokens ÷ generation time, anchored at the first streamed token so
+time-to-first-token stays out of the average — the usual convention),
+accumulated from pi's message events. Appears after the first response.
 - **z.ai quota** comes from `api.z.ai/api/monitor/usage/quota/limit` (the
 endpoint the z.ai console itself calls), keyed by `auth.json`'s zai entry
 or `ZAI_API_KEY`. Shows the 5-hour and weekly windows with reset times.
@@ -121,8 +122,10 @@ usage draws from extra usage billed per token, not plan limits — the
 claude numbers reflect overall plan headroom (Claude Code, claude.ai),
 not what pi consumes.
 
-Quota polls every 60s and on model switches; failures hide the quota
-segments rather than ever blocking pi. Colors reuse pi's theme (dim
+Quota polls every 60s (active provider only) and on model switches;
+failed polls keep the last known-good quota, which ages out after ten
+minutes. Fetches are aborted on session teardown and failures never
+block pi. Colors reuse pi's theme (dim
 labels; warning >70%, error >90% — the same thresholds as the context %).
 
 ## Keys and commands worth remembering

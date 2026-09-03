@@ -116,6 +116,10 @@ the result the way real sessions do. It covers:
   by construction; apply itself fails if the sections vanish), with a
   closed frontmatter block obeying pi's validation rules and the
   load-bearing command lines intact in both files
+- the provider-usage pi extension: installed into the scratch HOME, with
+  its unit harness (`scripts/test-provider-usage.mjs`, jiti-loaded like
+  pi loads it) covering the row format through pi's own status
+  sanitizer, quota-window parsing, and the fetch/lifecycle behavior
 - the nvim exit rule, headlessly: `:q` from the last session-holding
   window closes disposable UI so one quit exits — while terminal splits
   (live jobs asserted alive), other tabs, `:q!`, unsaved buffers, and

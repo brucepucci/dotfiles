@@ -2,76 +2,93 @@
  * provider-usage -- a footer status row for plan quotas + generation speed.
  *
  * Renders (via ctx.ui.setStatus) one line below pi's built-in footer stats,
- * showing only the provider that owns the active model:
+ * showing only the provider that owns the active model. Segments join on a
+ * dim middle dot -- pi's footer collapses runs of spaces, so whitespace is
+ * not a separator:
  *
- *   z.ai pro  5h 3% (resets 14:32)  week 28% (resets Sat 09:07)  37 tok/s
- *   claude  5h 0% (resets 18:10)  week 2% (resets Fri 02:00)  55 tok/s
+ *   z.ai pro · 5h 3% (resets 14:32) · week 28% (resets Sat 09:07) · 37 tok/s
+ *   claude · 5h 0% (resets 18:10) · week 2% (resets Fri 02:00) · 55 tok/s
  *
- * - tok/s: output tokens per second, session average (convention: generated
- *   tokens / generation time), accumulated from message_start/message_end.
+ * - tok/s: output tokens per second, session average -- generated tokens /
+ *   generation time, anchored at the first streamed token (excludes
+ *   time-to-first-token), accumulated from pi's message events.
  * - z.ai quota: GET api.z.ai/api/monitor/usage/quota/limit (the endpoint the
- *   z.ai console uses); key from ~/.pi/agent/auth.json, else $ZAI_API_KEY.
+ *   z.ai console uses); the key comes from ctx.modelRegistry.getProviderAuth,
+ *   which resolves auth.json and $ZAI_API_KEY just like pi's own requests.
  * - Claude quota: GET api.anthropic.com/api/oauth/usage with the OAuth token
- *   pi stores after /login (Claude Pro/Max). API-key auth has no plan quota
- *   and is silently skipped.
+ *   getProviderAuth resolves (refreshed when expired) after /login into
+ *   Claude Pro/Max. API-key auth has no plan quota and is skipped.
  *
- * Quota polls every 60s and on model switches; fetches are fire-and-forget
- * and failures just hide the affected segments.
+ * The active provider's quota polls every 60s and on model switches; the
+ * last known-good quota survives failed polls and ages out after 10 minutes.
+ * Fetches are aborted on session teardown and failures never block pi.
  */
 
-import { readFileSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, ThemeColor } from "@earendil-works/pi-coding-agent";
 
 // ---------- types ----------
 
 type QuotaWindow = { label: string; pct: number; resetMs: number | null };
 type Quota = { plan: string | null; windows: QuotaWindow[]; fetchedAt: number };
-type Cache = { quota?: Quota; failedAt?: number };
-type Fg = (name: string, text: string) => string;
+type Fg = (name: ThemeColor, text: string) => string;
 
 const POLL_MS = 60_000;
 const STALE_MS = 30_000;
+const MAX_AGE_MS = 10 * POLL_MS;
+const FETCH_TIMEOUT_MS = 8_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
+/** Resets further out than this are treated as bogus (weekly is <= 7d). */
+const RESET_MAX_AHEAD_MS = 30 * DAY_MS;
 
-// ---------- pure helpers (exported for testing) ----------
+// ---------- pure helpers (exported for scripts/test-provider-usage.mjs) ----------
 
-/** "14:32" for resets within 24h, "Sat 14:32" beyond. */
-export function formatReset(resetMs: number, now: number = Date.now()): string {
+/** Clock time for a pending reset: "14:32" within 24h, "Sat 14:32" beyond.
+ *  Returns null for an elapsed reset so callers can drop the clause. */
+export function formatReset(resetMs: number, now: number = Date.now()): string | null {
+	if (resetMs <= now) return null;
 	const d = new Date(resetMs);
 	const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
 	if (resetMs - now < DAY_MS) return time;
 	return `${d.toLocaleDateString("en-US", { weekday: "short" })} ${time}`;
 }
 
-/** z.ai limits[] entry -> window; unit 3 = hours, 6 = weeks (observed). */
-export function zaiWindow(entry: {
-	unit?: number;
-	number?: number;
-	percentage?: number;
-	nextResetTime?: number;
-}): QuotaWindow | null {
+/** z.ai limits[] entry -> window; unit 3 = hours, 6 = weeks (observed).
+ *  nextResetTime is accepted in ms or s; nonsense values become null. */
+export function zaiWindow(
+	entry: { unit?: number; number?: number; percentage?: number; nextResetTime?: number },
+	now: number = Date.now(),
+): QuotaWindow | null {
 	if (typeof entry.percentage !== "number") return null;
 	const label =
-		entry.unit === 3 && entry.number
+		entry.unit === 3 && (entry.number ?? 0) > 0
 			? `${entry.number}h`
 			: entry.unit === 6 && entry.number === 1
 				? "week"
-				: entry.unit === 6 && entry.number
+				: entry.unit === 6 && (entry.number ?? 0) > 1
 					? `${entry.number}w`
 					: "quota";
-	return { label, pct: Math.round(entry.percentage), resetMs: entry.nextResetTime ?? null };
+	let resetMs: number | null = null;
+	if (typeof entry.nextResetTime === "number" && entry.nextResetTime > 0) {
+		const ms = entry.nextResetTime < 1e12 ? entry.nextResetTime * 1000 : entry.nextResetTime;
+		if (ms - now <= RESET_MAX_AHEAD_MS) resetMs = ms;
+	}
+	return { label, pct: Math.round(entry.percentage), resetMs };
 }
 
 /** Sort shorter windows first; unknown labels sink. */
 export function sortWindows(windows: QuotaWindow[]): QuotaWindow[] {
-	const weight = (label: string) =>
-		/^(\d+)h$/.test(label) ? Number(label.slice(0, -1)) : label === "week" ? 168 : 1e6;
+	const weight = (label: string) => {
+		const h = /^(\d+)h$/.exec(label);
+		if (h) return Number(h[1]);
+		const w = /^(\d+)w$/.exec(label);
+		if (w) return 168 * Number(w[1]);
+		return label === "week" ? 168 : 1e6;
+	};
 	return [...windows].sort((a, b) => weight(a.label) - weight(b.label));
 }
 
-/** "z.ai pro  5h 3% (resets 14:32)  week 28% (resets Sat 09:07)  37 tok/s" */
+/** "z.ai pro · 5h 3% (resets 14:32) · week 28% (resets Sat 09:07) · 37 tok/s"
+ *  -- single-character separators, because pi's footer collapses space runs. */
 export function formatRow(opts: {
 	head: string;
 	windows: QuotaWindow[];
@@ -83,47 +100,29 @@ export function formatRow(opts: {
 	const parts: string[] = [fg("dim", opts.head)];
 	for (const w of opts.windows) {
 		const pct = w.pct > 90 ? fg("error", `${w.pct}%`) : w.pct > 70 ? fg("warning", `${w.pct}%`) : fg("dim", `${w.pct}%`);
-		const reset = w.resetMs ? fg("dim", ` (resets ${formatReset(w.resetMs, opts.now)})`) : "";
+		const at = w.resetMs !== null ? formatReset(w.resetMs, opts.now) : null;
+		const reset = at ? fg("dim", ` (resets ${at})`) : "";
 		parts.push(`${fg("dim", w.label)} ${pct}${reset}`);
 	}
 	if (opts.tokPerSec !== null) parts.push(fg("dim", `${opts.tokPerSec} tok/s`));
-	return parts.join("  ");
-}
-
-// ---------- credentials (re-read each fetch so pi's OAuth refreshes are picked up) ----------
-
-function authEntry(provider: string): { type?: string; key?: string; access?: string } | undefined {
-	try {
-		return JSON.parse(readFileSync(join(homedir(), ".pi", "agent", "auth.json"), "utf8"))?.[provider];
-	} catch {
-		return undefined;
-	}
-}
-
-function zaiKey(): string | undefined {
-	return authEntry("zai")?.key ?? process.env.ZAI_API_KEY;
-}
-
-function claudeOAuthToken(): string | undefined {
-	const entry = authEntry("anthropic");
-	return entry?.type === "oauth" ? entry.access : undefined;
+	return parts.join(fg("dim", " · "));
 }
 
 // ---------- fetchers ----------
 
-async function fetchJson(url: string, headers: Record<string, string>): Promise<unknown> {
-	const res = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
+async function fetchJson(url: string, headers: Record<string, string>, signal: AbortSignal): Promise<unknown> {
+	const res = await fetch(url, { headers, signal });
 	if (!res.ok) throw new Error(`HTTP ${res.status}`);
 	return res.json();
 }
 
-async function fetchZai(): Promise<Quota | null> {
-	const key = zaiKey();
-	if (!key) return null;
-	const body = (await fetchJson("https://api.z.ai/api/monitor/usage/quota/limit", { Authorization: key })) as {
-		data?: { level?: string; limits?: Array<Parameters<typeof zaiWindow>[0]> };
-	};
-	const windows = sortWindows((body.data?.limits ?? []).map(zaiWindow).filter((w): w is QuotaWindow => w !== null));
+async function fetchZai(apiKey: string, signal: AbortSignal): Promise<Quota | null> {
+	const body = (await fetchJson(
+		"https://api.z.ai/api/monitor/usage/quota/limit",
+		{ Authorization: apiKey },
+		signal,
+	)) as { data?: { level?: string; limits?: Array<Parameters<typeof zaiWindow>[0]> } };
+	const windows = sortWindows((body.data?.limits ?? []).map((e) => zaiWindow(e)).filter((w): w is QuotaWindow => w !== null));
 	if (!windows.length) return null;
 	return { plan: body.data?.level ?? null, windows, fetchedAt: Date.now() };
 }
@@ -134,14 +133,16 @@ function parseReset(iso: string | null | undefined): number | null {
 	return Number.isNaN(t) ? null : t;
 }
 
-async function fetchClaude(): Promise<Quota | null> {
-	const token = claudeOAuthToken();
-	if (!token) return null;
-	const body = (await fetchJson("https://api.anthropic.com/api/oauth/usage", {
-		Authorization: `Bearer ${token}`,
-		"anthropic-beta": "oauth-2025-04-20",
-		Accept: "application/json",
-	})) as {
+async function fetchClaude(apiKey: string, signal: AbortSignal): Promise<Quota | null> {
+	const body = (await fetchJson(
+		"https://api.anthropic.com/api/oauth/usage",
+		{
+			Authorization: `Bearer ${apiKey}`,
+			"anthropic-beta": "oauth-2025-04-20",
+			Accept: "application/json",
+		},
+		signal,
+	)) as {
 		five_hour?: { utilization?: number; resets_at?: string | null } | null;
 		seven_day?: { utilization?: number; resets_at?: string | null } | null;
 	};
@@ -154,91 +155,129 @@ async function fetchClaude(): Promise<Quota | null> {
 	return { plan: null, windows, fetchedAt: Date.now() };
 }
 
+// ---------- provider table (the single place a provider is spelled out) ----------
+
+const PROVIDERS: Record<string, { head: string; fetch: (apiKey: string, signal: AbortSignal) => Promise<Quota | null> }> = {
+	zai: { head: "z.ai", fetch: fetchZai },
+	anthropic: { head: "claude", fetch: fetchClaude },
+};
+
 // ---------- extension ----------
 
 export default function (pi: ExtensionAPI) {
-	const caches: Record<string, Cache> = {};
+	const caches: Record<string, Quota | undefined> = {};
+	const aborts = new Set<AbortController>();
 	let outputTokens = 0;
 	let genMs = 0;
 	let messageStartedAt: number | null = null;
+	let awaitingFirstToken = false;
 	let started = false;
+	let live = false;
 	let timer: ReturnType<typeof setInterval> | null = null;
 	let ctx: ExtensionContext | null = null;
 
-	function provider(): "zai" | "anthropic" | null {
+	function provider(): string | null {
 		const p = ctx?.model?.provider;
-		return p === "zai" || p === "anthropic" ? p : null;
-	}
-
-	function themeFg(): Fg {
-		const theme = (ctx?.ui as unknown as { theme?: { fg?: Fg } } | undefined)?.theme;
-		return typeof theme?.fg === "function" ? (name, text) => theme.fg!(name, text) : (_name, text) => text;
+		return p && p in PROVIDERS ? p : null;
 	}
 
 	function render(): void {
+		// `live` gates stale contexts: after session_shutdown the extension
+		// context is disposed and every property getter throws. In-flight
+		// fetches settle afterwards, so render() must not touch `ctx` then.
+		if (!live || !ctx?.hasUI) return;
 		const p = provider();
-		if (!ctx?.hasUI || !p) return;
-		const cache = caches[p];
+		if (!p) return;
+		const quota = caches[p];
+		const windows = quota && Date.now() - quota.fetchedAt < MAX_AGE_MS ? quota.windows : [];
 		const tokPerSec = genMs > 0 ? Math.round(outputTokens / (genMs / 1000)) : null;
-		const windows = cache?.quota?.windows ?? [];
 		if (!windows.length && tokPerSec === null) {
 			ctx.ui.setStatus("provider-usage", undefined);
 			return;
 		}
-		const head = p === "zai" ? `z.ai${cache?.quota?.plan ? ` ${cache.quota.plan}` : ""}` : "claude";
-		ctx.ui.setStatus("provider-usage", formatRow({ head, windows, tokPerSec, fg: themeFg() }));
+		const spec = PROVIDERS[p]!;
+		const head = quota?.plan ? `${spec.head} ${quota.plan}` : spec.head;
+		ctx.ui.setStatus("provider-usage", formatRow({ head, windows, tokPerSec, fg: ctx.ui.theme.fg }));
 	}
 
 	function clear(): void {
-		ctx?.hasUI && ctx.ui.setStatus("provider-usage", undefined);
+		if (live && ctx?.hasUI) ctx.ui.setStatus("provider-usage", undefined);
 	}
 
-	function refresh(p: "zai" | "anthropic", force = false): void {
-		const cache = caches[p];
-		if (!force && cache?.quota && Date.now() - cache.quota.fetchedAt < STALE_MS) {
+	function refresh(p: string): void {
+		const cached = caches[p];
+		if (cached && Date.now() - cached.fetchedAt < STALE_MS) {
 			render();
 			return;
 		}
-		void (p === "zai" ? fetchZai() : fetchClaude())
+		const ac = new AbortController();
+		aborts.add(ac);
+		const signal = AbortSignal.any([ac.signal, AbortSignal.timeout(FETCH_TIMEOUT_MS)]);
+		void (async () => {
+			if (!live || !ctx) return null;
+			// Resolves the stored/env credential like pi's own requests do,
+			// refreshing OAuth tokens when expired. undefined -> not configured.
+			const auth = await ctx.modelRegistry.getProviderAuth(p).catch(() => undefined);
+			const apiKey = auth?.auth.apiKey;
+			if (!apiKey) return null;
+			return PROVIDERS[p]!.fetch(apiKey, signal);
+		})()
 			.then((quota) => {
-				caches[p] = quota ? { quota } : { failedAt: Date.now() };
+				// A failed or empty poll keeps the last known-good quota (#blips).
+				if (quota) caches[p] = quota;
 				render();
 			})
-			.catch(() => {
-				caches[p] = { failedAt: Date.now() };
-				render();
-			});
+			.catch(() => render())
+			.finally(() => aborts.delete(ac));
 	}
 
-	function refreshAll(): void {
-		refresh("zai");
-		refresh("anthropic");
+	function refreshActive(): void {
+		const p = provider();
+		if (p) refresh(p);
 	}
 
 	pi.on("session_start", async (_event, extensionCtx) => {
 		ctx = extensionCtx;
-		if (started) return;
+		// No UI -> nothing can ever be displayed (print/json modes); skip the
+		// polls entirely so one-shot runs send no credentials and exit promptly.
+		if (started || !ctx.hasUI) return;
 		started = true;
-		refreshAll();
-		timer = setInterval(refreshAll, POLL_MS);
+		live = true;
+		refreshActive();
+		timer = setInterval(refreshActive, POLL_MS);
 	});
 
 	pi.on("session_shutdown", async () => {
+		live = false;
+		started = false;
+		ctx = null;
 		if (timer) clearInterval(timer);
 		timer = null;
-		started = false;
+		for (const ac of aborts) ac.abort();
+		aborts.clear();
 	});
 
 	pi.on("model_select", async (event, extensionCtx) => {
 		ctx = extensionCtx;
-		const p = event.model?.provider;
-		if (p === "zai" || p === "anthropic") refresh(p);
+		const p = provider();
+		if (p) refresh(p);
 		else clear();
 	});
 
 	pi.on("message_start", async (event, extensionCtx) => {
 		ctx = extensionCtx;
-		if (event.message.role === "assistant") messageStartedAt = Date.now();
+		awaitingFirstToken = event.message.role === "assistant";
+		if (!awaitingFirstToken) messageStartedAt = null;
+	});
+
+	pi.on("message_update", async (event, extensionCtx) => {
+		ctx = extensionCtx;
+		// Anchor the generation window at the first streamed token so TTFT
+		// and prompt processing stay out of the tok/s average.
+		if (awaitingFirstToken) {
+			awaitingFirstToken = false;
+			messageStartedAt = Date.now();
+		}
 	});
 
 	pi.on("message_end", async (event, extensionCtx) => {
@@ -250,6 +289,7 @@ export default function (pi: ExtensionAPI) {
 			outputTokens += usage.output;
 		}
 		messageStartedAt = null;
+		awaitingFirstToken = false;
 		render();
 	});
 }
