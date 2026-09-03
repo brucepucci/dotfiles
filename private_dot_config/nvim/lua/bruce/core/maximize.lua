@@ -3,18 +3,10 @@
 
 local M = {}
 
--- Count only real, non-floating windows in this tabpage. Floats (hover,
--- diagnostics, which-key, pickers) would otherwise satisfy the "more than one
--- window" test and let us save geometry for a layout that is not split.
-local function real_wins()
-    local wins = {}
-    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-        if vim.api.nvim_win_get_config(w).relative == "" then
-            wins[#wins + 1] = w
-        end
-    end
-    return wins
-end
+-- Real (non-floating) windows in this tabpage: floats (hover, diagnostics,
+-- which-key, pickers) would otherwise satisfy the "more than one window"
+-- test and let us save geometry for a layout that is not split.
+local real_wins = require("bruce.core.wins").real_wins
 
 function M.toggle()
     local wins = real_wins()

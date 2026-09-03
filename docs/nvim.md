@@ -23,7 +23,7 @@ lua/bruce/
 │   ├── options.lua      settings (relativenumber, 4-space indent, clipboard…)
 │   ├── keymaps.lua      the load-bearing custom keys (see below)
 │   ├── autocmds.lua     external-write reloads, appearance sync, treesitter,
-│   │                     last-window exit handling
+│   │                     one-:q exit (see Windows, splits, tabs, buffers)
 │   ├── appearance.lua   light/dark mode: detect, set 'background', apply scheme
 │   ├── maximize.lua     40-line window maximize (replaced vim-maximizer)
 │   └── theming.lua.tmpl GENERATED at apply time — the palette data (see
@@ -115,16 +115,20 @@ picker, `<C-d>` deletes a buffer. In the explorer: `l` open, `h` close,
 | `<leader>tl` / `<leader>th` | Next / previous tab |
 | `<leader>bd` | Delete buffer |
 
-**Leaving Neovim** — `:q` from the last ordinary editing window exits the
-whole application, closing any auxiliary UI beside it (explorer, pickers,
-prompts); you never have to quit each helper window first. The rule counts
-**windows, not buffers**: saved hidden buffers are closed along with
-everything else, while another *visible* editing window — in a split or in
-another tab — keeps the app open, so `:q` there closes just that window.
-Unsaved hidden buffers still block the exit with the usual E37 warning.
-(QuitPre handler in `core/autocmds.lua`; "auxiliary" is any window whose
-buffer isn't a normal file, so it needs no knowledge of which plugin owns
-which window.)
+**Leaving Neovim** — `:q` from the last session-holding window in a tab
+closes the disposable UI beside it (explorer, pickers, prompts) and exits
+the whole app; you never have to quit each helper window first. What
+counts is **windows, not buffers**, and only this tab's real (non-float)
+ones: a saved hidden buffer is closed along with everything else, while a
+*visible* window that holds the session — another editor, a terminal
+split (the REPL, an agent terminal), an acwrite buffer — keeps the app
+open, as does anything in another tab (the tab closes instead). `:q!`
+keeps its bang, and an unsaved buffer anywhere blocks the exit with
+Neovim's own one-line E37 — the handler only closes disposable windows
+and lets the pending `:quit` run Neovim's exit rules (QuitPre handler in
+`core/autocmds.lua`; "disposable" is any other `buftype` — `nofile`,
+`prompt`, quickfix, help — that is unmodified, so nothing couples to
+which plugin owns which window).
 
 ### Editing
 
@@ -240,10 +244,10 @@ below it.
   Neovim notices and reloads it (`autoread` + `:checktime` autocmds). If you
   had unsaved edits in that same file you get the standard W12 prompt
   instead of losing them. A reload announces itself with a warning toast.
-- **One-`:q` exit** — quitting the last ordinary editing window with
-  auxiliary UI still open exits the app instead of stranding the explorer
-  or a picker on its own. Saved hidden buffers ride along; unsaved ones
-  still refuse with E37 (see *Windows, splits, tabs, buffers* above).
+- **One-`:q` exit** — quitting the last session-holding window with
+  disposable UI still open closes that UI so the pending `:quit` exits
+  the app. Terminal splits, other tabs, and unsaved buffers all keep
+  Neovim's own rules (see *Windows, splits, tabs, buffers* above).
 - **Permanent sign column** — gitsigns marks and diagnostics appearing
   never shift the text sideways.
 - **System clipboard** — `y` and `p` use it directly, no `"+` prefix.

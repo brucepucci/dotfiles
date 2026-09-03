@@ -116,12 +116,14 @@ the result the way real sessions do. It covers:
   by construction; apply itself fails if the sections vanish), with a
   closed frontmatter block obeying pi's validation rules and the
   load-bearing command lines intact in both files
-- the nvim exit rule, headlessly: `:q` from the last ordinary editing
-  window closes auxiliary UI and exits Neovim, while visible editors
-  elsewhere, unsaved hidden buffers, and `:q` issued from an auxiliary
-  window itself keep stock behavior (fake `nofile` splits stand in for
-  the explorer, so nothing couples to Snacks' layout; skipped where nvim
-  is absent, like the EDITOR fallback)
+- the nvim exit rule, headlessly: `:q` from the last session-holding
+  window closes disposable UI so one quit exits — while terminal splits
+  (live jobs asserted alive), other tabs, `:q!`, unsaved buffers, and
+  quits issued from aux UI keep stock Neovim behavior. Fake `nofile`
+  splits stand in for the explorer, so nothing couples to Snacks'
+  layout; the harness provably fails on a failed assert (the marker is
+  the assertion chunk's last statement) and on unexpected stderr —
+  skipped where nvim is absent, like the EDITOR fallback
 
 `--nvim` additionally restores plugins in the throwaway HOME (~2 min) for
 plugin-level checks. CI runs tier 1 on `macos-latest` with no Ghostty

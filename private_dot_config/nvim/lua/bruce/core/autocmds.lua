@@ -79,41 +79,68 @@ vim.api.nvim_create_autocmd("FileType", {
 -- ---------------------------------------------------------------------------
 -- Application exit
 --
--- `:q` from the LAST ordinary editing window should exit Neovim even when
--- auxiliary UI (the explorer, pickers, prompts) is still open -- the user
--- must not have to quit each helper window separately.
+-- `:q` from the last session-holding window should leave the app in one
+-- command, instead of stranding auxiliary UI (the explorer, pickers,
+-- prompts) for a separate quit of each window.
 --
--- This counts WINDOWS, not buffers: a saved hidden buffer is closed along
--- with everything else, while another visible editing window -- in a split
--- or another tab -- keeps the application open. An auxiliary window is any
--- window whose buffer is not a normal file (buftype ~= ""), so the check
--- needs no knowledge of which plugin owns which window; it keeps working
--- when Snacks reshuffles its internal layout.
+-- What counts is this tabpage's real (non-float) windows, classified by
+-- what the user loses if the window vanishes:
 --
--- QuitPre fires before Neovim decides whether `:quit` closes one window or
--- exits. It is non-recursive, so the nested quitall cannot re-trigger this
--- handler. quitall (never quitall!) preserves the modified-buffer checks:
--- an unsaved hidden buffer still blocks exit with the usual E37 warning.
+--   holding     a normal file, a terminal (a live REPL or agent job), or
+--               an acwrite buffer (written by autocommand) -- the session
+--               stays open for these
+--   disposable  everything else (nofile, prompt, quickfix, help...) that
+--               is also unmodified -- safe to close on the way out
+--
+-- Buffers never enter the count: a saved hidden buffer is closed along
+-- with everything else when the app exits, and an unsaved one blocks
+-- the exit on its own.
+--
+-- The handler never exits Neovim itself -- it closes the disposable
+-- windows so the pending `:quit` is quitting the last real window, and
+-- Neovim's own exit rules decide the rest. `:q!` keeps its bang, an
+-- unsaved buffer refuses with a clean one-line E37, and there is no
+-- error to catch or force flag to lose. Another tabpage, or a terminal
+-- split in this one, simply keeps the app open with stock `:q`.
 -- ---------------------------------------------------------------------------
+local HOLDS_SESSION = { [""] = true, terminal = true, acwrite = true }
+
 vim.api.nvim_create_autocmd("QuitPre", {
     group = aug,
-    desc = ":q from the last ordinary window exits instead of stranding auxiliary UI",
+    desc = ":q from the last session-holding window closes auxiliary UI so one quit exits",
     callback = function()
-        local ordinary = {} -- windows showing a normal-file buffer
-        for _, win in ipairs(vim.api.nvim_list_wins()) do
-            if vim.bo[vim.api.nvim_win_get_buf(win)].buftype == "" then
-                table.insert(ordinary, win)
-            end
+        local wins = require("bruce.core.wins").real_wins()
+        if #wins < 2 then
+            return
         end
-        -- Only when auxiliary windows are what would remain: more than one
-        -- window total, this is the last ordinary one, and it is the one
-        -- being quit. Anything else keeps Neovim's normal `:q` behavior.
-        if
-            #vim.api.nvim_list_wins() > 1
-            and #ordinary == 1
-            and ordinary[1] == vim.api.nvim_get_current_win()
-        then
-            vim.cmd("quitall")
+
+        local holding, disposable = {}, {}
+        for _, win in ipairs(wins) do
+            local buf = vim.api.nvim_win_get_buf(win)
+            if HOLDS_SESSION[vim.bo[buf].buftype] then
+                holding[#holding + 1] = win
+            elseif not vim.bo[buf].modified then
+                disposable[#disposable + 1] = win
+            end
+            -- a modified auxiliary buffer lands in neither list: it keeps
+            -- stock `:q` behavior below
+        end
+
+        -- Only when auxiliary windows are all that would remain: this is
+        -- the last session-holding window, it is the one being quit, and
+        -- every other window is disposable. Anything else stays stock.
+        if #holding ~= 1 or holding[1] ~= vim.api.nvim_get_current_win() then
+            return
+        end
+        if #disposable ~= #wins - 1 then
+            return
+        end
+
+        -- pcall: a close can legitimately refuse (a job that will not
+        -- die, a window locked by its owner); the pending `:quit` then
+        -- behaves exactly as stock, which is the safe fallback.
+        for _, win in ipairs(disposable) do
+            pcall(vim.api.nvim_win_close, win, false)
         end
     end,
 })
