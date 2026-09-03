@@ -13,6 +13,7 @@ Three pieces, kept deliberately separate:
 | The binary | npm: `@earendil-works/pi-coding-agent` (via the Brewfile, which also pulls its hard dependency `node`) | installed, not configured, by this repo |
 | Settings + themes | `dot_pi/agent/` → `~/.pi/agent/settings.json`, `~/.pi/agent/themes/dotfiles-{light,dark}.json` | **yes — chezmoi templates** |
 | The runbook skill | `dot_pi/agent/skills/runbook/SKILL.md.tmpl` → `~/.pi/agent/skills/runbook/SKILL.md` (`/skill:runbook`) | **yes — generated from AGENTS.md at apply time** |
+| The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
 | The API key | `ZAI_API_KEY` in `~/.zsh/secrets.zsh` (or `~/.pi/agent/auth.json` via `/login`) | **no — a secret, never in the repo** |
 
 ## The tmux wrapper (`pi()` in `~/.zshrc`)
@@ -96,6 +97,33 @@ time: edit AGENTS.md, `chezmoi apply`, and the skill follows — never edit
 the skill (or its template's extracted regions) by hand. Apply fails
 loudly if the sections disappear from AGENTS.md; the smoke test checks
 the render and the frontmatter.
+
+## The provider-usage extension (managed)
+
+`dot_pi/agent/extensions/provider-usage.ts` is a global extension (pi
+auto-discovers `~/.pi/agent/extensions/`) that adds one footer row below
+pi's built-in stats, for whichever provider owns the active model:
+
+```
+z.ai pro  5h 3% (resets 14:32)  week 28% (resets Sat 09:07)  37 tok/s
+```
+
+- **tok/s** is output tokens per second — session average (generated
+tokens ÷ generation time, the usual convention), accumulated from pi's
+message events. Appears after the first response.
+- **z.ai quota** comes from `api.z.ai/api/monitor/usage/quota/limit` (the
+endpoint the z.ai console itself calls), keyed by `auth.json`'s zai entry
+or `ZAI_API_KEY`. Shows the 5-hour and weekly windows with reset times.
+- **claude quota** comes from Anthropic's OAuth usage endpoint and only
+exists when pi is `/login`-ed into Claude Pro/Max with OAuth (an API-key
+auth has no plan limits and is skipped). Note pi's own docs: harness
+usage draws from extra usage billed per token, not plan limits — the
+claude numbers reflect overall plan headroom (Claude Code, claude.ai),
+not what pi consumes.
+
+Quota polls every 60s and on model switches; failures hide the quota
+segments rather than ever blocking pi. Colors reuse pi's theme (dim
+labels; warning >70%, error >90% — the same thresholds as the context %).
 
 ## Keys and commands worth remembering
 
