@@ -1,5 +1,5 @@
 {{/*
-  dot_pi/agent/skills/runbook/SKILL.md -- GENERATED at apply time.
+  dot_pi/agent/skills/chezmoi-runbook/SKILL.md -- GENERATED at apply time.
 
   The "Verifying a change" and "After changing plugins" sections below are
   extracted VERBATIM from AGENTS.md at the repo root, so the skill cannot
@@ -24,7 +24,7 @@
 {{- if not (contains "smoke-test.sh" $verify) -}}{{ fail "runbook skill: AGENTS.md's verify section lost its smoke-test step" }}{{ end -}}
 {{- if not (contains "lazy-lock.json" $plugins) -}}{{ fail "runbook skill: AGENTS.md's plugins section lost its lockfile re-add step" }}{{ end -}}
 ---
-name: runbook
+name: chezmoi-runbook
 description: Verification runbook for the chezmoi dotfiles repo at ~/.local/share/chezmoi (github.com/brucepucci/dotfiles). Run after ANY change to that repo's files, and again before pushing or opening a PR. Covers the tier-1 smoke test, chezmoi diff/apply, headless checkhealth, the LSP attach check, and the plugin lockfile re-add + commit steps.
 ---
 

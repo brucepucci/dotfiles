@@ -112,7 +112,7 @@ the result the way real sessions do. It covers:
   zsh-syntax-highlighting sourced LAST)
 - sparse custom themes emitting role hexes; pinned-theme mode rendering
   `PI_THEME_PINNED`
-- the runbook skill: generated from AGENTS.md at apply time (drift-proof
+- the chezmoi-runbook skill: generated from AGENTS.md at apply time (drift-proof
   by construction; apply itself fails if the sections vanish), with a
   closed frontmatter block obeying pi's validation rules and the
   load-bearing command lines intact in both files
@@ -241,7 +241,7 @@ windows pick it up; existing ones need a restart.
 ### Edit the runbook / the pi skill
 The verification runbook lives in AGENTS.md ("Verifying a change",
 "After changing plugins"). Edit it there; `chezmoi apply` regenerates
-`~/.pi/agent/skills/runbook/SKILL.md` from those sections — never edit
+`~/.pi/agent/skills/chezmoi-runbook/SKILL.md` from those sections — never edit
 the skill, and don't rename the AGENTS.md headings (apply fails loudly,
 by design). The smoke test checks the render and the frontmatter.
 

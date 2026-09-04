@@ -75,7 +75,7 @@
 #      (fn+Delete) and its esc-prefix twin kill the next word (pi
 #      parity) and forward-delete kills a char -- live bindings
 #      asserted only where the formula exists, shape always
-#  19. the runbook skill: GENERATED from AGENTS.md at apply time
+#  19. the chezmoi-runbook skill: GENERATED from AGENTS.md at apply time
 #      (SKILL.md.tmpl extracts the verify/plugins sections verbatim, so
 #      drift is impossible by construction and apply itself fails loudly
 #      if the sections vanish); tier 1 asserts the render, a closed
@@ -1281,9 +1281,10 @@ grep -qF -- '--use-theme' "$TLOG" \
   || die "theme=system (committed) must not render a pin into ~/.zshrc"
 ok "pin renders, wraps without --use-theme; system mode stays unpinned"
 
-step "runbook skill: generated from AGENTS.md, frontmatter valid"
-# dot_pi/agent/skills/runbook/SKILL.md.tmpl renders ~/.pi/agent/skills/
-# runbook/SKILL.md (a global pi skill location, /skill:runbook) by
+step "chezmoi-runbook skill: generated from AGENTS.md, frontmatter valid"
+# dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl renders
+# ~/.pi/agent/skills/chezmoi-runbook/SKILL.md (a global pi skill location,
+# /skill:chezmoi-runbook) by
 # extracting AGENTS.md's "Verifying a change" and "After changing
 # plugins" sections VERBATIM -- drift between the two is impossible by
 # construction, and apply itself fails loudly if the sections vanish or
@@ -1296,8 +1297,8 @@ step "runbook skill: generated from AGENTS.md, frontmatter valid"
 # their load-bearing command lines -- whole-line (grep -qxF), in BOTH the
 # rendered skill and AGENTS.md, so a mangled extraction or a gutted
 # AGENTS.md section cannot pass silently.
-SKILL="$NEWHOME/.pi/agent/skills/runbook/SKILL.md"
-[[ -f "$SKILL" ]] || die "pi runbook skill did not render under the target HOME"
+SKILL="$NEWHOME/.pi/agent/skills/chezmoi-runbook/SKILL.md"
+[[ -f "$SKILL" ]] || die "pi chezmoi-runbook skill did not render under the target HOME"
 if ! python3 - "$SKILL" <<'PY'
 import re, sys
 text = open(sys.argv[1]).read()

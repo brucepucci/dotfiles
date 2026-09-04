@@ -99,9 +99,10 @@ private_dot_config/ghostty/themes/      # those two theme files, rendered from
 dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # .json.tmpl — the pi TUI's themes, generated from
                             # the active themes' roles (stable file names);
-                            # skills/runbook/SKILL.md — this runbook as a pi
-                            # skill (/skill:runbook), smoke-guarded against
-                            # this file; extensions/provider-usage.ts — a
+                            # skills/chezmoi-runbook/SKILL.md — this
+                            # runbook as a pi skill (/skill:chezmoi-runbook),
+                            # smoke-guarded against this file;
+                            # extensions/provider-usage.ts — a
                             # footer row with plan quota (z.ai + Claude Pro
                             # OAuth) and output tok/s for the active provider;
                             # extensions/title-screen.ts — the startup splash:
@@ -200,11 +201,11 @@ bad update bisectable via `git log -p -- private_dot_config/nvim/lazy-lock.json`
 
 ## Verifying a change
 
-This runbook also ships as a pi skill (dot_pi/agent/skills/runbook/
-SKILL.md → ~/.pi/agent/skills/, `/skill:runbook`) so pi can be told to
-verify with one command. AGENTS.md stays the source of truth: the smoke
-test asserts every command line the skill teaches appears verbatim here,
-so edit both together or tier 1 fails.
+This runbook also ships as a pi skill (dot_pi/agent/skills/
+chezmoi-runbook/SKILL.md → ~/.pi/agent/skills/, `/skill:chezmoi-runbook`)
+so pi can be told to verify with one command. AGENTS.md stays the source
+of truth: the smoke test asserts every command line the skill teaches
+appears verbatim here, so edit both together or tier 1 fails.
 
 ```bash
 chezmoi cd                  # -> ~/.local/share/chezmoi, if not already there

@@ -162,7 +162,7 @@ non-Homebrew install.
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts | [git.md](docs/git.md) |
 | `~/.config/lazygit/config.yml` | delta as lazygit's diff renderer | [git.md](docs/git.md) |
 | `~/.local/bin/delta-theme` | Appearance-aware delta wrapper | [git.md](docs/git.md) |
-| `~/.pi/agent/settings.json`, `~/.pi/agent/themes/` | pi's settings, generated theme pair, and the `/skill:runbook` verification skill (generated from AGENTS.md) | [pi.md](docs/pi.md) |
+| `~/.pi/agent/settings.json`, `~/.pi/agent/themes/` | pi's settings, generated theme pair, and the `/skill:chezmoi-runbook` verification skill (generated from AGENTS.md) | [pi.md](docs/pi.md) |
 
 Repo-level files that are **never installed** (see `.chezmoiignore`):
 this README, `AGENTS.md`, `Brewfile`, `scripts/`, `settings.toml`, and
@@ -288,7 +288,7 @@ patch treadmill. A few things still deserve a calendar:
 
 This is what would have caught the old config's silently-dead LSP; silence
 means healthy (missing servers warn by name at startup). And pi can run the
-whole verification runbook for you, any time: `/skill:runbook`.
+whole verification runbook for you, any time: `/skill:chezmoi-runbook`.
 
 ### After updating things
 

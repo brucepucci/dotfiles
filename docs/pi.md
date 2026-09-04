@@ -12,7 +12,7 @@ Three pieces, kept deliberately separate:
 |---|---|---|
 | The binary | npm: `@earendil-works/pi-coding-agent` (via the Brewfile, which also pulls its hard dependency `node`) | installed, not configured, by this repo |
 | Settings + themes | `dot_pi/agent/` → `~/.pi/agent/settings.json`, `~/.pi/agent/themes/dotfiles-{light,dark}.json` | **yes — chezmoi templates** |
-| The runbook skill | `dot_pi/agent/skills/runbook/SKILL.md.tmpl` → `~/.pi/agent/skills/runbook/SKILL.md` (`/skill:runbook`) | **yes — generated from AGENTS.md at apply time** |
+| The chezmoi-runbook skill | `dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl` → `~/.pi/agent/skills/chezmoi-runbook/SKILL.md` (`/skill:chezmoi-runbook`) | **yes — generated from AGENTS.md at apply time** |
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
 | The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
 | The API key | `ZAI_API_KEY` in `~/.zsh/secrets.zsh` (or `~/.pi/agent/auth.json` via `/login`) | **no — a secret, never in the repo** |
@@ -88,14 +88,14 @@ viewing terminal even over SSH — the reasoning is in
   `/model`, fold them into `dot_pi/agent/settings.json.tmpl` by hand (see
   [developing.md](developing.md#pi-self-bumps)).
 
-## The runbook skill (managed)
+## The chezmoi-runbook skill (managed)
 
-`dot_pi/agent/skills/runbook/SKILL.md.tmpl` generates
-`~/.pi/agent/skills/runbook/SKILL.md` — a global skill location, so
-`/skill:runbook` is available in every pi session on the machine. The
-verify/plugins steps are extracted **verbatim from AGENTS.md** at apply
-time: edit AGENTS.md, `chezmoi apply`, and the skill follows — never edit
-the skill (or its template's extracted regions) by hand. Apply fails
+`dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl` generates
+`~/.pi/agent/skills/chezmoi-runbook/SKILL.md` — a global skill location,
+so `/skill:chezmoi-runbook` is available in every pi session on the
+machine. The verify/plugins steps are extracted **verbatim from AGENTS.md**
+at apply time: edit AGENTS.md, `chezmoi apply`, and the skill follows —
+never edit the skill (or its template's extracted regions) by hand. Apply fails
 loudly if the sections disappear from AGENTS.md; the smoke test checks
 the render and the frontmatter.
 
