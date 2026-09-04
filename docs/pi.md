@@ -14,6 +14,7 @@ Three pieces, kept deliberately separate:
 | Settings + themes | `dot_pi/agent/` → `~/.pi/agent/settings.json`, `~/.pi/agent/themes/dotfiles-{light,dark}.json` | **yes — chezmoi templates** |
 | The runbook skill | `dot_pi/agent/skills/runbook/SKILL.md.tmpl` → `~/.pi/agent/skills/runbook/SKILL.md` (`/skill:runbook`) | **yes — generated from AGENTS.md at apply time** |
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
+| The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
 | The API key | `ZAI_API_KEY` in `~/.zsh/secrets.zsh` (or `~/.pi/agent/auth.json` via `/login`) | **no — a secret, never in the repo** |
 
 ## The tmux wrapper (`pi()` in `~/.zshrc`)
@@ -127,6 +128,46 @@ failed polls keep the last known-good quota, which ages out after ten
 minutes. Fetches are aborted on session teardown and failures never
 block pi. Colors reuse pi's theme (dim
 labels; warning >70%, error >90% — the same thresholds as the context %).
+
+## The title-screen extension (managed)
+
+`dot_pi/agent/extensions/title-screen.ts` replaces pi's built-in startup
+header with a splash, on CLI launches only (`pi`, `pi -c`… — every
+session_start with reason "startup"; `/new`, `/resume` and `/reload`
+leave whatever header is up):
+
+```
+              ███████╗  ██╗      <- accent (blue)
+              ██╔═══██╗ ██║      <- accent
+              ██╔═══██╗ ██║      <- accent
+              ███████╔╝ ██║      <- mdCode (aqua)
+              ██╔════╝  ██║      <- mdCode
+              ██║       ██║      <- mdCode
+              ██║       ██║      <- dim
+              ╚═╝       ╚═╝      <- dim
+3.14159 26535 89793 23846 ... (muted, truncated to the terminal)
+esc interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · more · vN
+```
+
+- The "PI" is ANSI Shadow, one row-step larger than the stock glyph,
+  centered on `render(width)` so it re-centers on resize; the digits are
+  π's first 100 places, whole 5-digit groups, capped at 100 columns.
+- Colors ride **theme roles only** (accent/mdCode/dim/muted) — the same
+  indexed slots the generated themes carry — so the splash follows the
+  active dotfiles-{light,dark} theme and, through it, the viewing
+  terminal's palette, even over SSH. Styling happens at render time
+  against pi's live theme object, so an OS appearance flip re-tints it
+  mid-session. On light themes the dim base dissolves into the paper; on
+  dark ones into the void.
+- The hint line mirrors pi's built-in compact header (interrupt /
+  clear/exit / commands / bash / more) plus the version, with keys
+  resolved through pi's own `keyText` — a custom `keybindings.json` is
+  honored.
+- `/builtin-header` restores pi's own header; `/title-screen` brings the
+  splash back.
+- Guarded by `scripts/test-title-screen.mjs` (jiti-loaded like pi loads
+  it) and the smoke test's orphan-hex scan — the extension must never
+  carry a hardcoded hex.
 
 ## Keys and commands worth remembering
 

@@ -103,7 +103,10 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # skill (/skill:runbook), smoke-guarded against
                             # this file; extensions/provider-usage.ts — a
                             # footer row with plan quota (z.ai + Claude Pro
-                            # OAuth) and output tok/s for the active provider
+                            # OAuth) and output tok/s for the active provider;
+                            # extensions/title-screen.ts — the startup splash:
+                            # a gradient "PI" over pi's digits, theme roles
+                            # only, /builtin-header to restore pi's own header
 docs/                      # repo-level docs, never installed: one page per
                             # tool + developing.md (the maintainer guide)
 ```

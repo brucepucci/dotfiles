@@ -614,12 +614,17 @@ for t in dotfiles-light dotfiles-dark; do
   [[ -f "$NEWHOME/.pi/agent/themes/$t.json" ]] \
     || die "pi theme $t.json missing from ~/.pi/agent/themes"
 done
-# pi extension: installed, and its unit harness passes (pure helpers +
-# lifecycle against a fake pi, through pi's own status sanitizer).
+# pi extensions: installed, and their unit harnesses pass (pure helpers +
+# lifecycle against a fake pi; provider-usage through pi's own status
+# sanitizer, title-screen through a fake Theme with receiver mechanics).
 [[ -f "$NEWHOME/.pi/agent/extensions/provider-usage.ts" ]] \
   || die "provider-usage.ts missing from ~/.pi/agent/extensions"
 node "$SOURCE/scripts/test-provider-usage.mjs" \
   || die "provider-usage unit harness failed"
+[[ -f "$NEWHOME/.pi/agent/extensions/title-screen.ts" ]] \
+  || die "title-screen.ts missing from ~/.pi/agent/extensions"
+node "$SOURCE/scripts/test-title-screen.mjs" \
+  || die "title-screen unit harness failed"
 out="$(fresh_zsh '[[ $path[(r)$HOME/.local/bin] ]] && echo lbin=yes')"
 [[ "$out" == *lbin=yes* ]] || die "login PATH does not include ~/.local/bin"
 # The wrapper itself, hermetically: fake `defaults` + fake `delta`, both
@@ -668,11 +673,14 @@ themeget "$DTHEME" roles.bg >/dev/null \
   || die "dark_theme '$DTHEME' does not resolve from themes/ -- run scripts/themes-sync.sh"
 # Every hex in any color-carrying output must come from the resolved
 # themes -- including files that should hold none today (ps1, ghostty
-# config, gitconfig, delta-theme, the static nvim files): a hardcoded color
-# anywhere defeats the whole single-source design.
+# config, gitconfig, delta-theme, the static nvim files, the pi
+# extensions): a hardcoded color anywhere defeats the whole single-source
+# design.
 palhex="$(python3 "$SOURCE/scripts/theme.py" --hexes "$LTHEME" "$DTHEME")"
 for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
          "$NEWHOME/.pi/agent/themes/dotfiles-dark.json" \
+         "$NEWHOME/.pi/agent/extensions/provider-usage.ts" \
+         "$NEWHOME/.pi/agent/extensions/title-screen.ts" \
          "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
          "$NEWHOME/.config/zsh/ps1.zsh" \
          "$NEWHOME/.config/nvim/lua/bruce/plugins/ui.lua" \
