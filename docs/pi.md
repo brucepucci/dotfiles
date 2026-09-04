@@ -137,20 +137,21 @@ session_start with reason "startup"; `/new`, `/resume` and `/reload`
 leave whatever header is up):
 
 ```
-███████╗  ██╗
-██╔═══██╗ ██║
-██╔═══██╗ ██║
-███████╔╝ ██║
-██╔════╝  ██║
-██║       ██║
-██║       ██║
-╚═╝       ╚═╝
-glm-5.3 · high
+  ███████╗  ██╗
+  ██╔═══██╗ ██║
+  ██╔═══██╗ ██║
+  ███████╔╝ ██║
+  ██╔════╝  ██║
+  ██║       ██║
+  ██║       ██║
+  ╚═╝       ╚═╝
+  glm-5.3 · high
 ```
 
 - The "PI" is ANSI Shadow, one row-step larger than the stock glyph, and
-  everything sits flush left — pi's chrome is left-aligned, so the
-  splash lines up with it (the render is width-independent).
+  everything sits at a two-space indent — enough air that the block
+  glyphs don't sit on the terminal border (the render is still
+  width-independent).
 - ONE color for the whole block, drawn at random per launch from three
   theme roles (`accent` blue, `mdCode` aqua, `dim`) — roles only, the
   same indexed slots the generated themes carry — so the splash follows

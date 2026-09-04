@@ -105,10 +105,10 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # footer row with plan quota (z.ai + Claude Pro
                             # OAuth) and output tok/s for the active provider;
                             # extensions/title-screen.ts — the startup splash:
-                            # a left-aligned "PI" block in one random palette
-                            # role, captioned with the launch model + effort
-                            # (roles only; /builtin-header restores pi's own
-                            # header)
+                            # a "PI" block in one random palette role at a
+                            # small left indent, captioned with the launch
+                            # model + effort (roles only; /builtin-header
+                            # restores pi's own header)
 docs/                      # repo-level docs, never installed: one page per
                             # tool + developing.md (the maintainer guide)
 ```

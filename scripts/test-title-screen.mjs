@@ -108,9 +108,9 @@ comp.invalidate(); // must be a safe no-op
 const lines = comp.render(80);
 check("80 cols: blank + 8 art rows + caption", lines.length === 10, lines.length);
 check("leading blank line", lines[0] === "");
-check("art flush left, one role for the whole block", lines.slice(1, 9).every((l) => l.startsWith("<dim>") && !l.startsWith(" ")), lines[1]);
-check("art rows are the 13-column glyph", lines.slice(1, 9).map(strip).every((s) => s.length === 13), lines.slice(1, 9).map(strip).join(" | "));
-check("caption is model + effort, flush left", lines[9] === "<dim>glm-5.3<muted> · <dim>high", lines[9]);
+check("art at the two-space indent, one role for the whole block", lines.slice(1, 9).every((l) => l.startsWith("  <dim>") && !l.startsWith("   ")), lines[1]);
+check("art rows are the 13-column glyph", lines.slice(1, 9).map(strip).every((s) => s.length === 13 + 2), lines.slice(1, 9).map(strip).join(" | "));
+check("caption is model + effort at the indent", lines[9] === "  <dim>glm-5.3<muted> · <dim>high", lines[9]);
 check("caption joins on one muted dot", (lines[9]?.match(/<muted> · /g) ?? []).length === 1);
 
 // the render no longer reads the terminal width: identical at any size
@@ -132,7 +132,7 @@ check("render is width-independent", JSON.stringify(comp.render(20)) === JSON.st
 	const c = hs[0](undefined, new FakeTheme());
 	Math.random = realRandom;
 	const bare = c.render(80);
-	check("no model: caption gone, art only", bare.length === 9 && bare.slice(1, 9).every((l) => l.startsWith("<accent>")), bare.length);
+	check("no model: caption gone, art only", bare.length === 9 && bare.slice(1, 9).every((l) => l.startsWith("  <accent>")), bare.length);
 }
 
 // ---------- commands ----------

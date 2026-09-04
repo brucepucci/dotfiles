@@ -28,8 +28,9 @@
  * the theme pi hands the factory -- the live proxy -- so an OS
  * appearance flip re-tints the splash on the next paint.
  *
- * Everything sits flush left: pi's chrome is left-aligned, so the
- * splash lines up with it instead of floating center. The caption is
+ * Everything sits at a two-space indent: the block glyphs are visually
+ * heavy, and flush against the terminal border they look cramped -- the
+ * small pad gives them air without floating center. The caption is
  * frozen at launch -- the model and thinking level pi started with
  * (the footer tracks the live ones) -- and drops out entirely when pi
  * starts without a model. No keybinding hints here; they live one
@@ -54,6 +55,10 @@ const ART = [
 	"╚═╝       ╚═╝",
 ];
 
+/** The whole splash's left indent -- enough air that the block glyphs
+ *  don't sit on the terminal border. */
+const PAD = 2;
+
 /** The pool the splash draws from, one color for the whole block: the
  *  three roles the first cut faded through. accent is blue and mdCode is
  *  aqua -- both exact palette slots -- and dim is the quiet launch. */
@@ -71,12 +76,13 @@ function makeHeader(theme: Theme, color: ThemeColor, caption: { model?: string; 
 	return {
 		render(_width: number): string[] {
 			const lines: string[] = [""];
-			// the logo: one color for every row, flush left
+			// the logo: one color for every row, at the small left indent
+			const pad = " ".repeat(PAD);
 			for (const row of ART) {
 				// fg is a prototype method reading this.fgColors -- always
 				// called on the receiver, never extracted (an unbound call
 				// throws; same trap the provider-usage harness polices).
-				lines.push(theme.fg(color, row));
+				lines.push(pad + theme.fg(color, row));
 			}
 			// the caption: the launch model + effort, dropped entirely when
 			// pi started without a model
@@ -84,7 +90,7 @@ function makeHeader(theme: Theme, color: ThemeColor, caption: { model?: string; 
 			const parts: string[] = [];
 			if (caption.model) parts.push(theme.fg("dim", caption.model));
 			if (caption.effort) parts.push(theme.fg("dim", caption.effort));
-			if (parts.length > 0) lines.push(parts.join(sep));
+			if (parts.length > 0) lines.push(pad + parts.join(sep));
 			return lines;
 		},
 		invalidate() {},
