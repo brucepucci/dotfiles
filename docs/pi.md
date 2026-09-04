@@ -137,34 +137,31 @@ session_start with reason "startup"; `/new`, `/resume` and `/reload`
 leave whatever header is up):
 
 ```
-              ███████╗  ██╗      <- accent (blue)
-              ██╔═══██╗ ██║      <- accent
-              ██╔═══██╗ ██║      <- accent
-              ███████╔╝ ██║      <- mdCode (aqua)
-              ██╔════╝  ██║      <- mdCode
-              ██║       ██║      <- mdCode
-              ██║       ██║      <- dim
-              ╚═╝       ╚═╝      <- dim
-3.14159 26535 89793 23846 ... (muted, truncated to the terminal)
-esc interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · more · vN
+                                 ███████╗  ██╗
+                                 ██╔═══██╗ ██║
+                                 ██╔═══██╗ ██║
+                                 ███████╔╝ ██║
+                                 ██╔════╝  ██║
+                                 ██║       ██║
+                                 ██║       ██║
+                                 ╚═╝       ╚═╝
+https://github.com/earendil-works/pi · glm-5.3 · high
 ```
 
 - The "PI" is ANSI Shadow, one row-step larger than the stock glyph,
-  centered on `render(width)` so it re-centers on resize; the digits are
-  π's first 100 places, whole 5-digit groups, capped at 100 columns.
-- Colors ride **theme roles only** (accent/mdCode/dim/muted) — the same
-  indexed slots the generated themes carry — so the splash follows the
-  active dotfiles-{light,dark} theme and, through it, the viewing
+  centered on `render(width)` so it re-centers on resize.
+- ONE color for the whole block, drawn at random per launch from three
+  theme roles (`accent` blue, `mdCode` aqua, `dim`) — roles only, the
+  same indexed slots the generated themes carry — so the splash follows
+  the active dotfiles-{light,dark} theme and, through it, the viewing
   terminal's palette, even over SSH. Styling happens at render time
   against pi's live theme object, so an OS appearance flip re-tints it
-  mid-session. On light themes the dim base dissolves into the paper; on
-  dark ones into the void.
-- The hint line mirrors pi's built-in compact header (interrupt /
-  clear/exit / commands / bash / more) plus the version, with keys
-  resolved through pi's own `keyText` — a custom `keybindings.json` is
-  honored.
-- `/builtin-header` restores pi's own header; `/title-screen` brings the
-  splash back.
+  mid-session.
+- The caption names the project url and the model + thinking level pi
+  launched with, frozen at startup — the footer tracks the live values.
+  When pi starts without a model the url stands alone.
+- `/builtin-header` restores pi's own header (keybinding hints and all);
+  `/title-screen` brings the splash back and draws a fresh color.
 - Guarded by `scripts/test-title-screen.mjs` (jiti-loaded like pi loads
   it) and the smoke test's orphan-hex scan — the extension must never
   carry a hardcoded hex.

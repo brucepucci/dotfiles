@@ -1,40 +1,41 @@
 /**
- * title-screen -- the startup splash: a big gradient "PI" over pi's digits.
+ * title-screen -- the startup splash: "PI" in one random palette role,
+ * captioned with the project url and the launch model + effort.
  *
  * Replaces pi's built-in startup header (logo + keybinding hints) with a
  * title screen, once per process: session_start fires with reason
  * "startup" only (every CLI launch, `pi -c` included); /new, /resume and
  * /reload leave whatever header is already up. /builtin-header restores
- * pi's own header; /title-screen brings the splash back.
+ * pi's own header; /title-screen brings the splash back (and draws a new
+ * color).
  *
- *   ███████╗  ██╗      <- accent (blue)
- *   ██╔═══██╗ ██║      <- accent
- *   ██╔═══██╗ ██║      <- accent
- *   ███████╔╝ ██║      <- mdCode (aqua)
- *   ██╔════╝  ██║      <- mdCode
- *   ██║       ██║      <- mdCode
- *   ██║       ██║      <- dim
- *   ╚═╝       ╚═╝      <- dim
- *   3.14159 26535 ...  <- muted, truncated to the terminal
- *   esc interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · more · vN
+ *   ███████╗  ██╗
+ *   ██╔═══██╗ ██║
+ *   ██╔═══██╗ ██║
+ *   ███████╔╝ ██║
+ *   ██╔════╝  ██║
+ *   ██║       ██║
+ *   ██║       ██║
+ *   ╚═╝       ╚═╝
+ *   https://github.com/earendil-works/pi · glm-5.3 · high
  *
- * Colors ride THEME ROLES ONLY -- never a hex, never a raw index -- so the
- * splash follows the active dotfiles-{light,dark} theme and, through its
- * indexed slots, the viewing terminal's palette, even over SSH (the same
- * guarantee the rest of pi's chrome carries). The logo fades blue -> aqua
- * -> dim so it stays legible on both sides of the appearance switch: on
- * light themes the base dissolves into the paper, on dark ones into the
- * void. Styling happens inside render() against the theme pi hands the
- * factory -- the live proxy -- so an OS appearance flip re-tints the
- * splash on the next paint, and render(width) re-centers on resize.
+ * The block is ONE color for the whole splash, drawn per launch from
+ * three theme roles -- accent (blue), mdCode (aqua), dim. Roles only,
+ * never a hex, never a raw index, so the splash follows the active
+ * dotfiles-{light,dark} theme and, through its indexed slots, the
+ * viewing terminal's palette, even over SSH (the same guarantee the
+ * rest of pi's chrome carries). Styling happens inside render() against
+ * the theme pi hands the factory -- the live proxy -- so an OS
+ * appearance flip re-tints the splash on the next paint, and
+ * render(width) re-centers on resize.
  *
- * The hint line mirrors pi's built-in compact header (interrupt /
- * clear/exit / commands / bash / more) with keys resolved through pi's
- * own keyText, so a custom keybindings.json is honored, plus the version.
+ * The caption is frozen at launch: it names the model and thinking level
+ * pi started with (the footer tracks the live ones). It carries no
+ * keybinding hints -- pi's compact hints live one ctrl+o away in the
+ * built-in header, restorable any time with /builtin-header.
  */
 
 import type { ExtensionAPI, Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
-import { VERSION, keyText } from "@earendil-works/pi-coding-agent";
 
 // ---------- the logo ----------
 
@@ -53,37 +54,15 @@ const ART = [
 
 const ART_WIDTH = 13;
 
-/** One role per art row, top to bottom: the fade. accent is blue and
- *  mdCode is aqua -- both exact palette slots -- and dim grounds the base. */
-const FADE: ThemeColor[] = [
-	"accent",
-	"accent",
-	"accent",
-	"mdCode",
-	"mdCode",
-	"mdCode",
-	"dim",
-	"dim",
-];
+/** The pool the splash draws from, one color for the whole block: the
+ *  three roles the old fade used. accent is blue and mdCode is aqua --
+ *  both exact palette slots -- and dim is the quiet launch. */
+export const COLOR_POOL = ["accent", "mdCode", "dim"] as const;
 
-// ---------- pi's digits ----------
-
-/** 100 decimal places of pi -- decoration, truncated to the terminal. */
-const DIGITS =
-	"14159265358979323846264338327950288419716939937510" +
-	"58209749445923078164062862089986280348253421170679";
-
-/** "3." plus whole 5-digit groups: the longest line that fits `budget`
- *  columns. null when not even one group fits ("3." + 5 = 7). */
-export function piDigits(budget: number): string | null {
-	if (budget < 7) return null;
-	let line = "3.";
-	for (let i = 0; i + 5 <= DIGITS.length; i += 5) {
-		const sep = line.length > 2 ? " " : "";
-		if (line.length + sep.length + 5 > budget) break;
-		line += sep + DIGITS.slice(i, i + 5);
-	}
-	return line;
+/** One role for the whole block, redrawn per launch. Takes the rng so the
+ *  harness can pin it; defaults to Math.random. */
+export function pickColor(rng: () => number = Math.random): ThemeColor {
+	return COLOR_POOL[Math.floor(rng() * COLOR_POOL.length)]!;
 }
 
 // ---------- layout helpers (exported for scripts/test-title-screen.mjs) ----------
@@ -103,36 +82,30 @@ export function centerPad(width: number, w: number): number {
 
 // ---------- the header component ----------
 
-function makeHeader(theme: Theme) {
+function makeHeader(
+	theme: Theme,
+	color: ThemeColor,
+	caption: { url: string; model?: string; effort?: string },
+) {
 	return {
 		render(width: number): string[] {
 			const lines: string[] = [""];
-			// logo, centered, one fade step per row
+			// the logo: one color for every row, centered
 			const pad = centerPad(width, ART_WIDTH);
-			for (let i = 0; i < ART.length; i++) {
+			for (const row of ART) {
 				// fg is a prototype method reading this.fgColors -- always
 				// called on the receiver, never extracted (an unbound call
 				// throws; same trap the provider-usage harness polices).
-				lines.push(" ".repeat(pad) + theme.fg(FADE[i]!, ART[i]!));
+				lines.push(" ".repeat(pad) + theme.fg(color, row));
 			}
-			// the digits: capped well below the art's visual weight, muted
-			// (slot 8) so they stay legible on both light and dark themes
-			const digits = piDigits(Math.min(width, 100));
-			if (digits !== null) {
-				lines.push(" ".repeat(centerPad(width, digits.length)) + theme.fg("muted", digits));
-			}
-			// the built-in compact header's five hints + the version
+			// the caption: project url + the launch model + effort; the
+			// model/effort segments drop out when pi started without one
 			const sep = theme.fg("muted", " · ");
-			const hint = (key: string, desc: string) => theme.fg("dim", key) + theme.fg("muted", ` ${desc}`);
-			const hints = [
-				hint(keyText("app.interrupt"), "interrupt"),
-				hint(`${keyText("app.clear")}/${keyText("app.exit")}`, "clear/exit"),
-				hint("/", "commands"),
-				hint("!", "bash"),
-				hint(keyText("app.tools.expand"), "more"),
-				theme.fg("dim", `v${VERSION}`),
-			].join(sep);
-			lines.push(" ".repeat(centerPad(width, visibleWidth(hints))) + hints);
+			const parts = [theme.fg("dim", caption.url)];
+			if (caption.model) parts.push(theme.fg("dim", caption.model));
+			if (caption.effort) parts.push(theme.fg("dim", caption.effort));
+			const line = parts.join(sep);
+			lines.push(" ".repeat(centerPad(width, visibleWidth(line))) + line);
 			return lines;
 		},
 		invalidate() {},
@@ -144,13 +117,26 @@ function makeHeader(theme: Theme) {
 export default function (pi: ExtensionAPI) {
 	pi.on("session_start", async (event, ctx) => {
 		if (event.reason !== "startup" || ctx.mode !== "tui") return;
-		ctx.ui.setHeader((_tui, theme) => makeHeader(theme));
+		const model = ctx.model?.id;
+		const effort = ctx.thinkingLevel;
+		ctx.ui.setHeader((_tui, theme) => makeHeader(theme, pickColor(), {
+			url: "https://github.com/earendil-works/pi",
+			model,
+			effort,
+		}));
 	});
 
 	pi.registerCommand("title-screen", {
 		description: "Show the title-screen splash header",
 		handler: async (_args, ctx) => {
-			if (ctx.mode === "tui") ctx.ui.setHeader((_tui, theme) => makeHeader(theme));
+			if (ctx.mode !== "tui") return;
+			const model = ctx.model?.id;
+			const effort = ctx.thinkingLevel;
+			ctx.ui.setHeader((_tui, theme) => makeHeader(theme, pickColor(), {
+				url: "https://github.com/earendil-works/pi",
+				model,
+				effort,
+			}));
 		},
 	});
 
