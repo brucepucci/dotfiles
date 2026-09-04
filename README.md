@@ -71,8 +71,9 @@ The decisions, so future-you doesn't have to re-derive them:
   mirror committed inside this repo (rooted in iTerm2-Color-Schemes), so
   apply needs no network and no Ghostty install. Surfaces that travel over
   SSH render in the terminal's indexed color slots so the *viewing*
-  terminal decides.
-  Never a hardcoded hex. See [docs/theming.md](docs/theming.md).
+  terminal decides. Managed files carry no hardcoded hex — the lone
+  carve-out is pi's two live-derived tool tints, where the fixed xterm
+  cube has no honest match. See [docs/theming.md](docs/theming.md).
 - **Secrets never enter the repo.** `~/.zsh/secrets.zsh` (unmanaged,
   listed in `.chezmoiignore`) holds the keys; pi's `auth.json` and session
   transcripts are unmanaged too.
@@ -162,11 +163,12 @@ non-Homebrew install.
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts | [git.md](docs/git.md) |
 | `~/.config/lazygit/config.yml` | delta as lazygit's diff renderer | [git.md](docs/git.md) |
 | `~/.local/bin/delta-theme` | Appearance-aware delta wrapper | [git.md](docs/git.md) |
-| `~/.pi/agent/settings.json`, `~/.pi/agent/themes/` | pi's settings, generated theme pair, and the `/skill:chezmoi-runbook` verification skill (generated from AGENTS.md) | [pi.md](docs/pi.md) |
+| `~/.pi/agent/settings.json`, `~/.pi/agent/themes/`, `~/.pi/agent/extensions/`, `~/.pi/agent/skills/` | pi's settings, generated theme pair, managed extensions (provider-usage footer, title-screen splash), and the `/skill:chezmoi-runbook` verification skill (generated from AGENTS.md) | [pi.md](docs/pi.md) |
 
 Repo-level files that are **never installed** (see `.chezmoiignore`):
-this README, `AGENTS.md`, `Brewfile`, `scripts/`, `settings.toml`, and
-`docs/`.
+this README, `AGENTS.md`, `Brewfile`, `scripts/`, `settings.toml`,
+`docs/`, the theme mirror in `themes/`, `themes-local/` (hand-written
+palette overrides the resolver reads first), and `LICENSE`.
 
 Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
 generated), `~/.zsh/secrets.zsh` (API keys — a secret), `~/.ssh/`,
@@ -304,7 +306,9 @@ whole verification runbook for you, any time: `/skill:chezmoi-runbook`.
 - **Themes** — the mirror in `themes/` is a snapshot: upstream
   iTerm2-Color-Schemes keeps adding schemes, and they work the moment you
   run `scripts/themes-sync.sh` and type their name in `settings.toml`.
-  Re-run `chezmoi apply` so every surface re-renders.
+  Re-run `chezmoi apply` so every surface re-renders. Hand-tuning a
+  palette? Never edit `themes/` (sync replaces it wholesale) — drop a
+  same-named file in `themes-local/` and the resolver reads it first.
 - **Homebrew** — `brew bundle --file="$(chezmoi source-path)/Brewfile"`
   reinstalls anything an OS migration dropped; `brew bundle check` (same
   file) reports drift; `brew upgrade` for the rest.
