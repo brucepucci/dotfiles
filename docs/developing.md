@@ -120,6 +120,13 @@ the result the way real sessions do. It covers:
   its unit harness (`scripts/test-provider-usage.mjs`, jiti-loaded like
   pi loads it) covering the row format through pi's own status
   sanitizer, quota-window parsing, and the fetch/lifecycle behavior
+- the title-screen pi extension: same treatment
+  (`scripts/test-title-screen.mjs`) — art geometry (small fixed indent,
+  compact narrow fallback, width independence, the section-header role),
+  caption variants pi can actually produce, re-install on every
+  session_start reason (pi resets extension UI on each rebind), and the
+  tui-only command guards — plus the orphan-hex scan now covers both pi
+  extensions (no hardcoded colors)
 - the nvim exit rule, headlessly: `:q` from the last session-holding
   window closes disposable UI so one quit exits — while terminal splits
   (live jobs asserted alive), other tabs, `:q!`, unsaved buffers, and

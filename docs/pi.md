@@ -14,6 +14,7 @@ Three pieces, kept deliberately separate:
 | Settings + themes | `dot_pi/agent/` → `~/.pi/agent/settings.json`, `~/.pi/agent/themes/dotfiles-{light,dark}.json` | **yes — chezmoi templates** |
 | The runbook skill | `dot_pi/agent/skills/runbook/SKILL.md.tmpl` → `~/.pi/agent/skills/runbook/SKILL.md` (`/skill:runbook`) | **yes — generated from AGENTS.md at apply time** |
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
+| The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
 | The API key | `ZAI_API_KEY` in `~/.zsh/secrets.zsh` (or `~/.pi/agent/auth.json` via `/login`) | **no — a secret, never in the repo** |
 
 ## The tmux wrapper (`pi()` in `~/.zshrc`)
@@ -127,6 +128,52 @@ failed polls keep the last known-good quota, which ages out after ten
 minutes. Fetches are aborted on session teardown and failures never
 block pi. Colors reuse pi's theme (dim
 labels; warning >70%, error >90% — the same thresholds as the context %).
+
+## The title-screen extension (managed)
+
+`dot_pi/agent/extensions/title-screen.ts` replaces pi's built-in startup
+header with a splash. session_start fires on every launch AND on
+`/new`, `/resume`, `/fork` and `/reload` — pi resets extension-managed
+UI (the header with it) before each rebind — so the splash re-installs
+on every reason; skipping any would strand the stock header for the
+rest of the process. Terminals narrower than the glyph get a compact
+one-liner instead of a wrapped block:
+
+```
+  ███████╗  ██╗
+  ██╔═══██╗ ██║
+  ██╔═══██╗ ██║
+  ███████╔╝ ██║
+  ██╔════╝  ██║
+  ██║       ██║
+  ██║       ██║
+  ╚═╝       ╚═╝
+  glm-5.3 · high
+```
+
+- The "PI" is ANSI Shadow, one row-step larger than the stock glyph, and
+  everything sits at a two-space indent — enough air that the block
+  glyphs don't sit on the terminal border (the render is still
+  width-independent).
+- ONE color for the whole block: the `mdHeading` role — the same role pi
+  renders its `[Context]` / `[Skills]` / `[Extensions]` startup section
+  headers with, so the splash reads as pi's own chrome. Roles only, the
+  same indexed slots the generated themes carry — the splash follows the
+  active dotfiles-{light,dark} theme and, through it, the viewing
+  terminal's palette, even over SSH. Styling happens at render time
+  against pi's live theme object, so an OS appearance flip re-tints it
+  mid-session.
+- The caption is snapshotted at install time — the model id and, for
+  reasoning models only, the thinking level then in effect (pi's footer
+  keeps tracking the live values; it spells a reasoning model's off as
+  `thinking off`, the caption as plain `off`). With no model — no
+  resolvable auth or catalogue — the caption drops out entirely. The
+  splash is not expandable, so ctrl+o has nothing to reveal;
+  `/builtin-header` brings the keybinding hints back and
+  `/title-screen` re-installs the splash.
+- Guarded by `scripts/test-title-screen.mjs` (jiti-loaded like pi loads
+  it) and the smoke test's orphan-hex scan — the extension must never
+  carry a hardcoded hex.
 
 ## Keys and commands worth remembering
 
