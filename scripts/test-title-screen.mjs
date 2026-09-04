@@ -1,13 +1,14 @@
 // Unit harness for dot_pi/agent/extensions/title-screen.ts.
 //
 // Drives the extension through a fake pi object and asserts the rendered
-// splash: art geometry (every row the same width, ONE color for the whole
-// block, drawn from the role pool), the caption (project url + the launch
-// model and effort, centered, segments dropping when pi starts without a
-// model), and the startup gating (reason "startup" + tui mode only, like
-// a title screen should). Theme#fg is faked as a prototype method reading
-// the receiver, the same call mechanics as pi's own Theme -- an unbound
-// extraction throws, so the fake catches it (see test-provider-usage.mjs).
+// splash: art geometry (every row 13 columns, flush left, ONE color for
+// the whole block drawn from the role pool, render independent of the
+// terminal width), the caption (launch model + effort, dropped entirely
+// when pi starts without a model), and the startup gating (reason
+// "startup" + tui mode only, like a title screen should). Theme#fg is
+// faked as a prototype method reading the receiver, the same call
+// mechanics as pi's own Theme -- an unbound extraction throws, so the
+// fake catches it (see test-provider-usage.mjs).
 //
 // Run directly (node scripts/test-title-screen.mjs) or via smoke-test.sh.
 // jiti is resolved from pi's install so the TypeScript extension loads
@@ -44,7 +45,9 @@ const check = (name, cond, extra = "") => {
 };
 
 // pi's Theme#fg is a prototype method that reads this.fgColors -- this fake
-// throws the same way if the extension ever extracts it unbound.
+// throws the same way if the extension ever extracts it unbound. Its
+// <role> markers are literal text, so the harness strips them (plus real
+// SGR escapes) to measure display widths.
 class FakeTheme {
 	constructor() {
 		this.marker = "<";
@@ -53,18 +56,10 @@ class FakeTheme {
 		return `${this.marker}${n}>${t}`;
 	}
 }
+const strip = (s) => s.replace(/\x1b\[[0-9;]*m/g, "").replace(/<\w+>/g, "");
 
-// ---------- pure helpers ----------
+// ---------- the color pool ----------
 
-check("visibleWidth strips SGR escapes", mod.visibleWidth("\x1b[1;38;5;4mab\x1b[0m") === 2, mod.visibleWidth("\x1b[1;38;5;4mab\x1b[0m"));
-check("visibleWidth plain string", mod.visibleWidth("pi") === 2);
-
-check("centerPad centers on wide terminals", mod.centerPad(80, 13) === 33, mod.centerPad(80, 13));
-check("centerPad rounds down", mod.centerPad(21, 8) === 6, mod.centerPad(21, 8));
-check("centerPad clamps to 0 when it does not fit", mod.centerPad(12, 13) === 0);
-
-// the color pool: roles only -- the repo's whole theming contract in one
-// array -- and pickColor maps an rng uniformly onto it
 check("pool is three roles", mod.COLOR_POOL.length === 3, mod.COLOR_POOL.join(","));
 check("pool carries no hexes/raw indices", mod.COLOR_POOL.every((c) => ["accent", "mdCode", "dim"].includes(c)), mod.COLOR_POOL.join(","));
 check("pickColor rng=0 -> first", mod.pickColor(() => 0) === "accent");
@@ -85,7 +80,6 @@ const pi = {
 };
 mod.default(pi);
 
-const PROJECT_URL = "https://github.com/earendil-works/pi";
 const tuiCtx = () => ({
 	mode: "tui",
 	hasUI: true,
@@ -111,30 +105,18 @@ Math.random = realRandom;
 check("header component exposes render/invalidate", typeof comp.render === "function" && typeof comp.invalidate === "function");
 comp.invalidate(); // must be a safe no-op
 
-// 80 columns: art centered at pad 33, one role across all rows, caption
-// centered on its visible width. Fake theme marks fg() calls as <role>text.
 const lines = comp.render(80);
 check("80 cols: blank + 8 art rows + caption", lines.length === 10, lines.length);
 check("leading blank line", lines[0] === "");
-const fades = lines.slice(1, 9).map((l) => /^ {33}<(\w+)>/.exec(l)?.[1]);
-check("one role colors the whole block", fades.every((c) => c === "dim"), fades.join(","));
-// with the fake theme the <role> markers are literal text, so expected
-// visible width = pad + marker + art row
-const artVisible = lines.slice(1, 9).map((l) => mod.visibleWidth(l));
-check("art rows all 33 + marker + 13 columns", artVisible.every((w) => w === 33 + 3 + 2 + 13), artVisible.join(","));
-const caption = lines[9] ?? "";
-check("caption names the project url", caption.includes(PROJECT_URL), caption.slice(0, 48));
-check("caption names the launch model", caption.includes("<dim>glm-5.3"));
-check("caption names the launch effort", caption.includes("<dim>high"));
-check("caption joins url/model/effort on two muted dots", (caption.match(/<muted> · /g) ?? []).length === 2, caption);
-check("caption centered on its visible width", caption === " ".repeat(mod.centerPad(80, mod.visibleWidth(caption))) + caption.trimStart(), mod.visibleWidth(caption));
+check("art flush left, one role for the whole block", lines.slice(1, 9).every((l) => l.startsWith("<dim>") && !l.startsWith(" ")), lines[1]);
+check("art rows are the 13-column glyph", lines.slice(1, 9).map(strip).every((s) => s.length === 13), lines.slice(1, 9).map(strip).join(" | "));
+check("caption is model + effort, flush left", lines[9] === "<dim>glm-5.3<muted> · <dim>high", lines[9]);
+check("caption joins on one muted dot", (lines[9]?.match(/<muted> · /g) ?? []).length === 1);
 
-// narrow terminals: art left-aligns at pad 3, caption overflows without pad
-const narrow = comp.render(20);
-check("20 cols: art at pad 3", narrow.length === 10 && narrow[1]?.startsWith("   <dim>"), narrow[1]?.slice(0, 20));
-check("20 cols: caption overflows flush left", narrow[9]?.startsWith("<dim>"), narrow[9]?.slice(0, 24));
+// the render no longer reads the terminal width: identical at any size
+check("render is width-independent", JSON.stringify(comp.render(20)) === JSON.stringify(lines) && JSON.stringify(comp.render(200)) === JSON.stringify(lines));
 
-// pi started without a model: the url stands alone
+// pi started without a model: the caption drops out entirely
 {
 	const h = {};
 	const hs = [];
@@ -150,8 +132,7 @@ check("20 cols: caption overflows flush left", narrow[9]?.startsWith("<dim>"), n
 	const c = hs[0](undefined, new FakeTheme());
 	Math.random = realRandom;
 	const bare = c.render(80);
-	check("no model: caption is the bare url", bare.length === 10 && bare[9]?.trim() === `<dim>${PROJECT_URL}` && (bare[9].match(/<muted>/g) ?? []).length === 0, bare[9]?.trim());
-	check("no model: block still fully colored", bare.slice(1, 9).every((l) => l.startsWith(" ".repeat(33) + "<accent>")));
+	check("no model: caption gone, art only", bare.length === 9 && bare.slice(1, 9).every((l) => l.startsWith("<accent>")), bare.length);
 }
 
 // ---------- commands ----------

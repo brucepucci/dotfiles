@@ -137,19 +137,20 @@ session_start with reason "startup"; `/new`, `/resume` and `/reload`
 leave whatever header is up):
 
 ```
-                                 ███████╗  ██╗
-                                 ██╔═══██╗ ██║
-                                 ██╔═══██╗ ██║
-                                 ███████╔╝ ██║
-                                 ██╔════╝  ██║
-                                 ██║       ██║
-                                 ██║       ██║
-                                 ╚═╝       ╚═╝
-https://github.com/earendil-works/pi · glm-5.3 · high
+███████╗  ██╗
+██╔═══██╗ ██║
+██╔═══██╗ ██║
+███████╔╝ ██║
+██╔════╝  ██║
+██║       ██║
+██║       ██║
+╚═╝       ╚═╝
+glm-5.3 · high
 ```
 
-- The "PI" is ANSI Shadow, one row-step larger than the stock glyph,
-  centered on `render(width)` so it re-centers on resize.
+- The "PI" is ANSI Shadow, one row-step larger than the stock glyph, and
+  everything sits flush left — pi's chrome is left-aligned, so the
+  splash lines up with it (the render is width-independent).
 - ONE color for the whole block, drawn at random per launch from three
   theme roles (`accent` blue, `mdCode` aqua, `dim`) — roles only, the
   same indexed slots the generated themes carry — so the splash follows
@@ -157,9 +158,9 @@ https://github.com/earendil-works/pi · glm-5.3 · high
   terminal's palette, even over SSH. Styling happens at render time
   against pi's live theme object, so an OS appearance flip re-tints it
   mid-session.
-- The caption names the project url and the model + thinking level pi
-  launched with, frozen at startup — the footer tracks the live values.
-  When pi starts without a model the url stands alone.
+- The caption is the model + thinking level pi launched with, frozen at
+  startup — the footer tracks the live values. When pi starts without a
+  model the caption drops out entirely.
 - `/builtin-header` restores pi's own header (keybinding hints and all);
   `/title-screen` brings the splash back and draws a fresh color.
 - Guarded by `scripts/test-title-screen.mjs` (jiti-loaded like pi loads

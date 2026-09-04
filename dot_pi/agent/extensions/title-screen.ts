@@ -1,6 +1,6 @@
 /**
  * title-screen -- the startup splash: "PI" in one random palette role,
- * captioned with the project url and the launch model + effort.
+ * captioned with the launch model + effort.
  *
  * Replaces pi's built-in startup header (logo + keybinding hints) with a
  * title screen, once per process: session_start fires with reason
@@ -17,7 +17,7 @@
  *   ██║       ██║
  *   ██║       ██║
  *   ╚═╝       ╚═╝
- *   https://github.com/earendil-works/pi · glm-5.3 · high
+ *   glm-5.3 · high
  *
  * The block is ONE color for the whole splash, drawn per launch from
  * three theme roles -- accent (blue), mdCode (aqua), dim. Roles only,
@@ -26,13 +26,15 @@
  * viewing terminal's palette, even over SSH (the same guarantee the
  * rest of pi's chrome carries). Styling happens inside render() against
  * the theme pi hands the factory -- the live proxy -- so an OS
- * appearance flip re-tints the splash on the next paint, and
- * render(width) re-centers on resize.
+ * appearance flip re-tints the splash on the next paint.
  *
- * The caption is frozen at launch: it names the model and thinking level
- * pi started with (the footer tracks the live ones). It carries no
- * keybinding hints -- pi's compact hints live one ctrl+o away in the
- * built-in header, restorable any time with /builtin-header.
+ * Everything sits flush left: pi's chrome is left-aligned, so the
+ * splash lines up with it instead of floating center. The caption is
+ * frozen at launch -- the model and thinking level pi started with
+ * (the footer tracks the live ones) -- and drops out entirely when pi
+ * starts without a model. No keybinding hints here; they live one
+ * ctrl+o away in the built-in header, restorable any time with
+ * /builtin-header.
  */
 
 import type { ExtensionAPI, Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
@@ -52,11 +54,9 @@ const ART = [
 	"╚═╝       ╚═╝",
 ];
 
-const ART_WIDTH = 13;
-
 /** The pool the splash draws from, one color for the whole block: the
- *  three roles the old fade used. accent is blue and mdCode is aqua --
- *  both exact palette slots -- and dim is the quiet launch. */
+ *  three roles the first cut faded through. accent is blue and mdCode is
+ *  aqua -- both exact palette slots -- and dim is the quiet launch. */
 export const COLOR_POOL = ["accent", "mdCode", "dim"] as const;
 
 /** One role for the whole block, redrawn per launch. Takes the rng so the
@@ -65,47 +65,26 @@ export function pickColor(rng: () => number = Math.random): ThemeColor {
 	return COLOR_POOL[Math.floor(rng() * COLOR_POOL.length)]!;
 }
 
-// ---------- layout helpers (exported for scripts/test-title-screen.mjs) ----------
-
-const ANSI_RE = /\x1b\[[0-9;]*m/g;
-
-/** Display columns of a string that may carry SGR escapes. */
-export function visibleWidth(s: string): number {
-	return s.replace(ANSI_RE, "").length;
-}
-
-/** Left padding that centers `w` visible columns in a `width`-column
- *  terminal; 0 when it does not fit. */
-export function centerPad(width: number, w: number): number {
-	return Math.max(0, Math.floor((width - w) / 2));
-}
-
 // ---------- the header component ----------
 
-function makeHeader(
-	theme: Theme,
-	color: ThemeColor,
-	caption: { url: string; model?: string; effort?: string },
-) {
+function makeHeader(theme: Theme, color: ThemeColor, caption: { model?: string; effort?: string }) {
 	return {
-		render(width: number): string[] {
+		render(_width: number): string[] {
 			const lines: string[] = [""];
-			// the logo: one color for every row, centered
-			const pad = centerPad(width, ART_WIDTH);
+			// the logo: one color for every row, flush left
 			for (const row of ART) {
 				// fg is a prototype method reading this.fgColors -- always
 				// called on the receiver, never extracted (an unbound call
 				// throws; same trap the provider-usage harness polices).
-				lines.push(" ".repeat(pad) + theme.fg(color, row));
+				lines.push(theme.fg(color, row));
 			}
-			// the caption: project url + the launch model + effort; the
-			// model/effort segments drop out when pi started without one
+			// the caption: the launch model + effort, dropped entirely when
+			// pi started without a model
 			const sep = theme.fg("muted", " · ");
-			const parts = [theme.fg("dim", caption.url)];
+			const parts: string[] = [];
 			if (caption.model) parts.push(theme.fg("dim", caption.model));
 			if (caption.effort) parts.push(theme.fg("dim", caption.effort));
-			const line = parts.join(sep);
-			lines.push(" ".repeat(centerPad(width, visibleWidth(line))) + line);
+			if (parts.length > 0) lines.push(parts.join(sep));
 			return lines;
 		},
 		invalidate() {},
@@ -119,11 +98,7 @@ export default function (pi: ExtensionAPI) {
 		if (event.reason !== "startup" || ctx.mode !== "tui") return;
 		const model = ctx.model?.id;
 		const effort = ctx.thinkingLevel;
-		ctx.ui.setHeader((_tui, theme) => makeHeader(theme, pickColor(), {
-			url: "https://github.com/earendil-works/pi",
-			model,
-			effort,
-		}));
+		ctx.ui.setHeader((_tui, theme) => makeHeader(theme, pickColor(), { model, effort }));
 	});
 
 	pi.registerCommand("title-screen", {
@@ -132,11 +107,7 @@ export default function (pi: ExtensionAPI) {
 			if (ctx.mode !== "tui") return;
 			const model = ctx.model?.id;
 			const effort = ctx.thinkingLevel;
-			ctx.ui.setHeader((_tui, theme) => makeHeader(theme, pickColor(), {
-				url: "https://github.com/earendil-works/pi",
-				model,
-				effort,
-			}));
+			ctx.ui.setHeader((_tui, theme) => makeHeader(theme, pickColor(), { model, effort }));
 		},
 	});
 
