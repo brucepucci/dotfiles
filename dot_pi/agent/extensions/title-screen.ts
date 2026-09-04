@@ -1,32 +1,22 @@
 /**
- * title-screen -- the startup splash: "PI" in one random palette role,
+ * title-screen -- the startup splash: "PI" in the section-header color,
  * captioned with the launch model + effort.
  *
  * Replaces pi's built-in startup header (logo + keybinding hints) with a
  * title screen, once per process: session_start fires with reason
  * "startup" only (every CLI launch, `pi -c` included); /new, /resume and
  * /reload leave whatever header is already up. /builtin-header restores
- * pi's own header; /title-screen brings the splash back (and draws a new
- * color).
+ * pi's own header; /title-screen brings the splash back.
  *
- *   ███████╗  ██╗
- *   ██╔═══██╗ ██║
- *   ██╔═══██╗ ██║
- *   ███████╔╝ ██║
- *   ██╔════╝  ██║
- *   ██║       ██║
- *   ██║       ██║
- *   ╚═╝       ╚═╝
- *   glm-5.3 · high
- *
- * The block is ONE color for the whole splash, drawn per launch from
- * three theme roles -- accent (blue), mdCode (aqua), dim. Roles only,
- * never a hex, never a raw index, so the splash follows the active
- * dotfiles-{light,dark} theme and, through its indexed slots, the
- * viewing terminal's palette, even over SSH (the same guarantee the
- * rest of pi's chrome carries). Styling happens inside render() against
- * the theme pi hands the factory -- the live proxy -- so an OS
- * appearance flip re-tints the splash on the next paint.
+ * The block is ONE color for the whole splash: the mdHeading role, the
+ * same role pi renders its [Context] / [Skills] / [Extensions] startup
+ * section headers with. Roles only, never a hex, never a raw index, so
+ * the splash follows the active dotfiles-{light,dark} theme and, through
+ * its indexed slots, the viewing terminal's palette, even over SSH (the
+ * same guarantee the rest of pi's chrome carries). Styling happens
+ * inside render() against the theme pi hands the factory -- the live
+ * proxy -- so an OS appearance flip re-tints the splash on the next
+ * paint.
  *
  * Everything sits at a two-space indent: the block glyphs are visually
  * heavy, and flush against the terminal border they look cramped -- the
@@ -38,7 +28,7 @@
  * /builtin-header.
  */
 
-import type { ExtensionAPI, Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
 
 // ---------- the logo ----------
 
@@ -59,20 +49,14 @@ const ART = [
  *  don't sit on the terminal border. */
 const PAD = 2;
 
-/** The pool the splash draws from, one color for the whole block: the
- *  three roles the first cut faded through. accent is blue and mdCode is
- *  aqua -- both exact palette slots -- and dim is the quiet launch. */
-export const COLOR_POOL = ["accent", "mdCode", "dim"] as const;
-
-/** One role for the whole block, redrawn per launch. Takes the rng so the
- *  harness can pin it; defaults to Math.random. */
-export function pickColor(rng: () => number = Math.random): ThemeColor {
-	return COLOR_POOL[Math.floor(rng() * COLOR_POOL.length)]!;
-}
+/** The one color for the whole block: the role behind pi's own startup
+ *  section headers ([Context], [Skills], [Extensions] -- interactive-mode
+ *  sectionHeader defaults to it), so the splash reads as pi's chrome. */
+const BLOCK_COLOR = "mdHeading" as const;
 
 // ---------- the header component ----------
 
-function makeHeader(theme: Theme, color: ThemeColor, caption: { model?: string; effort?: string }) {
+function makeHeader(theme: Theme, caption: { model?: string; effort?: string }) {
 	return {
 		render(_width: number): string[] {
 			const lines: string[] = [""];
@@ -82,7 +66,7 @@ function makeHeader(theme: Theme, color: ThemeColor, caption: { model?: string; 
 				// fg is a prototype method reading this.fgColors -- always
 				// called on the receiver, never extracted (an unbound call
 				// throws; same trap the provider-usage harness polices).
-				lines.push(pad + theme.fg(color, row));
+				lines.push(pad + theme.fg(BLOCK_COLOR, row));
 			}
 			// the caption: the launch model + effort, dropped entirely when
 			// pi started without a model
@@ -104,7 +88,7 @@ export default function (pi: ExtensionAPI) {
 		if (event.reason !== "startup" || ctx.mode !== "tui") return;
 		const model = ctx.model?.id;
 		const effort = ctx.thinkingLevel;
-		ctx.ui.setHeader((_tui, theme) => makeHeader(theme, pickColor(), { model, effort }));
+		ctx.ui.setHeader((_tui, theme) => makeHeader(theme, { model, effort }));
 	});
 
 	pi.registerCommand("title-screen", {
@@ -113,7 +97,7 @@ export default function (pi: ExtensionAPI) {
 			if (ctx.mode !== "tui") return;
 			const model = ctx.model?.id;
 			const effort = ctx.thinkingLevel;
-			ctx.ui.setHeader((_tui, theme) => makeHeader(theme, pickColor(), { model, effort }));
+			ctx.ui.setHeader((_tui, theme) => makeHeader(theme, { model, effort }));
 		},
 	});
 

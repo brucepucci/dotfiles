@@ -122,10 +122,9 @@ the result the way real sessions do. It covers:
   sanitizer, quota-window parsing, and the fetch/lifecycle behavior
 - the title-screen pi extension: same treatment
   (`scripts/test-title-screen.mjs`) — art geometry (small fixed indent,
-  width independent), the random role pick (pool membership + rng
-  mapping), caption contents, and startup gating against a fake pi —
-  plus the orphan-hex scan now covers both pi extensions (no hardcoded
-  colors)
+  width independent, the section-header role), caption contents, and
+  startup gating against a fake pi — plus the orphan-hex scan now
+  covers both pi extensions (no hardcoded colors)
 - the nvim exit rule, headlessly: `:q` from the last session-holding
   window closes disposable UI so one quit exits — while terminal splits
   (live jobs asserted alive), other tabs, `:q!`, unsaved buffers, and

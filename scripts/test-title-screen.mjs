@@ -58,17 +58,6 @@ class FakeTheme {
 }
 const strip = (s) => s.replace(/\x1b\[[0-9;]*m/g, "").replace(/<\w+>/g, "");
 
-// ---------- the color pool ----------
-
-check("pool is three roles", mod.COLOR_POOL.length === 3, mod.COLOR_POOL.join(","));
-check("pool carries no hexes/raw indices", mod.COLOR_POOL.every((c) => ["accent", "mdCode", "dim"].includes(c)), mod.COLOR_POOL.join(","));
-check("pickColor rng=0 -> first", mod.pickColor(() => 0) === "accent");
-check("pickColor rng just under 1/3 -> first", mod.pickColor(() => 0.3299) === "accent");
-check("pickColor rng mid -> second", mod.pickColor(() => 0.34) === "mdCode");
-check("pickColor rng 2/3+ -> third", mod.pickColor(() => 0.67) === "dim");
-check("pickColor rng ->1 stays in pool", mod.pickColor(() => 0.999) === "dim");
-check("pickColor default rng works", ["accent", "mdCode", "dim"].includes(mod.pickColor()));
-
 // ---------- the rendered splash, through the fake theme ----------
 
 const headers = [];
@@ -96,19 +85,16 @@ check("print mode shows no splash", headers.length === 0);
 await handlers.session_start({ reason: "startup" }, tuiCtx());
 check("startup + tui installs the header once", headers.length === 1 && typeof headers[0] === "function");
 
-// Pin the draw: rng 0.9 -> "dim". The factory is invoked once; the whole
-// block must share that one role.
-const realRandom = Math.random;
-Math.random = () => 0.9;
+// The block color is fixed (mdHeading -- pi's section-header role), so the
+// component is fully deterministic.
 const comp = headers[0](undefined, new FakeTheme());
-Math.random = realRandom;
 check("header component exposes render/invalidate", typeof comp.render === "function" && typeof comp.invalidate === "function");
 comp.invalidate(); // must be a safe no-op
 
 const lines = comp.render(80);
 check("80 cols: blank + 8 art rows + caption", lines.length === 10, lines.length);
 check("leading blank line", lines[0] === "");
-check("art at the two-space indent, one role for the whole block", lines.slice(1, 9).every((l) => l.startsWith("  <dim>") && !l.startsWith("   ")), lines[1]);
+check("art at the indent, in the section-header role", lines.slice(1, 9).every((l) => l.startsWith("  <mdHeading>") && !l.startsWith("   <")), lines[1]);
 check("art rows are the 13-column glyph", lines.slice(1, 9).map(strip).every((s) => s.length === 13 + 2), lines.slice(1, 9).map(strip).join(" | "));
 check("caption is model + effort at the indent", lines[9] === "  <dim>glm-5.3<muted> · <dim>high", lines[9]);
 check("caption joins on one muted dot", (lines[9]?.match(/<muted> · /g) ?? []).length === 1);
@@ -128,11 +114,9 @@ check("render is width-independent", JSON.stringify(comp.render(20)) === JSON.st
 		thinkingLevel: undefined,
 		ui: { setHeader: (f) => hs.push(f), notify: () => {} },
 	});
-	Math.random = () => 0; // -> "accent"
 	const c = hs[0](undefined, new FakeTheme());
-	Math.random = realRandom;
 	const bare = c.render(80);
-	check("no model: caption gone, art only", bare.length === 9 && bare.slice(1, 9).every((l) => l.startsWith("  <accent>")), bare.length);
+	check("no model: caption gone, art only", bare.length === 9 && bare.slice(1, 9).every((l) => l.startsWith("  <mdHeading>")), bare.length);
 }
 
 // ---------- commands ----------

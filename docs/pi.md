@@ -152,10 +152,11 @@ leave whatever header is up):
   everything sits at a two-space indent — enough air that the block
   glyphs don't sit on the terminal border (the render is still
   width-independent).
-- ONE color for the whole block, drawn at random per launch from three
-  theme roles (`accent` blue, `mdCode` aqua, `dim`) — roles only, the
-  same indexed slots the generated themes carry — so the splash follows
-  the active dotfiles-{light,dark} theme and, through it, the viewing
+- ONE color for the whole block: the `mdHeading` role — the same role pi
+  renders its `[Context]` / `[Skills]` / `[Extensions]` startup section
+  headers with, so the splash reads as pi's own chrome. Roles only, the
+  same indexed slots the generated themes carry — the splash follows the
+  active dotfiles-{light,dark} theme and, through it, the viewing
   terminal's palette, even over SSH. Styling happens at render time
   against pi's live theme object, so an OS appearance flip re-tints it
   mid-session.
@@ -163,7 +164,7 @@ leave whatever header is up):
   startup — the footer tracks the live values. When pi starts without a
   model the caption drops out entirely.
 - `/builtin-header` restores pi's own header (keybinding hints and all);
-  `/title-screen` brings the splash back and draws a fresh color.
+  `/title-screen` brings the splash back.
 - Guarded by `scripts/test-title-screen.mjs` (jiti-loaded like pi loads
   it) and the smoke test's orphan-hex scan — the extension must never
   carry a hardcoded hex.
