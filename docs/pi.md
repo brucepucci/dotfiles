@@ -132,9 +132,12 @@ labels; warning >70%, error >90% — the same thresholds as the context %).
 ## The title-screen extension (managed)
 
 `dot_pi/agent/extensions/title-screen.ts` replaces pi's built-in startup
-header with a splash, on CLI launches only (`pi`, `pi -c`… — every
-session_start with reason "startup"; `/new`, `/resume` and `/reload`
-leave whatever header is up):
+header with a splash. session_start fires on every launch AND on
+`/new`, `/resume`, `/fork` and `/reload` — pi resets extension-managed
+UI (the header with it) before each rebind — so the splash re-installs
+on every reason; skipping any would strand the stock header for the
+rest of the process. Terminals narrower than the glyph get a compact
+one-liner instead of a wrapped block:
 
 ```
   ███████╗  ██╗
@@ -160,11 +163,14 @@ leave whatever header is up):
   terminal's palette, even over SSH. Styling happens at render time
   against pi's live theme object, so an OS appearance flip re-tints it
   mid-session.
-- The caption is the model + thinking level pi launched with, frozen at
-  startup — the footer tracks the live values. When pi starts without a
-  model the caption drops out entirely.
-- `/builtin-header` restores pi's own header (keybinding hints and all);
-  `/title-screen` brings the splash back.
+- The caption is snapshotted at install time — the model id and, for
+  reasoning models only, the thinking level then in effect (pi's footer
+  keeps tracking the live values; it spells a reasoning model's off as
+  `thinking off`, the caption as plain `off`). With no model — no
+  resolvable auth or catalogue — the caption drops out entirely. The
+  splash is not expandable, so ctrl+o has nothing to reveal;
+  `/builtin-header` brings the keybinding hints back and
+  `/title-screen` re-installs the splash.
 - Guarded by `scripts/test-title-screen.mjs` (jiti-loaded like pi loads
   it) and the smoke test's orphan-hex scan — the extension must never
   carry a hardcoded hex.

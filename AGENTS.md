@@ -107,7 +107,8 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # extensions/title-screen.ts — the startup splash:
                             # a "PI" block in pi's section-header color
                             # (mdHeading) at a small left indent, captioned
-                            # with the launch model + effort (roles only;
+                            # with the model + effort at install (roles only;
+                            # re-installed on every session switch;
                             # /builtin-header restores pi's own header)
 docs/                      # repo-level docs, never installed: one page per
                             # tool + developing.md (the maintainer guide)
