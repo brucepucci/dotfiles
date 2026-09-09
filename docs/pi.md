@@ -140,18 +140,20 @@ rest of the process. Terminals narrower than the glyph get a compact
 one-liner instead of a wrapped block:
 
 ```
-  ███████╗  ██╗
-  ██╔═══██╗ ██║
-  ██╔═══██╗ ██║
-  ███████╔╝ ██║
-  ██╔════╝  ██║
-  ██║       ██║
-  ██║       ██║
-  ╚═╝       ╚═╝
+  ████████████
+  ████████████
+  ████    ████
+  ████    ████
+  ████████    ████
+  ████████    ████
+  ████        ████
+  ████        ████
   glm-5.3 · high
 ```
 
-- The "PI" is ANSI Shadow, one row-step larger than the stock glyph, and
+- The glyph is the pi logo mark itself (pi.dev's logo: a squared "P"
+  with a square counter plus the "i" block, on its 4×4 grid, each cell
+  rendered 4 chars × 2 rows so the mark comes out square), and
   everything sits at a two-space indent — enough air that the block
   glyphs don't sit on the terminal border (the render is still
   width-independent).
