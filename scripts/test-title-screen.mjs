@@ -4,8 +4,9 @@
 // splash: art geometry (the 16-column pi logo mark at a two-space
 // indent, compact fallback below 18 columns, render independent of
 // width above that),
-// the fixed section-header role (mdHeading, the role behind pi's own
-// [Context]/[Skills]/[Extensions] startup headers), the caption (model
+// the fixed output-text role (text, the color pi renders assistant
+// output in -- the dotfiles themes map it to the terminal's default
+// foreground, so it matches on any background), the caption (model
 // always when present; effort only for reasoning models -- pi's agent
 // state initializes thinkingLevel to "off", never undefined, so a
 // fabricated undefined would assert an impossible state), the gating
@@ -113,7 +114,7 @@ comp.invalidate(); // must be a safe no-op
 
 const lines = comp.render(80);
 check("80 cols: 8 art rows + caption, no leading blank (pi's Spacer handles that)", lines.length === 9, lines.length);
-check("art at the indent, in the section-header role", lines.slice(0, 8).every((l) => l.startsWith("  <mdHeading>")), lines[0]);
+check("art at the indent, in the output-text role", lines.slice(0, 8).every((l) => l.startsWith("  <text>")), lines[0]);
 check("art rows are the pi logo mark, cells doubled for a square aspect", lines.slice(0, 8).every((l, i) => strip(l) === `  ${LOGO[i]}`), lines.slice(0, 8).map(strip).join(" | "));
 check("caption is model + effort at the indent", lines[8] === "  <dim>glm-5.3<muted> · <dim>high", lines[8]);
 check("caption joins on one muted dot", (lines[8]?.match(/<muted> · /g) ?? []).length === 1);
@@ -125,7 +126,7 @@ check(
 );
 // below it: a compact one-liner instead of a wrapped, mangled block
 const narrow = comp.render(17);
-check("below the art width: compact one-liner", narrow.length === 1 && narrow[0] === "  <mdHeading>pi", narrow[0]);
+check("below the art width: compact one-liner", narrow.length === 1 && narrow[0] === "  <text>pi", narrow[0]);
 check("art-width boundary renders the block", comp.render(18).length === 9);
 
 // caption variants pi can actually produce:
@@ -155,7 +156,7 @@ check("art-width boundary renders the block", comp.render(18).length === 9);
 	const none = render(undefined, "off");
 	check(
 		"no model: caption gone, art only",
-		none.length === 8 && none.every((l) => l.includes("<mdHeading>")),
+		none.length === 8 && none.every((l) => l.includes("<text>")),
 		none.length,
 	);
 }

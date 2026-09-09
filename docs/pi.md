@@ -157,9 +157,11 @@ one-liner instead of a wrapped block:
   everything sits at a two-space indent — enough air that the block
   glyphs don't sit on the terminal border (the render is still
   width-independent).
-- ONE color for the whole block: the `mdHeading` role — the same role pi
-  renders its `[Context]` / `[Skills]` / `[Extensions]` startup section
-  headers with, so the splash reads as pi's own chrome. Roles only, the
+- ONE color for the whole block: the `text` role — the plain output-text
+  color, so the mark reads as the content it captions, not chrome. The
+  dotfiles themes map the role to the terminal's default foreground —
+  exactly the color pi renders assistant output in, on a light or dark
+  background alike. Roles only, the
   same indexed slots the generated themes carry — the splash follows the
   active dotfiles-{light,dark} theme and, through it, the viewing
   terminal's palette, even over SSH. Styling happens at render time

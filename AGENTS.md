@@ -106,8 +106,10 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # footer row with plan quota (z.ai + Claude Pro
                             # OAuth) and output tok/s for the active provider;
                             # extensions/title-screen.ts — the startup splash:
-                            # the pi logo mark in pi's section-header color
-                            # (mdHeading) at a small left indent, captioned
+                            # the pi logo mark in the output-text color
+                            # (the text role — the dotfiles themes map it
+                            # to the terminal's default foreground) at a
+                            # small left indent, captioned
                             # with the model + effort at install (roles only;
                             # re-installed on every session switch;
                             # /builtin-header restores pi's own header)
