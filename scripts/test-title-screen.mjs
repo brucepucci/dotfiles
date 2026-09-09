@@ -1,8 +1,9 @@
 // Unit harness for dot_pi/agent/extensions/title-screen.ts.
 //
 // Drives the extension through a fake pi object and asserts the rendered
-// splash: art geometry (13-column glyph, two-space indent, compact
-// fallback below 15 columns, render independent of width above that),
+// splash: art geometry (the 16-column pi logo mark at a two-space
+// indent, compact fallback below 18 columns, render independent of
+// width above that),
 // the fixed section-header role (mdHeading, the role behind pi's own
 // [Context]/[Skills]/[Extensions] startup headers), the caption (model
 // always when present; effort only for reasoning models -- pi's agent
@@ -59,6 +60,20 @@ class FakeTheme {
 }
 const strip = (s) => s.replace(/\x1b\[[0-9;]*m/g, "").replace(/<\w+>/g, "");
 
+// The mark itself, verbatim: the pi logo (pi.dev's logo-auto.svg) -- a
+// squared "P" with a square counter plus the "i" block -- on its 4x4
+// grid, each cell rendered 4 chars x 2 rows so the mark comes out square.
+const LOGO = [
+	"████████████",
+	"████████████",
+	"████    ████",
+	"████    ████",
+	"████████    ████",
+	"████████    ████",
+	"████        ████",
+	"████        ████",
+];
+
 // ---------- the rendered splash, through the fake theme ----------
 
 const headers = [];
@@ -99,7 +114,7 @@ comp.invalidate(); // must be a safe no-op
 const lines = comp.render(80);
 check("80 cols: 8 art rows + caption, no leading blank (pi's Spacer handles that)", lines.length === 9, lines.length);
 check("art at the indent, in the section-header role", lines.slice(0, 8).every((l) => l.startsWith("  <mdHeading>")), lines[0]);
-check("art rows are the 13-column glyph", lines.slice(0, 8).map(strip).every((s) => s.length === 13 + 2), lines.slice(0, 8).map(strip).join(" | "));
+check("art rows are the pi logo mark, cells doubled for a square aspect", lines.slice(0, 8).every((l, i) => strip(l) === `  ${LOGO[i]}`), lines.slice(0, 8).map(strip).join(" | "));
 check("caption is model + effort at the indent", lines[8] === "  <dim>glm-5.3<muted> · <dim>high", lines[8]);
 check("caption joins on one muted dot", (lines[8]?.match(/<muted> · /g) ?? []).length === 1);
 
@@ -109,9 +124,9 @@ check(
 	JSON.stringify(comp.render(20)) === JSON.stringify(lines) && JSON.stringify(comp.render(200)) === JSON.stringify(lines),
 );
 // below it: a compact one-liner instead of a wrapped, mangled block
-const narrow = comp.render(14);
+const narrow = comp.render(17);
 check("below the art width: compact one-liner", narrow.length === 1 && narrow[0] === "  <mdHeading>pi", narrow[0]);
-check("art-width boundary renders the block", comp.render(15).length === 9);
+check("art-width boundary renders the block", comp.render(18).length === 9);
 
 // caption variants pi can actually produce:
 {

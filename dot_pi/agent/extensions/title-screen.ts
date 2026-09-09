@@ -1,6 +1,7 @@
 /**
- * title-screen -- the startup splash: "PI" in the section-header color,
- * captioned with the model + effort in effect when it installs.
+ * title-screen -- the startup splash: the pi logo mark in the
+ * section-header color, captioned with the model + effort in effect when
+ * it installs.
  *
  * Replaces pi's built-in startup header (logo + keybinding hints) with a
  * title screen. session_start fires on every launch AND on /new,
@@ -10,14 +11,14 @@
  * of the process. /builtin-header restores pi's own header;
  * /title-screen brings the splash back.
  *
- *   ███████╗  ██╗
- *   ██╔═══██╗ ██║
- *   ██╔═══██╗ ██║
- *   ███████╔╝ ██║
- *   ██╔════╝  ██║
- *   ██║       ██║
- *   ██║       ██║
- *   ╚═╝       ╚═╝
+ *   ████████████
+ *   ████████████
+ *   ████    ████
+ *   ████    ████
+ *   ████████    ████
+ *   ████████    ████
+ *   ████        ████
+ *   ████        ████
  *   glm-5.3 · high
  *
  * The block is ONE color for the whole splash: the mdHeading role, the
@@ -53,20 +54,23 @@ import type { ExtensionAPI, ExtensionContext, Theme } from "@earendil-works/pi-c
 
 // ---------- the logo ----------
 
-/** ANSI Shadow "PI", one row-step larger than the stock glyph (8 rows x 13
- *  columns: the bowl and each stem gain a row, the hatches gain a column). */
+/** The pi logo mark (pi.dev's logo-auto.svg): a squared "P" with a
+ *  square counter plus the "i" block, laid out on the mark's own 4x4
+ *  unit grid. Each grid cell renders as a 4-char x 2-row block of █ --
+ *  terminal cells run about twice as tall as wide, so doubling both
+ *  axes keeps the mark visually square: 8 rows x 16 columns. */
 const ART = [
-	"███████╗  ██╗",
-	"██╔═══██╗ ██║",
-	"██╔═══██╗ ██║",
-	"███████╔╝ ██║",
-	"██╔════╝  ██║",
-	"██║       ██║",
-	"██║       ██║",
-	"╚═╝       ╚═╝",
+	"████████████",
+	"████████████",
+	"████    ████",
+	"████    ████",
+	"████████    ████",
+	"████████    ████",
+	"████        ████",
+	"████        ████",
 ];
 
-const ART_WIDTH = 13;
+const ART_WIDTH = 16;
 
 /** The whole splash's left indent -- enough air that the block glyphs
  *  don't sit on the terminal border. */
