@@ -1,6 +1,6 @@
 /**
  * title-screen -- the startup splash: the pi logo mark in the
- * section-header color, captioned with the model + effort in effect when
+ * output-text color, captioned with the model + effort in effect when
  * it installs.
  *
  * Replaces pi's built-in startup header (logo + keybinding hints) with a
@@ -21,10 +21,14 @@
  *   ████        ████
  *   glm-5.3 · high
  *
- * The block is ONE color for the whole splash: the mdHeading role, the
- * same role pi renders its [Context] / [Skills] / [Extensions] startup
- * section headers with. Roles only, never a hex, never a raw index, so
- * the splash follows the active dotfiles-{light,dark} theme and, through
+ * The block is ONE color for the whole splash: the text role, pi's
+ * plain output-text color, so the mark reads as the content it
+ * captions, not chrome. The dotfiles themes map the role to the
+ * terminal's default foreground -- exactly the color pi renders
+ * assistant output in, on a light background and a dark one alike (the
+ * built-in themes give it the theme author's text hex, same story).
+ * Roles only, never a hex, never a raw index, so the splash follows
+ * the active dotfiles-{light,dark} theme and, through
  * its indexed slots, the viewing terminal's palette, even over SSH (the
  * same guarantee the rest of pi's chrome carries). Styling happens
  * inside render() against the theme pi hands the factory -- the live
@@ -76,10 +80,11 @@ const ART_WIDTH = 16;
  *  don't sit on the terminal border. */
 const PAD = 2;
 
-/** The one color for the whole block: the role behind pi's own startup
- *  section headers ([Context], [Skills], [Extensions] -- interactive-mode
- *  sectionHeader defaults to it), so the splash reads as pi's chrome. */
-const BLOCK_COLOR = "mdHeading" as const;
+/** The one color for the whole block: the text role, pi's plain
+ *  output-text color. The dotfiles themes map it to the terminal's
+ *  default foreground -- exactly what assistant output renders in --
+ *  so the mark matches the text under it on any background. */
+const BLOCK_COLOR = "text" as const;
 
 // ---------- the header component ----------
 
