@@ -24,9 +24,7 @@
 // managed path everywhere).
 
 import { createRequire } from "node:module";
-
-const PI_PACKAGE_DIR =
-	process.env.PI_PACKAGE_DIR ?? "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent";
+import { PI_PACKAGE_DIR } from "./lib/pi-package-dir.mjs";
 
 let jiti;
 try {

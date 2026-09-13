@@ -253,7 +253,7 @@ setup, troubleshooting — is in [tmux.md](tmux.md); the repo README's
 
 ### tree-sitter CLI, node *(CLI)*
 `tree-sitter` builds the parsers nvim-treesitter installs (needs ≥ 0.26.1).
-`node` is a hard dependency of pi, which installs from npm — see below. It
+`node` is a hard dependency of pi's Homebrew formula — see below. It
 also builds markdown-preview's app on platforms with no prebuilt binary.
 
 ### gh *(CLI)*
@@ -262,8 +262,10 @@ GitHub CLI. Load-bearing for setup: the dotfiles repo is private, so
 machine.
 
 ### pi *(CLI)*
-The terminal coding agent, running Z.ai's GLM models. Installed from npm by
-the Brewfile; the `zai` / `glm-5.3` defaults come from chezmoi as
+The terminal coding agent, running Z.ai's GLM models. Installed from
+Homebrew (`pi-coding-agent`, which wraps the npm package in its own keg);
+upgrades ride `brew upgrade`, never `pi update`. The `zai` / `glm-5.3`
+defaults come from chezmoi as
 `~/.pi/agent/settings.json`. The API key is `ZAI_API_KEY` in
 `~/.zsh/secrets.zsh`, in the same place as every other secret; `/login`
 inside pi is an alternative that stores it in `~/.pi/agent/auth.json`.

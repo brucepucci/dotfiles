@@ -10,7 +10,7 @@ Three pieces, kept deliberately separate:
 
 | Piece | Where it lives | Managed? |
 |---|---|---|
-| The binary | npm: `@earendil-works/pi-coding-agent` (via the Brewfile, which also pulls its hard dependency `node`) | installed, not configured, by this repo |
+| The binary | Homebrew: `pi-coding-agent` (in the Brewfile; the formula wraps the npm package in its own keg and pulls `node`) | installed, not configured, by this repo |
 | Settings + themes | `dot_pi/agent/` → `~/.pi/agent/settings.json`, `~/.pi/agent/themes/dotfiles-{light,dark}.json` | **yes — chezmoi templates** |
 | The chezmoi-runbook skill | `dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl` → `~/.pi/agent/skills/chezmoi-runbook/SKILL.md` (`/skill:chezmoi-runbook`) | **yes — generated from AGENTS.md at apply time** |
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
@@ -35,9 +35,13 @@ walkthrough in [tmux.md](tmux.md); the wrapper's own rules:
   tmux, tmux isn't installed, not on a tty (unless `PI_TMUX_WRAP=force`),
   the cwd is `$HOME` (a home directory is not a project name), or the
   invocation is one-shot — any of `-h/--help -v/--version -p/--print
-  --mode --list-models`, or a management subcommand (`install`, `update`,
-  `config`, `auth`, …). One-shot runs must never spawn a tmux server: the
+  --mode --list-models`, or a management subcommand (`install`, `config`,
+  `auth`, …). One-shot runs must never spawn a tmux server: the
   session would flash the alternate screen and swallow the output.
+- **Refuses `pi update`** — the one subcommand that never falls through:
+  the Brewfile installs pi from Homebrew, so self-update would write into
+  a brew-owned keg. The wrapper prints the real upgrade path
+  (`brew upgrade pi-coding-agent`) and fails.
 - **Typeahead is preserved**: keystrokes that arrive while the theme probe
   holds the terminal are stashed and re-injected into the session.
 

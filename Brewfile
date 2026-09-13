@@ -40,17 +40,23 @@ brew "ipython"              # the REPL iron.nvim drives (<leader>`)
 
 # --- build / runtime ------------------------------------------------------
 brew "tree-sitter-cli"      # nvim-treesitter `main` compiles parsers (needs >= 0.26.1)
-brew "node"                 # REQUIRED: pi (below) installs via npm
+brew "node"                 # pulled in by pi-coding-agent (below) anyway; explicit
+                            # because markdown-preview.nvim's fallback build
+                            # shells out to npm when upstream ships no binary
 brew "fastfetch"            # banner in ~/.zshrc (guarded, optional)
 
 # --- coding agent ---------------------------------------------------------
-# pi, the terminal coding agent. No Homebrew formula exists, so it comes from
-# npm -- which is why `node` above is a hard dependency. Unpinned = latest,
-# matching the brew entries; `pi --version` shows what landed. Config and
-# model defaults come from chezmoi (~/.pi/agent/settings.json); the Z.ai API
-# key lives in ~/.zsh/secrets.zsh with the other secrets -- see README,
-# new-machine step 5.
-system "npm", "install", "-g", "@earendil-works/pi-coding-agent"
+# pi, the terminal coding agent. homebrew/core carries the formula (it wraps
+# the same npm package, kept in its own keg under libexec, and depends on
+# `node`), so it upgrades with everything else -- `brew upgrade`, never
+# `pi update`, which would write into a brew-owned keg. Do NOT go back to
+# `npm install -g`: both want to own /opt/homebrew/bin/pi, and whichever
+# lands second leaves the other shadowed or the symlink gone entirely.
+# Unpinned = latest, matching the brew entries; `pi --version` shows what
+# landed. Config and model defaults come from chezmoi
+# (~/.pi/agent/settings.json); the Z.ai API key lives in ~/.zsh/secrets.zsh
+# with the other secrets -- see README, new-machine step 5.
+brew "pi-coding-agent"
 
 # --- remote session continuity --------------------------------------------
 # tmux keeps sessions alive across disconnects: leave the desk, reattach

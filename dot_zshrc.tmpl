@@ -474,6 +474,14 @@ pi() {
   local __pi_typed=''
   local -i user_theme=0
   local -a a=("$@") quoted=()
+  # `update` is refused before anything else, wrap setting included: the
+  # Brewfile installs pi from homebrew/core, so pi's self-update would
+  # write into a brew-owned keg. Everything else proceeds normally.
+  case "${a[1]:-}" in
+    update)
+      print -u2 "pi: installed via Homebrew -- upgrade with: brew upgrade pi-coding-agent (not \"pi update\")"
+      return 1 ;;
+  esac
   if [[ ${PI_TMUX_WRAP:-} == never ]]; then command pi "$@"; return; fi
   # One-shot invocations must never spawn a tmux server: the session would
   # flash the alternate screen and swallow the output when it dies. Flags
@@ -492,7 +500,7 @@ pi() {
     esac
   done
   case "${a[1]:-}" in
-    install|remove|uninstall|update|list|config|auth) command pi "$@"; return ;;
+    install|remove|uninstall|list|config|auth) command pi "$@"; return ;;
   esac
   # No wrapping inside tmux, without the binary, off a tty, or from $HOME.
   if [[ -n ${TMUX:-} ]] || ! command -v tmux >/dev/null 2>&1 \

@@ -106,7 +106,7 @@ chezmoi init brucepucci
 # 3. Everything the config needs: Neovim, language servers, ripgrep, fd,
 #    lazygit, delta, tmux, ipython, tree-sitter, the Nerd Font, Ghostty
 #    itself, the shell QoL trio (fzf, zsh-autosuggestions,
-#    zsh-syntax-highlighting), and the pi coding agent (from npm)
+#    zsh-syntax-highlighting), and the pi coding agent
 brew bundle --file="$(chezmoi source-path)/Brewfile"
 
 # 4. Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty
@@ -298,8 +298,11 @@ whole verification runbook for you, any time: `/skill:chezmoi-runbook`.
   `:Lazy update`, test, then `chezmoi re-add ~/.config/nvim/lazy-lock.json`
   and commit — the runbook is in
   [docs/developing.md](docs/developing.md#update-plugins).
-- **pi** — unpinned npm package; `pi update` lands the latest (plus its
-  model catalogs). Its `lastChangelogVersion` self-bump shows as one
+- **pi** — unpinned Homebrew formula; `brew upgrade pi-coding-agent` lands
+  the latest (plus its model catalogs). Not `pi update` — the binary lives
+  in a brew-owned keg, the formula turns pi's own version check off, and
+  the shell wrapper refuses `pi update` outright.
+  Its `lastChangelogVersion` self-bump shows as one
   drifting field in `chezmoi diff` — harmless. Model defaults saved via
   `/model` + Ctrl+S must be folded into the template by hand:
   [docs/developing.md](docs/developing.md#pi-self-bumps).

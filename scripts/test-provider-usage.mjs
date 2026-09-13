@@ -16,6 +16,7 @@
 // both slipped past shape-only fakes.
 
 import { createRequire } from "node:module";
+import { PI_PACKAGE_DIR } from "./lib/pi-package-dir.mjs";
 
 // The expectations below are written in UTC; re-exec under TZ=UTC so the
 // harness is deterministic regardless of the host timezone.
@@ -27,9 +28,6 @@ if (process.env.TZ !== "UTC") {
 	});
 	process.exit(r.status ?? 1);
 }
-
-const PI_PACKAGE_DIR =
-	process.env.PI_PACKAGE_DIR ?? "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent";
 
 let jiti;
 try {
