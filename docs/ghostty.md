@@ -1,11 +1,13 @@
 # Ghostty — the terminal
 
 Ghostty is the terminal emulator this machine standardizes on. The repo
-manages exactly one thing for it: **appearance**. The Ghostty config
-deliberately sets nothing shell-related — no `ZDOTDIR`, no shell env lines,
-no command — because the shell is global by design (see [zsh.md](zsh.md)).
-If you ever want to change shell behavior, there is exactly one obvious
-place to look, and it is not here.
+manages two things for it: **appearance** (the theme line) and **ssh
+terminfo plumbing** (one feature line, so a remote shell can actually be a
+Ghostty — see [SSH](#ssh)). The config still deliberately sets nothing
+shell-related — no `ZDOTDIR`, no shell env lines, no command — because the
+shell is global by design (see [zsh.md](zsh.md)). If you ever want to
+change shell behavior, there is exactly one obvious place to look, and it
+is not here.
 
 **Managed files**: `private_dot_config/ghostty/config.tmpl` →
 `~/.config/ghostty/config`, plus
@@ -104,6 +106,19 @@ typed in a Ghostty shell uploads and compiles the entry on the host
 `ghostty +ssh-cache` lists the cache. A host where the install cannot land
 (no `tic`, restricted shell) falls back to `TERM=xterm-256color` plus
 propagated `COLORTERM`/`TERM_PROGRAM`, which works everywhere.
+
+Two operational caveats:
+
+- **A running Ghostty must be fully relaunched** after this config lands
+  or changes. The feature list reaches new shells through the app's
+  environment, and its hot-reload can miss an atomic file replace (the
+  same quirk the [zsh-ghostty guard](zsh.md#the-legacy-zdtdir-guard)
+  works around). `echo $GHOSTTY_SHELL_FEATURES` in a fresh window shows
+  what the running app actually picked up.
+- **The install cache is never re-verified against the remote.** The
+  wrapper trusts the cache; if a host's `~/.terminfo` is wiped later (a
+  fresh home dir, a reinstall), tell it so the next ssh re-heals:
+  `ghostty +ssh-cache --remove=user@host`.
 
 Manual fallback for connections made outside a Ghostty shell (scripts,
 other terminals):
