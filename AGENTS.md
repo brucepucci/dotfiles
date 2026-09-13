@@ -93,7 +93,11 @@ private_dot_config/zsh/ps1.zsh       # the prompt (git state, duration, exit
 private_dot_config/ghostty/config.tmpl # terminal appearance only — no shell settings;
                             # theme line names two GENERATED user themes in
                             # ~/.config/ghostty/themes/dotfiles-{light,dark}
-                            # (pair or single, from the settings)
+                            # (pair or single, from the settings);
+                            # shell-integration-features = ssh-env,ssh-terminfo
+                            # auto-installs Ghostty's terminfo on SSH hosts
+                            # (ssh never forwards the bundle's TERMINFO var —
+                            # without the entry the remote zle garbles)
 private_dot_config/ghostty/themes/      # those two theme files, rendered from
                             # the same resolved palettes every surface uses
 dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
