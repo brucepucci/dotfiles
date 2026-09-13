@@ -22,7 +22,7 @@ New to the repo? Each tool has its own page in [docs/](docs/):
 |---|---|---|
 | Neovim | [docs/nvim.md](docs/nvim.md) | structure, all 17 plugins, every keybinding grouped (git/review, finding, windows, LSP, REPL…) |
 | zsh | [docs/zsh.md](docs/zsh.md) | the one-shell design, history, prompt, shell keybindings & aliases, clipboard helpers, the pi wrapper, secrets |
-| Ghostty | [docs/ghostty.md](docs/ghostty.md) | the terminal — appearance only, the font, themes generated from this repo's mirror |
+| Ghostty | [docs/ghostty.md](docs/ghostty.md) | the terminal — appearance, ssh terminfo auto-install, the font, themes generated from this repo's mirror |
 | Colors | [docs/theming.md](docs/theming.md) | the whole palette system: two theme names drive every surface, from a theme mirror committed in the repo |
 | tmux + SSH | [docs/tmux.md](docs/tmux.md) | detachable sessions, the phone/SSH workflow, the managed config explained |
 | Git tooling | [docs/git.md](docs/git.md) | gitconfig, delta, lazygit, gh — the shell side |
@@ -158,7 +158,7 @@ non-Homebrew install.
 |---|---|---|
 | `~/.zshrc`, `~/.zprofile`, `~/.config/zsh/ps1.zsh` | The shell — every terminal, every SSH session | [zsh.md](docs/zsh.md) |
 | `~/.config/nvim/` | The editor (17 plugins, pinned) | [nvim.md](docs/nvim.md) |
-| `~/.config/ghostty/config` + `~/.config/ghostty/themes/` | The terminal's appearance — nothing shell-related; two theme files generated from the mirror | [ghostty.md](docs/ghostty.md) |
+| `~/.config/ghostty/config` + `~/.config/ghostty/themes/` | The terminal's appearance + ssh terminfo auto-install — nothing shell-related; two theme files generated from the mirror | [ghostty.md](docs/ghostty.md) |
 | `~/.tmux.conf` | Detachable sessions: pi's extended-keys, OSC 52 clipboard, truecolor | [tmux.md](docs/tmux.md) |
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts | [git.md](docs/git.md) |
 | `~/.config/lazygit/config.yml` | delta as lazygit's diff renderer | [git.md](docs/git.md) |

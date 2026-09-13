@@ -5,10 +5,12 @@
 # Ghostty reads both, and it MERGES them when both exist — keep only this
 # one so there is a single source.
 #
-# TERMINAL APPEARANCE ONLY. The shell itself — prompt, history, aliases,
-# completion, secrets — is global: every terminal and SSH session reads
-# ~/.zshrc and ~/.zprofile. Nothing shell-related is set here, so there is
-# exactly one obvious place to change the shell: the dotfiles repo's dot_zshrc.
+# TERMINAL APPEARANCE ONLY — plus the SSH terminfo pair at the bottom
+# (terminal plumbing, not shell config). The shell itself — prompt, history,
+# aliases, completion, secrets — is global: every terminal and SSH session
+# reads ~/.zshrc and ~/.zprofile. Nothing shell-related is set here, so
+# there is exactly one obvious place to change the shell: the dotfiles
+# repo's dot_zshrc.
 #
 {{ $mode := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "theme" | trim -}}
 # The colors are not set here at all: the theme line names two GENERATED
@@ -29,3 +31,28 @@ dotfiles-light
 {{- else -}}
 dotfiles-dark
 {{- end }}
+
+# --- SSH terminfo ------------------------------------------------------------
+# Ghostty announces itself as TERM=xterm-ghostty, but that terminfo entry
+# ships INSIDE the app bundle and never reaches remote hosts: Ghostty
+# exports a TERMINFO var pointing there for its own shells, and ssh does
+# not forward it. A remote zsh left holding TERM=xterm-ghostty with no
+# entry has an EMPTY terminfo table — zle redraws garble, backspace breaks,
+# and autosuggestion ghost text smears into the line (`cd ~` once rendered
+# as `ccdcdcdd d GitHub/pi-hole~` over ssh to the mini). These two features
+# fix every host at once, no per-host setup:
+#
+#   ssh-terminfo  on first connect to a host lacking the entry, upload and
+#                 compile it there (infocmp locally, tic remotely, into
+#                 ~/.terminfo); installs are cached per host, and
+#                 `ghostty +ssh-cache` manages that cache
+#   ssh-env       the fallback ladder — a host where the install cannot
+#                 land (no tic, restricted shell) gets TERM=xterm-256color
+#                 plus COLORTERM/TERM_PROGRAM propagated instead, which
+#                 works everywhere
+#
+# Omitted features keep their per-feature Ghostty defaults, so this line
+# only needs touching if upstream changes the ssh defaults themselves.
+# The installer is a shell function from Ghostty's integration: it covers
+# ssh typed in a Ghostty shell — scp/rsync/git call the binary directly.
+shell-integration-features = ssh-env,ssh-terminfo

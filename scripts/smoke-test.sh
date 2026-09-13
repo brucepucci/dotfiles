@@ -204,11 +204,17 @@ grep -qF "set -g window-status-current-format ' | #I:#W#{?window_flags,#{window_
 [[ ! -e "$NEWHOME/.zsh/secrets.zsh" ]] || die "~/.zsh/secrets.zsh was applied"
 ok "full tree rendered, diff empty, no secrets applied"
 
-step "ghostty config stays appearance-only"
+step "ghostty config stays free of shell settings"
 if grep -E '^[[:space:]]*(command|env)[[:space:]]*=' "$NEWHOME/.config/ghostty/config" >/dev/null; then
   die "ghostty config sets a shell command/env line"
 fi
 ok "no command=/env= lines"
+# The ssh terminfo features line is drift-guarded too: it is what makes
+# remote ssh sessions render at all (see docs/ghostty.md).
+grep -qF 'shell-integration-features = ssh-env,ssh-terminfo' \
+  "$NEWHOME/.config/ghostty/config" \
+  || die "ghostty config lost the ssh terminfo features line"
+ok "ssh terminfo features line present"
 
 step "nvim exit: :q from the last session-holding window"
 # core/autocmds.lua installs a QuitPre handler: quitting the last

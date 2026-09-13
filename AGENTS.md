@@ -7,7 +7,8 @@ or anything else that reads the cross-agent AGENTS.md convention).
 
 A chezmoi-managed dotfiles repo for an agent-focused terminal workflow:
 Neovim is the bulk of it, plus the zsh shell config shared by every terminal
-and SSH session, Ghostty (theme only), git tooling (delta, lazygit), tmux
+and SSH session, Ghostty (theme + ssh terminfo auto-install), git tooling
+(delta, lazygit), tmux
 (detachable sessions), and the pi coding agent (Z.ai/GLM models).
 
 `docs/` at the repo root (never installed -- see `.chezmoiignore`) holds one
@@ -90,10 +91,14 @@ private_dot_config/nvim/
 private_dot_config/zsh/ps1.zsh       # the prompt (git state, duration, exit
                             # code); fully indexed colors 0-15 -- static, follows
                             # whatever theme the terminal runs
-private_dot_config/ghostty/config.tmpl # terminal appearance only — no shell settings;
+private_dot_config/ghostty/config.tmpl # terminal appearance + ssh terminfo — no shell settings;
                             # theme line names two GENERATED user themes in
                             # ~/.config/ghostty/themes/dotfiles-{light,dark}
-                            # (pair or single, from the settings)
+                            # (pair or single, from the settings);
+                            # shell-integration-features = ssh-env,ssh-terminfo
+                            # auto-installs Ghostty's terminfo on SSH hosts
+                            # (ssh never forwards the bundle's TERMINFO var —
+                            # without the entry the remote zle garbles)
 private_dot_config/ghostty/themes/      # those two theme files, rendered from
                             # the same resolved palettes every surface uses
 dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}

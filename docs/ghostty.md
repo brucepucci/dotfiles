@@ -1,11 +1,13 @@
 # Ghostty — the terminal
 
 Ghostty is the terminal emulator this machine standardizes on. The repo
-manages exactly one thing for it: **appearance**. The Ghostty config
-deliberately sets nothing shell-related — no `ZDOTDIR`, no shell env lines,
-no command — because the shell is global by design (see [zsh.md](zsh.md)).
-If you ever want to change shell behavior, there is exactly one obvious
-place to look, and it is not here.
+manages two things for it: **appearance** (the theme line) and **ssh
+terminfo plumbing** (one feature line, so a remote shell can actually be a
+Ghostty — see [SSH](#ssh)). The config still deliberately sets nothing
+shell-related — no `ZDOTDIR`, no shell env lines, no command — because the
+shell is global by design (see [zsh.md](zsh.md)). If you ever want to
+change shell behavior, there is exactly one obvious place to look, and it
+is not here.
 
 **Managed files**: `private_dot_config/ghostty/config.tmpl` →
 `~/.config/ghostty/config`, plus
@@ -16,7 +18,7 @@ generated theme files in `~/.config/ghostty/themes/`.
 
 Almost nothing, on purpose:
 
-- **The theme line** — the only setting, rendered at `chezmoi apply` time
+- **The theme line** — one of two settings, rendered at `chezmoi apply` time
   from `settings.toml`. It names the two generated user themes,
   `dotfiles-light` and `dotfiles-dark`, which chezmoi renders into
   `~/.config/ghostty/themes/` from the same vendored palettes every other
@@ -28,6 +30,10 @@ Almost nothing, on purpose:
   terminal therefore shows exactly the palette nvim, lualine, and pi
   derived from the same theme files — and no Ghostty install is needed
   to *apply* the config: the palettes come from this repo's mirror.
+- **The SSH terminfo pair** — `shell-integration-features = ssh-env,ssh-terminfo`
+  (see [SSH](#ssh) below): the first `ssh` typed in a Ghostty shell installs
+  Ghostty's terminfo on the remote host and caches it; a host that refuses
+  the install falls back to `TERM=xterm-256color` instead.
 - Everything else — font, window chrome, keybindings — is Ghostty defaults.
 - Browsing themes happens upstream, not in the terminal: the gallery in
   [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes)'
@@ -82,6 +88,46 @@ side):
 Also relevant: Ghostty sends ctrl-modified Enters in the `modifyOtherKeys`
 CSI form, which is what the zsh autosuggestion shortcuts (Ctrl-Enter /
 Ctrl-Option-Enter) are built on — see [zsh.md](zsh.md#keybindings).
+
+## SSH
+
+Ghostty names itself `TERM=xterm-ghostty`, but the matching terminfo entry
+ships **inside the app bundle**: Ghostty exports a `TERMINFO` var pointing
+there for its own shells, and ssh does not forward it. A remote machine
+asked to be a terminal it has no entry for gives the shell an empty
+terminfo table — the prompt still renders, but zle redraws garble,
+backspace dies, and autosuggestion ghost text smears into the line.
+Terminal.app never shows this because it sends `TERM=xterm-256color`,
+which every host knows.
+
+The managed config enables `ssh-env,ssh-terminfo`, so the first `ssh`
+typed in a Ghostty shell uploads and compiles the entry on the host
+(`infocmp` locally, `tic` remotely, into `~/.terminfo`) and remembers it —
+`ghostty +ssh-cache` lists the cache. A host where the install cannot land
+(no `tic`, restricted shell) falls back to `TERM=xterm-256color` plus
+propagated `COLORTERM`/`TERM_PROGRAM`, which works everywhere.
+
+Two operational caveats:
+
+- **A running Ghostty must be fully relaunched** after this config lands
+  or changes. The feature list reaches new shells through the app's
+  environment, and its hot-reload can miss an atomic file replace (the
+  same quirk the [zsh-ghostty guard](zsh.md#the-legacy-zdtdir-guard)
+  works around). `echo $GHOSTTY_SHELL_FEATURES` in a fresh window shows
+  what the running app actually picked up.
+- **The install cache is never re-verified against the remote.** The
+  wrapper trusts the cache; if a host's `~/.terminfo` is wiped later (a
+  fresh home dir, a reinstall), tell it so the next ssh re-heals:
+  `ghostty +ssh-cache --remove=user@host`.
+
+Manual fallback for connections made outside a Ghostty shell (scripts,
+other terminals):
+
+```bash
+infocmp -x xterm-ghostty | ssh user@host -- tic -x -o ~/.terminfo -
+```
+
+Run it inside a Ghostty shell so `infocmp` can find the bundle entry.
 
 ## Division of labor with tmux
 

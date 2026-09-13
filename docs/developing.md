@@ -95,7 +95,8 @@ the result the way real sessions do. It covers:
   multi-argument, missing-file, and `--help` branches all exercised
 - the legacy ZDOTDIR guard repairing a pre-unification Ghostty window
 - the SSH prompt segment; history shared across shells
-- secrets staying out; Ghostty config containing no shell settings
+- secrets staying out; Ghostty config containing no shell settings but
+  carrying the ssh-terminfo features line (see [ghostty.md](ghostty.md))
 - the prompt's git-marker spacing and blank-line rules
 - light/dark mode wiring (Ghostty theme line, nvim mode module, the
   delta-theme wrapper exercised with fake `defaults`/`delta` shims)

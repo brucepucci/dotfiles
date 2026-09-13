@@ -149,7 +149,8 @@ Everything rendered is a build artifact; edit `settings.toml`, never these:
 - `dot_local/bin/executable_delta-theme.tmpl` → the delta wrapper
 - `dot_gitconfig.tmpl` → the delta fallback lines
 - `private_dot_config/ghostty/config.tmpl` → Ghostty's theme line (naming
-  the generated user themes)
+  the generated user themes; the file also carries Ghostty's ssh-terminfo
+  feature line — no color business, see [ghostty.md](ghostty.md))
 - `private_dot_config/ghostty/themes/dotfiles-{light,dark}.tmpl` → the
   two generated user theme files Ghostty runs (rendered unconditionally,
   whatever the mode)
