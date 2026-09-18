@@ -22,8 +22,11 @@ Ghostty, split in two:
 | `⌘[` / `⌘]` | Move between splits |
 
 pi on one side, `nvim` on the other. That's the whole arrangement — and the
-pi side is already detachable: every pi conversation runs in its own tmux
-session automatically, rejoinable from any device ([tmux.md](tmux.md)).
+pi side is already detachable: a pi conversation launched from a terminal
+tab runs in its own tmux session automatically, rejoinable from any device
+([tmux.md](tmux.md)). (Or run pi inside `herdr` instead — same detachability
+from its server, plus a live agents sidebar; see the herdr entry in
+[tools.md](tools.md).)
 
 **You do not need to reload files.** When the agent rewrites something you have
 open, Neovim notices and reloads it. If you happened to have unsaved edits in

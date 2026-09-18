@@ -58,12 +58,52 @@ Hand edits to `~/.config/herdr/config.toml` are wiped by the next apply.
 herdr hot-reloads the file: `herdr server reload-config` (or
 `prefix+shift+r` inside the TUI).
 
-## Server model
+## First session
 
-On demand (the decision for now): the first TUI or CLI call boots the
-server; it exits when the last session does. Nothing runs at login. If
-sessions ever become load-bearing across reboots — the tmux.md use case —
-flip to `brew services start herdr` (keep_alive at login) and say so here.
+```bash
+cd code/dotfiles
+herdr                # opens the TUI: spaces (workspaces) on the left
+                     # (the first launch boots the server in the background)
+```
+
+- **New space**: `Ctrl-b` then `Shift+n`. The shell that opens is ordinary
+  zsh — same `~/.zshrc` as everywhere else.
+- **Keys**: `Ctrl-b` then `?` lists everything; the ones that matter early
+  are split (`Ctrl-b` `v` / `Ctrl-b` `-`), move (`Ctrl-b` then arrows),
+  and close pane (`Ctrl-b` `x`).
+- **pi inside herdr**: type `pi` in a pane. The wrapper skips tmux here
+  (herdr is the detachable-session layer), so herdr's **agents** sidebar
+  lists the conversation with live working/idle state — that only works
+  for pi running directly in a herdr pane.
+- **Optional, recommended: the pi integration** —
+  `herdr integration install pi` drops a state-reporter into
+  `~/.pi/agent/extensions/` so herdr sees working vs waiting-for-input,
+  and pi conversations can resume after a server restart. Re-run it
+  after herdr upgrades if a release changes the protocol; it is
+  idempotent. Not managed by this repo (see below).
+- **Detach**: `Ctrl-b` then `q` — everything keeps running on the
+  server; close the terminal window if you like. **Reattach**: `herdr`
+  from anywhere (including over SSH).
+
+Detaching is not stopping: panes, shells, and agents live in the herdr
+server, not in your terminal window. The TUI is just a view.
+
+## Persistence: what survives what
+
+Three different events, three different outcomes — don't conflate them:
+
+| Event | Processes (shells, agents, dev servers) | Layout | pi conversations |
+|---|---|---|
+| Detach / close the terminal | **keep running** | back on reattach | live, exactly as left |
+| Server restart / reboot | **gone** | restored (shape, cwd, focus) | resumed only with the pi integration installed (`resume_agents_on_restore`, on by default) — the conversation resumes, in-flight process state does not |
+| `brew services start herdr` | starts/**restarts the daemon** at login — it does **not** preserve processes through a reboot | as above | as above |
+
+So the service is about convenience (the daemon is always up, no
+first-launch boot), not durability: an in-flight task does not survive a
+reboot any more than it would under tmux. The on-demand default — the
+first TUI or CLI call boots the server, it exits when the last session
+does — is the current choice; flip to `brew services start herdr` if
+the daemon-at-login convenience ever matters.
 
 ## pi inside herdr
 

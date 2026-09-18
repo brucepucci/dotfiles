@@ -105,7 +105,14 @@ the result the way real sessions do. It covers:
 - the tmux config's shape (extended keys, clipboard, truecolor — file
   shape only, no tmux binary needed)
 - the pi→tmux wrapper with fake tmux+pi shims (creates named sessions,
-  never attaches, probe fallbacks, all the fall-through guards)
+  never attaches, probe fallbacks, all the fall-through guards — including
+  bare pi inside herdr panes, `HERDR_ENV=1`, even under `PI_TMUX_WRAP=force`)
+- the herdr() wrapper (any `herdr update` refused with the brew path
+  before the binary is consulted, passthrough via shim) and herdr's managed
+  config: `herdr config check` accepts it when the formula is present, it
+  carries no hex at all (terminal-following theme — the SSH rule), the
+  update policy is pinned (`version_check`/`manifest_check` off), and it
+  renders byte-identical across appearance modes
 - `tmux_wrap` on/off rendering (second apply against a flipped settings
   file via `DOTFILES_SETTINGS_FILE`)
 - the shell integrations' shape (fzf/autosuggestions/syntax-highlighting

@@ -157,12 +157,13 @@ device's clipboard over SSH, stays tmux's OSC 52 job (see
 ## The `pi()` wrapper
 
 The largest custom piece of `~/.zshrc`: typing `pi` in a project directory
-always starts a **new** conversation, wrapped in its own named, detachable
+normally starts a **new** conversation, wrapped in its own named, detachable
 tmux session that dies when pi exits. Rejoining is deliberately explicit
 (`tmux attach -t <name>`), so `pi` never attaches to a stray session. The
 full story — naming, guards, and the theme probe that decides light/dark
 from the *viewing* terminal before the session exists — is in
-[pi.md](pi.md) and [tmux.md](tmux.md).
+[pi.md](pi.md) and [tmux.md](tmux.md). (Inside [herdr](herdr.md) panes the
+wrapper stands down: pi runs bare there — see [herdr.md](herdr.md).)
 
 Two settings from `settings.toml` render conditionally into this file:
 `tmux_wrap = "off"` becomes a `PI_TMUX_WRAP=never` default, and a pinned

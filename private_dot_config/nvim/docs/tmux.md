@@ -6,10 +6,12 @@ the state is gone. tmux moves those processes into a server that runs
 independently of any terminal, so any terminal can plug back into exactly what
 was running — including a phone, over SSH, from bed.
 
-If you read nothing else: **`pi` wraps itself — every new conversation gets
-its own tmux session automatically; rejoin from any device with
-`tmux attach -t <name>`.** The rest of this page teaches that properly, plus
-the manual path for everything that isn't pi.
+If you read nothing else: **from a terminal tab, `pi` wraps itself — every
+new conversation gets its own tmux session automatically; rejoin from any
+device with `tmux attach -t <name>`.** (Inside [herdr](tools.md) panes the
+opposite: pi runs bare, and herdr is the detachable layer — see the herdr
+entry in [tools.md](tools.md).) The rest of this page teaches the tmux path
+properly, plus the manual path for everything that isn't pi.
 
 ---
 
@@ -49,8 +51,9 @@ Three words carry the whole idea:
 ## The daily habit — pi does it for you
 
 For pi conversations there is nothing to remember. Typing `pi` in a project
-directory **always starts a new conversation**, wrapped in its own tmux
-session:
+directory (from a terminal tab) **always starts a new conversation**, wrapped
+in its own tmux session — inside herdr panes pi runs bare instead (herdr is
+the detachable layer there; see [tools.md](tools.md)):
 
 ```bash
 cd code/chezmoi
