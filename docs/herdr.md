@@ -107,17 +107,17 @@ herdr hot-reloads the file: `herdr server reload-config` (or
 
 ## pi inside herdr
 
-Type `pi` in a herdr pane and it runs **bare** — the `pi()` wrapper
-skips tmux when `HERDR_ENV=1` (see [pi.md](pi.md)). That is what makes
-herdr's sidebar work: herdr detects agents by the pane's foreground
-process and its own docs are explicit that tmux sessions launched inside
-a herdr pane hide the agent behind the tmux client; the tmux server's
-environment snapshot also strips `HERDR_*`, which would silence the
-pi state-reporting integration. herdr's server keeps panes alive across
-detach and TUI exit, so nothing is lost by dropping the tmux layer here —
-herdr is the detachable-session layer, the same job tmux does elsewhere.
-Launch agents from Ghostty tabs (tmux-wrapped) **or** from herdr panes
-(bare, sidebar-visible) — not both layered.
+Type `pi` in a herdr pane and it runs **bare** — like everywhere else:
+`tmux_wrap = "off"` keeps the `pi()` wrapper stood down machine-wide
+(see [pi.md](pi.md)), so herdr is the durable home for agent sessions.
+That is also what makes herdr's sidebar work: herdr detects agents by
+the pane's foreground process and its own docs are explicit that tmux
+sessions launched inside a herdr pane hide the agent behind the tmux
+client; the tmux server's environment snapshot also strips `HERDR_*`,
+which would silence the pi state-reporting integration. herdr's server
+keeps panes alive across detach and TUI exit. Launch agents from herdr
+panes (sidebar-visible, durable); a bare `pi` in a Ghostty tab is fine
+for quick work — `pi -c` resumes it — but the tab is not durable.
 
 ## Agent integrations
 

@@ -36,8 +36,10 @@
 #      keys (Shift+Enter survives the tmux layer), OSC 52 clipboard,
 #      truecolor passthrough, mouse-wheel copy-mode scrollback, status-bar
 #      window separator — file-shape only; no tmux binary needed
-#  12. the pi wrapper: `pi` always CREATES a session (never attaches —
-#      rejoining is manual `tmux attach`), names it after the project dir
+#  12. the pi→tmux wrapper (wrapping is off by default -- herdr owns agent
+#      sessions -- so the wrap cases run under PI_TMUX_WRAP=force): `pi`
+#      CREATES a session (never attaches — rejoining is manual
+#      `tmux attach`), names it after the project dir
 #      (-2/-3 on collision) or the sanitized -n topic, passes
 #      --use-theme dotfiles-{light,dark} decided from the VIEWING terminal
 #      (pi cannot ask through the tmux layer; non-tty runs fall back dark),
@@ -51,11 +53,12 @@
 #      PATH), everything else reaches the binary verbatim (shim), and
 #      the rendered config validates via `herdr config check` when the
 #      machine has the formula
-#  13. the tmux_wrap setting: "on" (the committed value) renders no env
-#      default and leaves PI_TMUX_WRAP unset; "off" renders
-#      : ${PI_TMUX_WRAP:=never} into ~/.zshrc (second apply against a
-#      flipped settings file via DOTFILES_SETTINGS_FILE, the same override
-#      pattern as the themes dir); an invalid value fails the resolver
+#  13. the tmux_wrap setting: "off" (the committed value -- herdr owns
+#      agent sessions) renders : ${PI_TMUX_WRAP:=never} into ~/.zshrc so
+#      plain pi runs bare; "on" renders no env default and leaves
+#      PI_TMUX_WRAP unset (second apply against a flipped settings file
+#      via DOTFILES_SETTINGS_FILE, the same override pattern as the
+#      themes dir); an invalid value fails the resolver
 #  14. the shell integrations' shape: fzf + autosuggestions + syntax
 #      highlighting blocks render after compinit, ghost text uses indexed
 #      color 8 (no hex), and zsh-syntax-highlighting is the LAST source in
@@ -1332,36 +1335,37 @@ grep -qF 'manifest_check = false' "$NEWHOME/.config/herdr/config.toml" \
 ok "herdr update refused with the brew path; passthrough intact; config check ok;
     terminal-relative colors, update checks off"
 
-step "tmux_wrap setting: on leaves the env alone, off defaults it to never"
+step "tmux_wrap setting: off defaults pi to bare, on wraps again"
 # settings.toml (repo root) carries tmux_wrap = on|off. The committed value
-# is "on": the applied ~/.zshrc carries no default and PI_TMUX_WRAP stays
-# unset in interactive shells. "off" renders : ${PI_TMUX_WRAP:=never} into
-# ~/.zshrc -- proven with a second apply against a settings file flipped to
-# off (the resolver reads DOTFILES_SETTINGS_FILE, same override pattern as
-# DOTFILES_THEMES).
-[[ "$(python3 "$SOURCE/scripts/theme.py" --setting tmux_wrap)" == on ]] \
-  || die "resolver: committed tmux_wrap must read 'on'"
+# is "off" -- herdr owns agent sessions -- so ~/.zshrc renders
+# : ${PI_TMUX_WRAP:=never} and interactive shells see PI_TMUX_WRAP=never:
+# plain `pi` runs bare everywhere. "on" renders no default and the wrapper
+# wraps again -- proven with a second apply against a settings file flipped
+# to on (the resolver reads DOTFILES_SETTINGS_FILE, same override pattern
+# as DOTFILES_THEMES).
+[[ "$(python3 "$SOURCE/scripts/theme.py" --setting tmux_wrap)" == off ]] \
+  || die "resolver: committed tmux_wrap must read 'off'"
 grep -qF ': ${PI_TMUX_WRAP:=never}' "$NEWHOME/.zshrc" \
-  && die "tmux_wrap=on must not render a PI_TMUX_WRAP default into ~/.zshrc"
-fresh_zsh '[[ -z ${PI_TMUX_WRAP:-} ]]' >/dev/null \
-  || die "tmux_wrap=on: PI_TMUX_WRAP must stay unset in interactive shells"
-offsettings="$WORK/settings-off.toml"
-sed 's/^tmux_wrap = "on"/tmux_wrap = "off"/' "$SOURCE/settings.toml" > "$offsettings"
-offhome="$WORK/home-off"; mkdir -p "$offhome"
-DOTFILES_SETTINGS_FILE="$offsettings" \
-  chezmoi --source "$SOURCE" --destination "$offhome" apply \
-  || die "tmux_wrap=off: apply failed"
-grep -qF ': ${PI_TMUX_WRAP:=never}' "$offhome/.zshrc" \
   || die 'tmux_wrap=off must render ": ${PI_TMUX_WRAP:=never}" into ~/.zshrc'
-env -i HOME="$offhome" TERM=xterm-256color PATH="/usr/bin:/bin" \
-    /bin/zsh -l -i -c '[[ ${PI_TMUX_WRAP:-} == never ]]' >/dev/null 2>&1 \
+fresh_zsh '[[ ${PI_TMUX_WRAP:-} == never ]]' >/dev/null \
   || die "tmux_wrap=off: interactive shells must see PI_TMUX_WRAP=never"
+onsettings="$WORK/settings-on.toml"
+sed 's/^tmux_wrap = "off"/tmux_wrap = "on"/' "$SOURCE/settings.toml" > "$onsettings"
+onhome="$WORK/home-on"; mkdir -p "$onhome"
+DOTFILES_SETTINGS_FILE="$onsettings" \
+  chezmoi --source "$SOURCE" --destination "$onhome" apply \
+  || die "tmux_wrap=on: apply failed"
+grep -qF ': ${PI_TMUX_WRAP:=never}' "$onhome/.zshrc" \
+  && die "tmux_wrap=on must not render a PI_TMUX_WRAP default into ~/.zshrc"
+env -i HOME="$onhome" TERM=xterm-256color PATH="/usr/bin:/bin" \
+    /bin/zsh -l -i -c '[[ -z ${PI_TMUX_WRAP:-} ]]' >/dev/null 2>&1 \
+  || die "tmux_wrap=on: interactive shells must see PI_TMUX_WRAP unset"
 badsettings="$WORK/settings-bad.toml"
-sed 's/^tmux_wrap = "on"/tmux_wrap = "sometimes"/' "$SOURCE/settings.toml" > "$badsettings"
+sed 's/^tmux_wrap = "off"/tmux_wrap = "sometimes"/' "$SOURCE/settings.toml" > "$badsettings"
 DOTFILES_SETTINGS_FILE="$badsettings" \
   python3 "$SOURCE/scripts/theme.py" --setting tmux_wrap >/dev/null 2>&1 \
   && die "resolver: an invalid tmux_wrap value must fail loudly"
-ok "on leaves the env alone; off defaults it to never; invalid fails apply"
+ok "off defaults pi to bare (herdr owns agent sessions); on wraps again; invalid fails apply"
 
 step "pinned theme mode: the wrapper never overrides the pin"
 # theme = "light"|"dark" in settings.toml renders the single theme into
@@ -1386,7 +1390,7 @@ grep -qF 'PI_THEME_PINNED="dark"' "$pinnedhome/.zshrc" \
 cmp -s "$NEWHOME/.config/herdr/config.toml" "$pinnedhome/.config/herdr/config.toml" \
   || die "theme=dark: herdr config must not vary with the appearance setting"
 grep -qF ': ${PI_TMUX_WRAP:=never}' "$pinnedhome/.zshrc" \
-  && die "tmux_wrap=on must stay silent even when the theme is pinned"
+  || die "committed tmux_wrap=off must render the never default even when the theme is pinned"
 : > "$TLOG"; : > "$SESS"; : > "$PLOG"
 rc=0; out="$(env -i HOME="$pinnedhome" TERM=xterm-256color SHELL=/bin/zsh \
       PATH="$wbin:/usr/bin:/bin" FAKE_SESS="$SESS" FAKE_LOG="$TLOG" \

@@ -37,12 +37,15 @@ not be reintroduced.
 dot_zshrc.tmpl              # interactive shell: options, history, aliases,
                             # clipboard helpers (clipcopy/clippaste, over
                             # pbcopy/pbpaste), prompt; the pi() wrapper --
-                            # every new conversation gets
-                            # its own named tmux session (never attaches) and
-                            # probes the viewing terminal for the theme side;
-                            # the herdr() wrapper -- refuses self-updates
-                            # (`brew upgrade herdr` owns the keg); pi() goes
-                            # bare inside herdr panes (HERDR_ENV=1)
+                            # wraps a conversation in its own named tmux
+                            # session only when tmux_wrap=on or
+                            # PI_TMUX_WRAP=force (committed off: herdr owns
+                            # agent sessions, so pi runs bare everywhere),
+                            # never attaches, and probes the viewing terminal
+                            # for the theme side; goes bare inside herdr
+                            # panes too (HERDR_ENV=1, beats force); the
+                            # herdr() wrapper -- refuses self-updates
+                            # (`brew upgrade herdr` owns the keg)
                             # TWO conditional renders: tmux_wrap=off defaults
                             # PI_TMUX_WRAP to never; a pinned theme renders
                             # PI_THEME_PINNED (the wrapper must not inject

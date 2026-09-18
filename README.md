@@ -81,11 +81,11 @@ The decisions, so future-you doesn't have to re-derive them:
 - **Committed lockfile.** `lazy-lock.json` pins exact plugin revisions —
   a second machine reproduces the first, and a bad update is bisectable
   via `git log -p` on the lockfile.
-- **tmux only for detachability.** Local windows are Ghostty's job; tmux
-  exists so sessions survive disconnects and rejoin from anywhere — and
-  `pi` wraps itself automatically. [herdr](docs/herdr.md) is the same idea
-  one level up for agent work: panes owned by a server, with a live
-  agents sidebar; inside its panes pi runs bare.
+- **tmux by hand, herdr for agents.** Local windows are Ghostty's job.
+  tmux exists for sessions you send to the background yourself (nvim, a
+  dev server): `tmux new -s work`. Agent sessions have a dedicated home:
+  [herdr](docs/herdr.md) — panes owned by a server, a live agents
+  sidebar, and `pi` runs bare inside it (`tmux_wrap = "off"`).
 
 ## New machine
 
@@ -190,7 +190,7 @@ no hex, no per-app themes:
 theme = "system"                   # "system" | "light" | "dark"
 light_theme = "Flexoki Light"
 dark_theme = "Kanagawa Wave"
-tmux_wrap = "on"                   # "on" | "off": pi in detachable tmux sessions?
+tmux_wrap = "off"                  # "off" (default): pi runs bare -- herdr owns agent sessions
 ```
 
 `light_theme`/`dark_theme` are theme names resolved against the mirror
@@ -227,42 +227,38 @@ designated-successors table, rollback — is in
 
 ## Picking up from another device (SSH)
 
-The Mac is a server for your working sessions. pi conversations are
-already detachable. **From a terminal tab** (the default path), typing
-`pi` starts a new conversation in its own named tmux session:
+The Mac is a server for your working sessions, and agent sessions have
+one home: [herdr](docs/herdr.md). Launch it in a project directory, open
+a pane, and type `pi` — the conversation shows up in herdr's agents
+sidebar with live state, survives closing the terminal and the TUI, and
+`herdr` reattaches from anywhere:
 
 ```bash
 cd code/chezmoi
-pi                   # new tmux session "chezmoi" (hint printed), pi inside
-# ... work; leave by closing the terminal or Ctrl-b d — the session lives on
-tmux a -t chezmoi    # rejoin from ANY terminal: desk, laptop, phone over SSH
+herdr                # spaces on the left; Ctrl-b Shift-n for a new one
+pi                   # runs bare inside the pane -- sidebar-visible
+# ... work; detach with Ctrl-b q -- everything keeps running
+herdr                # reattach from ANY terminal: desk, laptop, phone over SSH
 ```
 
-The session dies when pi exits, so `tmux ls` lists exactly the live
-conversations. Anything that isn't pi — nvim, a dev server — wraps by
-hand: `tmux new -s work` … `tmux attach -t work`.
-
-**Or from [herdr](docs/herdr.md)** (the agent multiplexer): launch `herdr`
-in a project, open a pane, and type `pi` — it runs bare there (no tmux
-session), herdr's sidebar shows each conversation's live state, and
-`herdr` reattaches from anywhere. Same persistence, agent-aware. Pick one
-home per conversation: tmux (from tabs) or herdr (from its panes) — not
-both layered.
+A bare `pi` in a plain terminal tab is fine for quick work — conversations
+auto-save and `pi -c` resumes one — but closing the tab ends the process.
+Durability for agents comes from herdr. tmux remains for hand-rolled
+sessions (nvim, a dev server): `tmux new -s work` … `tmux attach -t work`.
 
 Why this works from anywhere: the SSH session reads the same `~/.zshrc`
 as the desk terminal (same history, same prompt), and the prompt, pi's
 TUI, and herdr's UI all render in the *viewing* terminal's palette — SSH
 from a light-mode phone and everything renders light, automatically,
-because the terminal in your hand decides. The pi wrapper even probes the
-connecting terminal for its light/dark side before creating the session,
-because pi's own detection can't see through the tmux layer.
+because the terminal in your hand decides.
 
 Getting in: enable **Remote Login** (System Settings → General → Sharing);
 use Blink Shell or Termius on the phone; put both ends on
 [Tailscale](https://tailscale.com) when away from home — **never expose
 port 22 to the internet**; keep the Mac awake with `caffeinate -dims`
-(a sleeping Mac refuses SSH). Forgot to start under tmux? Every pi
-conversation auto-saves — `pi -c` resumes the latest from any machine.
+(a sleeping Mac refuses SSH). Closed the tab before the agent finished?
+Every pi conversation auto-saves — `pi -c` resumes the latest from any
+machine, and anything you ran under herdr never stopped.
 The complete walkthrough — the mental model, phone-client setup, the
 handoff end to end, troubleshooting — is installed inside nvim
 (`<leader>?` → tmux) and sourced at
@@ -278,9 +274,9 @@ config, setting by setting, plus the keys and the SSH setup).
 | Run the test suite | `scripts/smoke-test.sh` (~1s; `--nvim` for plugin restore) |
 | Change themes | edit `settings.toml` → `chezmoi apply` |
 | Update plugins | `:Lazy update` → `chezmoi re-add ~/.config/nvim/lazy-lock.json` |
-| List / rejoin pi conversations (from a terminal tab) | `tmux ls` / `tmux a -t <name>` |
-| Open herdr / detach / reattach | `herdr` / `Ctrl-b` `q` / `herdr` — see [docs/herdr.md](docs/herdr.md) |
+| Agent sessions: open / detach / reattach | `herdr` / `Ctrl-b` `q` / `herdr` — see [docs/herdr.md](docs/herdr.md) |
 | Resume last pi conversation | `pi -c` |
+| Manual detachable session (nvim, dev server) | `tmux new -s work` … `tmux attach -t work` |
 | In-nvim cheatsheet / keymap search | `<leader>?` / `<leader>fk` |
 | Health check | `:checkhealth`, `:Lazy check` |
 | The maintainer's guide | [docs/developing.md](docs/developing.md) |

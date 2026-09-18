@@ -40,11 +40,23 @@ keymap.set("n", "<C-j>", "<C-w>j", { desc = "Window below" })
 keymap.set("n", "<C-k>", "<C-w>k", { desc = "Window above" })
 keymap.set("n", "<C-l>", "<C-w>l", { desc = "Window right" })
 
+-- the same movement on ctrl+alt: the chord herdr's pane focus uses, so
+-- window/pane movement is one reflex across the two tools. Ghostty passes
+-- ctrl+alt+letters through (macOS option-composing needs Option alone),
+-- and nothing else in this config claims them.
+keymap.set("n", "<C-A-h>", "<C-w>h", { desc = "Window left" })
+keymap.set("n", "<C-A-j>", "<C-w>j", { desc = "Window below" })
+keymap.set("n", "<C-A-k>", "<C-w>k", { desc = "Window above" })
+keymap.set("n", "<C-A-l>", "<C-w>l", { desc = "Window right" })
+
 -- terminal mode: escape back to the code window from the REPL.
 -- <C-j> is deliberately absent -- the REPL is the bottom split, nothing below.
 keymap.set("t", "<C-k>", [[<C-\><C-n><C-w>k]], { desc = "Leave terminal, window above" })
 keymap.set("t", "<C-h>", [[<C-\><C-n><C-w>h]], { desc = "Leave terminal, window left" })
 keymap.set("t", "<C-l>", [[<C-\><C-n><C-w>l]], { desc = "Leave terminal, window right" })
+keymap.set("t", "<C-A-k>", [[<C-\><C-n><C-w>k]], { desc = "Leave terminal, window above" })
+keymap.set("t", "<C-A-h>", [[<C-\><C-n><C-w>h]], { desc = "Leave terminal, window left" })
+keymap.set("t", "<C-A-l>", [[<C-\><C-n><C-w>l]], { desc = "Leave terminal, window right" })
 
 -- maximize / restore the current window (replaces vim-maximizer)
 keymap.set("n", "<leader>sm", function()

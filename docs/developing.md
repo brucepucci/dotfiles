@@ -113,7 +113,8 @@ the result the way real sessions do. It covers:
   carries no hex at all (terminal-following theme — the SSH rule), the
   update policy is pinned (`version_check`/`manifest_check` off), and it
   renders byte-identical across appearance modes
-- `tmux_wrap` on/off rendering (second apply against a flipped settings
+- `tmux_wrap` off/on rendering (committed off defaults pi to bare via a
+  `PI_TMUX_WRAP=never` default; second apply against a flipped settings
   file via `DOTFILES_SETTINGS_FILE`)
 - the shell integrations' shape (fzf/autosuggestions/syntax-highlighting
   source after compinit; ghost text is indexed color 8;
