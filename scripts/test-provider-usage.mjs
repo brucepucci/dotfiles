@@ -86,6 +86,15 @@ const sorted = mod.sortWindows([mod.zaiWindow({ unit: 6, number: 2, percentage: 
 check("sortWindows 5h < week < 2w", sorted.map((w) => w.label).join(",") === "5h,week,2w", sorted.map((w) => w.label).join(","));
 check("sortWindows unknown sinks", mod.sortWindows([{ label: "quota", pct: 0, resetMs: null }, w5h])[0].label === "5h");
 
+const c5h = mod.codexWindow({ used_percent: 3.4, limit_window_seconds: 18000, reset_at: Math.floor((NOW + 3600e3) / 1000) }, NOW);
+const cWeek = mod.codexWindow({ used_percent: 16, limit_window_seconds: 604800, reset_at: Math.floor((NOW + 4 * DAY) / 1000) }, NOW);
+check("codexWindow 5h (epoch s -> ms)", c5h?.label === "5h" && c5h.pct === 3 && c5h.resetMs === NOW + 3600e3);
+check("codexWindow week", cWeek?.label === "week" && cWeek.pct === 16);
+check("codexWindow unknown span -> 'quota'", mod.codexWindow({ used_percent: 0, limit_window_seconds: 900 }, NOW)?.label === "quota");
+check("codexWindow reset >30d ahead -> null resetMs", mod.codexWindow({ used_percent: 0, limit_window_seconds: 18000, reset_at: Math.floor((NOW + 60 * DAY) / 1000) }, NOW)?.resetMs === null);
+check("codexWindow no used_percent -> null", mod.codexWindow({ limit_window_seconds: 18000 }) === null);
+check("codexWindow null window -> null", mod.codexWindow(null) === null);
+
 // formatRow THROUGH the footer's sanitizer -- whitespace is not a separator.
 const id = (_n, t) => t;
 const row = mod.formatRow({
@@ -128,11 +137,14 @@ const statuses = new Map();
 let fetchMode = "ok"; // ok | fail | hang
 let zaiCalls = 0;
 let claudeCalls = 0;
+let codexCalls = 0;
 let hangingReject;
 globalThis.fetch = async (_url, opts) => {
 	const url = String(_url);
 	const isZai = url.includes("api.z.ai");
+	const isCodex = url.includes("chatgpt.com");
 	if (isZai) zaiCalls++;
+	else if (isCodex) codexCalls++;
 	else claudeCalls++;
 	if (fetchMode === "fail") return { ok: false, status: 500, json: async () => ({}) };
 	if (fetchMode === "hang")
@@ -154,10 +166,18 @@ globalThis.fetch = async (_url, opts) => {
 							],
 						},
 					}
-				: {
-						five_hour: { utilization: 0, resets_at: new Date(NOW + 3600e3).toISOString() },
-						seven_day: { utilization: 2.0, resets_at: new Date(NOW + 4 * DAY).toISOString() },
-					},
+				: isCodex
+					? {
+							plan_type: "plus",
+							rate_limit: {
+								primary_window: { used_percent: 3.4, limit_window_seconds: 18000, reset_at: Math.floor((NOW + 3600e3) / 1000) },
+								secondary_window: { used_percent: 16, limit_window_seconds: 604800, reset_at: Math.floor((NOW + 4 * DAY) / 1000) },
+							},
+						}
+					: {
+							five_hour: { utilization: 0, resets_at: new Date(NOW + 3600e3).toISOString() },
+							seven_day: { utilization: 2.0, resets_at: new Date(NOW + 4 * DAY).toISOString() },
+						},
 	};
 };
 
@@ -221,6 +241,16 @@ await handlers.model_select({ model: { provider: "anthropic" } }, makeCtx("anthr
 await settle();
 check("claude row rendered", (statuses.get("provider-usage") ?? "").includes("claude"), statuses.get("provider-usage"));
 
+// Switch to openai-codex (ChatGPT Plus/Pro OAuth).
+await handlers.model_select({ model: { provider: "openai-codex" } }, makeCtx("openai-codex"));
+await settle();
+check("gpt row rendered (plan + windows)", (statuses.get("provider-usage") ?? "").includes("gpt plus"), statuses.get("provider-usage"));
+check(
+	"codex windows 5h < week",
+	((statuses.get("provider-usage") ?? "").replace(/<[^>]+>/g, "").match(/5h 3% .*week 16%/) !== null),
+	statuses.get("provider-usage"),
+);
+
 // Switch to an unsupported provider -> row hidden.
 await handlers.model_select({ model: { provider: "openai" } }, makeCtx("openai"));
 check("row cleared for other providers", statuses.get("provider-usage") === undefined);
@@ -266,6 +296,15 @@ fetchMode = "ok";
 	await h.session_start({}, makeCtx("anthropic", true, { auth: { apiKey: "oauth-token" }, source: "OAuth" }));
 	await settle();
 	check("M-1: OAuth anthropic still fetched", claudeCalls === before + 1 && (statuses.get("provider-usage") ?? "").includes("claude"), `claudeCalls=+${claudeCalls - before}`);
+}
+{
+	const before = codexCalls;
+	const h = {};
+	const st = new Map();
+	mod.default({ on: (n, f) => (h[n] = f), ui: { setStatus: (k, v) => st.set(k, v) } });
+	await h.session_start({}, makeCtx("openai-codex", true, { auth: { apiKey: "tok" }, source: "stored" }));
+	await settle();
+	check("M-1: API-key codex skipped", codexCalls === before && st.get("provider-usage") === undefined, `codexCalls=+${codexCalls - before}`);
 }
 
 // A render() that throws must not take the session down, and must not

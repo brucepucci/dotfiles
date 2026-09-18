@@ -151,6 +151,7 @@ pi's built-in stats, for whichever provider owns the active model:
 
 ```
 z.ai pro · 5h 3% (resets 14:32) · week 28% (resets Sat 09:07) · 37 tok/s
+gpt plus · 5h 16% (resets 14:32) · week 3% (resets Sat 09:07) · 55 tok/s
 ```
 
 - **tok/s** is output tokens per second — session average (generated
@@ -166,6 +167,11 @@ auth has no plan limits and is skipped). Note pi's own docs: harness
 usage draws from extra usage billed per token, not plan limits — the
 claude numbers reflect overall plan headroom (Claude Code, claude.ai),
 not what pi consumes.
+- **gpt quota** comes from `chatgpt.com/backend-api/wham/usage` (what the
+Codex CLI reads) and only exists when pi is `/login`-ed into ChatGPT
+Plus/Pro — pi's ChatGPT-plan provider id is `openai-codex`. The plain
+API-key `openai` provider is metered billing, has no plan limits, and
+stays hidden.
 
 Quota polls every 60s (active provider only) and on model switches;
 failed polls keep the last known-good quota, which ages out after ten

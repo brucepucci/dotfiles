@@ -8,6 +8,7 @@
  *
  *   z.ai pro · 5h 3% (resets 14:32) · week 28% (resets Sat 09:07) · 37 tok/s
  *   claude · 5h 0% (resets 18:10) · week 2% (resets Fri 02:00) · 55 tok/s
+ *   gpt plus · 5h 16% (resets 14:32) · week 3% (resets Sat 09:07) · 55 tok/s
  *
  * - tok/s: output tokens per second, session average -- generated tokens /
  *   generation time, anchored at the first streamed token (excludes
@@ -18,6 +19,11 @@
  * - Claude quota: GET api.anthropic.com/api/oauth/usage with the OAuth token
  *   getProviderAuth resolves (refreshed when expired) after /login into
  *   Claude Pro/Max. API-key auth has no plan quota and is skipped.
+ * - ChatGPT quota: GET chatgpt.com/backend-api/wham/usage (what the Codex
+ *   CLI/console reads) with the OAuth token getProviderAuth resolves
+ *   (refreshed when expired) after /login into ChatGPT Plus/Pro -- pi's
+ *   provider id there is "openai-codex". The API-key "openai" provider is
+ *   metered billing, has no plan quota, and is skipped.
  *
  * The active provider's quota polls every 60s and on model switches; the
  * last known-good quota survives failed polls and ages out after 10 minutes.
@@ -155,6 +161,44 @@ async function fetchClaude(apiKey: string, signal: AbortSignal): Promise<Quota |
 	return { plan: null, windows, fetchedAt: Date.now() };
 }
 
+/** ChatGPT/Codex rate-limit window -> QuotaWindow. The span is the label
+ *  (18000s = "5h", 604800s = "week", anything else sinks to "quota");
+ *  reset_at is epoch seconds -- bogus values become null. */
+export function codexWindow(
+	win: { used_percent?: number; limit_window_seconds?: number; reset_at?: number } | null | undefined,
+	now: number = Date.now(),
+): QuotaWindow | null {
+	if (typeof win?.used_percent !== "number") return null;
+	const label = win.limit_window_seconds === 18000 ? "5h" : win.limit_window_seconds === 604800 ? "week" : "quota";
+	let resetMs: number | null = null;
+	if (typeof win.reset_at === "number" && win.reset_at > 0) {
+		const ms = win.reset_at < 1e12 ? win.reset_at * 1000 : win.reset_at;
+		if (ms - now <= RESET_MAX_AHEAD_MS) resetMs = ms;
+	}
+	return { label, pct: Math.round(win.used_percent), resetMs };
+}
+
+async function fetchOpenAI(apiKey: string, signal: AbortSignal): Promise<Quota | null> {
+	const body = (await fetchJson(
+		"https://chatgpt.com/backend-api/wham/usage",
+		{ Authorization: `Bearer ${apiKey}` },
+		signal,
+	)) as {
+		plan_type?: string;
+		rate_limit?: {
+			primary_window?: Parameters<typeof codexWindow>[0];
+			secondary_window?: Parameters<typeof codexWindow>[0];
+		} | null;
+	};
+	const windows = sortWindows(
+		[codexWindow(body.rate_limit?.primary_window), codexWindow(body.rate_limit?.secondary_window)].filter(
+			(w): w is QuotaWindow => w !== null,
+		),
+	);
+	if (!windows.length) return null;
+	return { plan: body.plan_type ?? null, windows, fetchedAt: Date.now() };
+}
+
 // ---------- provider table (the single place a provider is spelled out) ----------
 
 const PROVIDERS: Record<
@@ -165,6 +209,10 @@ const PROVIDERS: Record<
 	// The OAuth usage endpoint rejects plain API keys; only Claude Pro/Max
 	// logins (AuthResult.source === "OAuth") have plan quota to show.
 	anthropic: { head: "claude", oauthOnly: true, fetch: fetchClaude },
+	// Same gate as anthropic: the ChatGPT usage endpoint 401s on anything
+	// but an OAuth access token. pi's ChatGPT-plan provider id is
+	// "openai-codex"; plain API-key "openai" is not a plan.
+	"openai-codex": { head: "gpt", oauthOnly: true, fetch: fetchOpenAI },
 };
 
 // ---------- extension ----------
