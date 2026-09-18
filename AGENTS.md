@@ -108,8 +108,9 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # runbook as a pi skill (/skill:chezmoi-runbook),
                             # smoke-guarded against this file;
                             # extensions/provider-usage.ts — a
-                            # footer row with plan quota (z.ai + Claude Pro
-                            # OAuth) and output tok/s for the active provider;
+                            # footer row with plan quota (z.ai, Claude Pro
+                            # OAuth, ChatGPT/Codex OAuth) and output tok/s
+                            # for the active provider;
                             # extensions/title-screen.ts — the startup splash:
                             # the pi logo mark in the output-text color
                             # (the text role — the dotfiles themes map it
