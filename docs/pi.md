@@ -41,17 +41,16 @@ walkthrough in [tmux.md](tmux.md); the wrapper's own rules:
   tmux server: the session would flash the alternate screen and swallow
   the output.
 - **Triages `pi update`** — the one subcommand the wrapper inspects: the
-  Brewfile installs pi from Homebrew, so anything whose target is the pi
-  binary itself is refused with the real upgrade path
-  (`brew upgrade pi-coding-agent`) — bare `update`, the `self`/`pi`
-  aliases (also behind `--extensions`, where they widen to a combined
-  update), `--self`, `--force`, `--all`, and targetless runs whose only
-  arguments are trust flags (`pi update --approve`). The classifier is
-  default-deny: any flag it doesn't recognize refuses rather than
-  guesses. Package and model-catalog targets (`--extensions`,
-  `--models`, `--extension <source>`, an `npm:`/`git:` spec) only write
-  under `~/.pi/agent` and fall through like every other management
-  subcommand.
+  Brewfile installs pi from Homebrew, so the wrapper requires an
+  **explicit** package or model-catalog target (`--extensions`,
+  `--models`, `--extension <source>`, an `npm:`/`git:` spec — the only
+  things that stay inside `~/.pi/agent`) and refuses everything else
+  with the real upgrade path (`brew upgrade pi-coding-agent`): bare
+  `update`, the `self`/`pi` aliases, `--self`/`--force`/`--all`,
+  targetless runs in any spelling — trust flags `-a`/`-na`/
+  `--approve`/`--no-approve` or an empty positional — and every
+  unlisted flag, short or long (default-deny). Targeted forms fall
+  through like every other management subcommand.
 - **Typeahead is preserved**: keystrokes that arrive while the theme probe
   holds the terminal are stashed and re-injected into the session.
 

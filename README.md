@@ -301,9 +301,11 @@ whole verification runbook for you, any time: `/skill:chezmoi-runbook`.
 - **pi** — unpinned Homebrew formula; `brew upgrade pi-coding-agent` lands
   the latest (plus its model catalogs). Never `pi update` for the binary —
   it lives in a brew-owned keg, the formula turns pi's own version check
-  off, and the shell wrapper refuses every `pi update` whose target is
-  the binary (bare, `self`/`pi`, `--self`, `--force`, `--all`, targetless
-  trust flags; unknown flags refuse too — default-deny). Its npm
+  off, and the shell wrapper requires an explicit package/model target
+  before `pi update` passes through: bare, `self`/`pi`,
+  `--self`/`--force`/`--all`, targetless trust flags (`-a`, `--approve`,
+  …), empty positionals, and any unlisted flag all refuse — default-deny.
+  Its npm
   packages — the `packages` entries in
   [docs/pi.md](docs/pi.md#packages-npm-extensions) — update separately:
   `pi update --extensions` moves all unpinned specs,
