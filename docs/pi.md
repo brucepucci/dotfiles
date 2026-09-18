@@ -15,6 +15,7 @@ Three pieces, kept deliberately separate:
 | The chezmoi-runbook skill | `dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl` → `~/.pi/agent/skills/chezmoi-runbook/SKILL.md` (`/skill:chezmoi-runbook`) | **yes — generated from AGENTS.md at apply time** |
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
 | The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
+| The permission-system package | `"packages"` in `dot_pi/agent/settings.json.tmpl` + `dot_pi/agent/extensions/pi-permission-system/config.json` → policy config | **yes — entry in the template; config a plain static file** |
 | The API key | `ZAI_API_KEY` in `~/.zsh/secrets.zsh` (or `~/.pi/agent/auth.json` via `/login`) | **no — a secret, never in the repo** |
 
 ## The tmux wrapper (`pi()` in `~/.zshrc`)
@@ -75,9 +76,10 @@ viewing terminal even over SSH — the reasoning is in
 ```json
 {
   "defaultProvider": "zai",
-  "defaultModel": "glm-5.3",
-  "enabledModels": [ ... anthropic and zai models ... ],
-  "theme": "dotfiles-light/dotfiles-dark"
+  "defaultModel": "glm-5.3-flash",
+  "enabledModels": [ ... zai and openai-codex models ... ],
+  "theme": "dotfiles-light/dotfiles-dark",
+  "packages": ["npm:@gotgenes/pi-permission-system"]
 }
 ```
 
@@ -91,6 +93,33 @@ viewing terminal even over SSH — the reasoning is in
   template-sourced, `chezmoi re-add` skips it: after changing defaults via
   `/model`, fold them into `dot_pi/agent/settings.json.tmpl` by hand (see
   [developing.md](developing.md#pi-self-bumps)).
+
+## Packages (npm extensions)
+
+`packages` in `settings.json` carries npm-installed extensions. Today that
+is one:
+
+- **`@gotgenes/pi-permission-system`** — permission gates over tool, bash,
+  path, MCP, and skill access (`allow` / `ask` / `deny`; `path` rules cut
+  across every tool and bash at once, so a deny can't be overridden by a
+  per-tool allow). Unpinned, so `pi update --extensions` moves it — pin
+  with `npm:@gotgenes/pi-permission-system@<version>` to freeze it.
+
+Three distinct pieces, only two of them managed:
+
+| Piece | Where | Managed? |
+|---|---|---|
+| The settings entry | `"packages"` in `dot_pi/agent/settings.json.tmpl` | **yes** |
+| The policy config | `~/.pi/agent/extensions/pi-permission-system/config.json`, source `dot_pi/agent/extensions/private_pi-permission-system/config.json` | **yes — plain static file** (currently `yoloMode: true`: `ask` results auto-approve) |
+| The package payload | `~/.pi/agent/npm/…`, installed by `pi install npm:@gotgenes/pi-permission-system` | **no — npm's tree, ignored** |
+
+On a **fresh machine**, `chezmoi apply` writes the entry but not the
+payload — pi auto-installs missing *project* packages at startup, never
+user-scope ones. Run `pi install npm:@gotgenes/pi-permission-system`
+once after the first apply (idempotent — it reconciles the existing
+install). `pi list` shows what's registered; the review log lands in
+`~/.pi/agent/extensions/pi-permission-system/logs/` (unmanaged,
+ignored).
 
 ## The chezmoi-runbook skill (managed)
 

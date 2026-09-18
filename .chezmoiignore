@@ -27,9 +27,13 @@ docs/
 
 # Same idea for the pi coding agent (~/.pi/agent/): auth.json (written by
 # /login) holds a copy of the Z.ai API key and is a SECRET, models-store.json
-# is a catalog cache pi refetches from the provider, and sessions/ is
-# transcripts. An accidental `chezmoi add ~/.pi` must not sweep any of them
-# into the repo.
+# is a catalog cache pi refetches from the provider, sessions/ is transcripts,
+# npm/ is pi's installed-package tree (the payload behind settings.json's
+# "packages" entries, owned by `pi install`), and the permission system's
+# logs/ is runtime output. An accidental `chezmoi add ~/.pi` must not sweep
+# any of them into the repo.
 .pi/agent/auth.json
 .pi/agent/models-store.json
 .pi/agent/sessions
+.pi/agent/npm
+.pi/agent/extensions/pi-permission-system/logs
