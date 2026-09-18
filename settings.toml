@@ -13,16 +13,14 @@
 #                names are the mirror's file names in themes/)
 #
 # BEHAVIOR
-#   tmux_wrap    "off" -- pi runs bare: herdr owns agent sessions (its
-#                server keeps panes alive across detach, the agents sidebar
-#                only sees pi running bare, and conversations resume after
-#                a restart via the pi integration). tmux stays for hand-
-#                rolled sessions (nvim, a dev server): tmux new -s work.
-#                "on"  -- legacy: every new pi conversation gets its own
-#                detachable tmux session (detach Ctrl-b d, rejoin from any
-#                device with `tmux attach -t <name>`). Either way the env
-#                override wins per shell: PI_TMUX_WRAP=never for one
-#                shell, =force to wrap for one run despite the setting.
+#   tmux_wrap    "on"  -- every new pi conversation gets its own detachable
+#                tmux session (the default; detach Ctrl-b d, rejoin from
+#                any device with `tmux attach -t <name>`)
+#                "off" -- pi runs bare: no sessions, nothing to reattach
+#                from the phone (`pi -c` still resumes a conversation from
+#                any machine). The env override still wins per machine:
+#                PI_TMUX_WRAP=never for one shell, =force to wrap for one
+#                run despite the setting.
 #
 # Every surface this repo manages renders from the two theme names:
 #   Ghostty        the theme itself (light:/dark: pair when theme=system)
@@ -47,4 +45,4 @@ dark_theme = "Kanagawa Wave"
 
 # pi conversations in tmux? on = detachable sessions (the feature), off =
 # bare pi. Rendered into ~/.zshrc at apply time; see the header above.
-tmux_wrap = "off"
+tmux_wrap = "on"

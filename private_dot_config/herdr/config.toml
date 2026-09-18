@@ -11,34 +11,11 @@
 #
 # Updates: the binary is brew-owned, so background checks are off and the
 # self-updater is refused by the `herdr` wrapper in ~/.zshrc -- upgrade
-# with `brew upgrade herdr` like every other formula. Keys: pane focus
-# mirrors nvim's <C-hjkl> reflex (see the [keys] section). See docs/herdr.md.
+# with `brew upgrade herdr` like every other formula. See docs/herdr.md.
 onboarding = false
 
 [theme]
 name = "terminal"
-
-[keys]
-# nvim cohesion (keymaps.lua: "Chords (<C-hjkl>) are always movement,
-# never actions"): pane focus works without the prefix. Plain ctrl+hjkl
-# is the one form upstream warns against -- ctrl+j is Enter and ctrl+h is
-# backspace inside shells and editors (and herdr's own text fields), and
-# nvim running inside a herdr pane would lose its own window movement.
-# ctrl+alt is the family terminals leave free (herdr's prefix-free guide;
-# unaffected by macOS option-key composing, nothing in this repo claims
-# it). Lists layer the direct chords on top of the prefix chords.
-focus_pane_left  = ["prefix+h", "ctrl+alt+h"]
-focus_pane_down  = ["prefix+j", "ctrl+alt+j"]
-focus_pane_up    = ["prefix+k", "ctrl+alt+k"]
-focus_pane_right = ["prefix+l", "ctrl+alt+l"]
-
-# Jump back to the previously focused pane -- the ctrl+6 alternate-buffer
-# reflex; space is this repo's nvim leader.
-last_pane = ["prefix+space"]
-
-# Maximize/restore the focused pane (nvim: <leader>sm); the direct chord
-# is herdr's own prefix-free recommendation.
-zoom = ["prefix+z", "ctrl+alt+z"]
 
 [update]
 channel = "stable"

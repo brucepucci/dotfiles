@@ -19,29 +19,38 @@ troubleshooting) is also installed inside the editor at
 `~/.config/nvim/docs/tmux.md`, reachable from nvim with `<leader>?` —
 useful when you're already SSH'd in. This page is the repo reference.
 
-## pi runs bare — herdr owns agent sessions
+## pi wraps itself (outside herdr)
 
-pi does not touch tmux here. `tmux_wrap = "off"` in settings.toml keeps
-the wrapper stood down, so `pi` runs plain in whatever terminal launched
-it — and agent sessions have a different durable home:
-[herdr](herdr.md). Its server keeps panes (shells, agents, dev servers)
-alive across detach and terminal close, its agents sidebar shows each
-conversation's live state, and with the pi integration installed,
-conversations resume after a server restart. `herdr` reattaches from
-anywhere, including over SSH.
+You do not run tmux for pi. Typing `pi` in a project directory — from a
+plain terminal tab — starts a **new** conversation, wrapped in its own
+named tmux session (the wrapper is in `~/.zshrc` — details in
+[pi.md](pi.md)):
 
-A bare `pi` in a terminal tab is still useful for quick work — the
-conversation auto-saves and `pi -c` resumes it — but closing the tab ends
-the process. Durability for agents comes from herdr, not from tmux.
+```bash
+cd code/chezmoi
+pi                   # -> "pi: tmux session \"chezmoi\" (detach Ctrl-b d; rejoin: tmux attach -t chezmoi)"
+# ... work; detach with Ctrl-b d, or just close the terminal
+tmux a -t chezmoi    # rejoin from ANY terminal: desk, laptop, phone over SSH
+```
 
-If you ever want the old auto-wrap behavior back (every `pi` conversation
-in its own named tmux session), flip `tmux_wrap = "on"` in settings.toml
-— or export `PI_TMUX_WRAP=force` for one run. The wrapper's details
-(naming, collisions, the theme probe) are in [pi.md](pi.md).
+> **Inside [herdr](herdr.md) this does not apply:** there the wrapper
+> stands down and pi runs bare in the herdr pane — herdr is the
+> detachable-session layer in its own panes, and its agents sidebar only
+> sees pi that way. Everything on this page is the Ghostty-tab path.
 
-For anything that isn't pi — nvim, a dev server, plain shells — tmux is
-still the by-hand tool, same survival properties: `tmux new -s work`,
-work, `Ctrl-b d`, later `tmux attach -t work`.
+- **Naming**: the project directory's basename; a collision mints a
+  numbered sibling (`chezmoi-2`, `chezmoi-3`, …); `pi -n "auth refactor"`
+  names the session `auth-refactor` and pi's own session display name. An
+  explicitly named topic that is already live is refused with the rejoin
+  command — nothing is silently renamed.
+- **Lifecycle**: the session dies when pi exits, so `tmux ls` lists
+  exactly the live conversations. No junk drawer.
+- **Rejoining is always explicit** — `pi` never attaches to anything, so
+  it can never drop you into a stale session by surprise.
+
+For anything that isn't pi — nvim, a dev server, plain shells — wrap by
+hand, same survival properties: `tmux new -s work`, work, `Ctrl-b d`,
+later `tmux attach -t work`.
 
 ## The managed config, setting by setting
 

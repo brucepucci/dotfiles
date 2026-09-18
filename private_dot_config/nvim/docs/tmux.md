@@ -6,14 +6,12 @@ the state is gone. tmux moves those processes into a server that runs
 independently of any terminal, so any terminal can plug back into exactly what
 was running — including a phone, over SSH, from bed.
 
-If you read nothing else: **agent sessions live in herdr** — launch
-`herdr` in a project, type `pi` in a pane, detach with `Ctrl-b` then `q`,
-reattach from any device with `herdr`. pi runs bare everywhere else
-(`tmux_wrap = "off"`), so tmux on this Mac is the by-hand tool for
-sessions *you* choose to background — nvim, a dev server:
-`tmux new -s work` … `tmux attach -t work`. The rest of this page teaches
-that properly. (The herdr entry in [tools.md](tools.md) is the agent-side
-counterpart.)
+If you read nothing else: **from a terminal tab, `pi` wraps itself — every
+new conversation gets its own tmux session automatically; rejoin from any
+device with `tmux attach -t <name>`.** (Inside [herdr](tools.md) panes the
+opposite: pi runs bare, and herdr is the detachable layer — see the herdr
+entry in [tools.md](tools.md).) The rest of this page teaches the tmux path
+properly, plus the manual path for everything that isn't pi.
 
 ---
 
@@ -50,23 +48,22 @@ Three words carry the whole idea:
   press the command key. Two presses, not a chord. It feels odd for a day and
   then disappears into muscle memory.
 
-## The daily habit — by hand, for the sessions you choose
+## The daily habit — pi does it for you
 
-pi conversations don't use tmux (herdr owns agent sessions — launch them
-in a herdr pane and detach with `Ctrl-b` `q`). For everything else you
-background a session yourself, same survival properties:
+For pi conversations there is nothing to remember. Typing `pi` in a project
+directory (from a terminal tab) **always starts a new conversation**, wrapped
+in its own tmux session — inside herdr panes pi runs bare instead (herdr is
+the detachable layer there; see [tools.md](tools.md)):
 
 ```bash
 cd code/chezmoi
-tmux new -s work      # nvim, a dev server, long builds — whatever outlives the tab
-# ... work; detach with Ctrl-b d, or just close the terminal
-tmux attach -t work   # rejoin from ANY terminal: desk, laptop, phone over SSH
+pi      # -> pi: tmux session "chezmoi"
+        #    (detach Ctrl-b d; rejoin: tmux attach -t chezmoi)
 ```
 
-That is the entire ceremony. If you ever turn `tmux_wrap = "on"` on in
-settings.toml, `pi` rejoins this world automatically — the printed line
-names the session it minted, and the thin status bar at the bottom of the
-window is the only visible trace of tmux. Naming, no thinking required:
+That one printed line is the entire ceremony. pi behaves exactly as always —
+the thin status bar at the bottom of the window is the only visible trace of
+tmux. Naming, no thinking required:
 
 - the project directory's basename — `chezmoi`
 - a collision mints a numbered sibling — `chezmoi-2`, `chezmoi-3`, …

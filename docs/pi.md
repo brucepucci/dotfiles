@@ -20,20 +20,16 @@ Three pieces, kept deliberately separate:
 
 ## The tmux wrapper (`pi()` in `~/.zshrc`)
 
-By default `pi` runs **bare**: `tmux_wrap = "off"` in settings.toml
-stands the wrapper down, because [herdr](herdr.md) owns agent sessions —
-its server keeps panes alive across detach, and its agents sidebar only
-sees pi running directly in a pane. A conversation started bare still
-auto-saves; `pi -c` resumes it, but closing the terminal ends the
-process — run agents inside herdr when durability matters.
+Typing `pi` in a project directory normally starts a **new** conversation,
+wrapped in its own named tmux session — so every conversation survives
+closing the terminal and can be rejoined from any device. The session dies
+when pi exits, so `tmux ls` is exactly the live conversations. Full
+walkthrough in [tmux.md](tmux.md); the wrapper's own rules:
 
-The wrapper still exists for the opt-in tmux path: with
-`tmux_wrap = "on"` (or `PI_TMUX_WRAP=force` for one run), typing `pi` in
-a project directory starts a **new** conversation wrapped in its own
-named tmux session — it survives closing the terminal and rejoins from
-any device. The session dies when pi exits, so `tmux ls` is exactly the
-live conversations. Full walkthrough in [tmux.md](tmux.md); the wrapper's
-own rules:
+> **The herdr exception:** inside a [herdr](herdr.md) pane the wrapper
+> stands down and pi runs bare — herdr is the detachable-session layer
+> there, and its agent sidebar only sees pi running directly in a pane.
+> Everything below describes the tmux path.
 
 - **Never attaches.** Rejoining is explicitly `tmux attach -t <name>` —
   `pi` can't drop you into a stale session.
@@ -66,10 +62,9 @@ own rules:
 - **Typeahead is preserved**: keystrokes that arrive while the theme probe
   holds the terminal are stashed and re-injected into the session.
 
-Knobs: wrapping is off by default; `tmux_wrap = "on"` in `settings.toml`
-re-enables it machine-wide (removing the `PI_TMUX_WRAP=never` default
-from `~/.zshrc`); the env var still wins per shell (`never`, or `force`
-for one run).
+Knobs: `tmux_wrap = "off"` in `settings.toml` disables wrapping for the
+whole machine (rendered as a `PI_TMUX_WRAP=never` default in `~/.zshrc`);
+the env var still wins per shell (`never`, or `force` for one run).
 
 ## The theme probe (why the wrapper asks the terminal)
 

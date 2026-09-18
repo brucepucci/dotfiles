@@ -238,19 +238,20 @@ then `chezmoi apply`. Per-tool docs live in the repo's `docs/` folder; the
 maintainer's guide is `docs/developing.md`.
 
 ### tmux *(CLI)*
-Detachable terminal sessions — the "leave the desk, continue from the
-phone" tool for work *you* choose to background (nvim, a dev server, long
-builds): `tmux new -s work`, `Ctrl-b` `d` to detach, `tmux attach -t work`
-to rejoin from any device. pi conversations do not use it — they belong
-to herdr (below), and the managed `~/.zshrc` keeps the pi→tmux wrapper
-stood down (`tmux_wrap = "off"`; flip the setting, or export
-`PI_TMUX_WRAP=force` for one run, if you ever want the old auto-wrap
-back). The managed `~/.tmux.conf` stays minimal on purpose: OSC 52
-clipboard (copy-mode yanks reach the connecting device), truecolor
-passthrough, mouse-wheel copy-mode scrollback. Local window management
-stays Ghostty's job. The full walkthrough — daily habit, phone setup,
-troubleshooting — is in [tmux.md](tmux.md); the repo README's "Picking up
-from another device" section is the condensed version.
+Detachable terminal sessions — the "leave the desk, continue from the phone"
+tool. For pi launched from a terminal tab it is invisible: `~/.zshrc` wraps
+every new `pi` conversation in its own named tmux session (project basename,
+`-2`/`-3` siblings, or the sanitized `pi -n` topic) and the session dies when
+pi exits, so `tmux ls` is exactly the live conversations. Rejoining is
+explicit — `tmux attach -t <name>` lands straight inside the running pi, from
+any device. The managed `~/.tmux.conf` stays minimal on purpose: pi's
+`extended-keys` requirements (so `Shift+Enter` keeps working through the tmux
+layer), OSC 52 clipboard (yanks reach the connecting device), truecolor
+passthrough. Local window management stays Ghostty's job. The full
+walkthrough — daily habit, phone setup, troubleshooting — is in
+[tmux.md](tmux.md); the repo README's "Picking up from another device"
+section is the condensed version. (pi launched inside herdr skips tmux —
+see the herdr entry below.)
 
 ### tree-sitter CLI, node *(CLI)*
 `tree-sitter` builds the parsers nvim-treesitter installs (needs ≥ 0.26.1).
@@ -272,19 +273,18 @@ defaults come from chezmoi as
 inside pi is an alternative that stores it in `~/.pi/agent/auth.json`.
 
 ### herdr *(CLI)*
-The agent manager — a terminal workspace manager for coding agents:
-spaces, tabs, and panes owned by a background server, with an **agents**
-sidebar that shows each pi conversation's live state (working / waiting
-for input). This is where agent sessions belong; pi runs bare everywhere
-on this Mac because herdr owns them. Launch it from a project directory
-with `herdr`; type `pi` in a pane; detach with `Ctrl-b` then `q`
-(everything keeps running on the server — closing the terminal and the
-TUI is safe); reattach with `herdr`, including over SSH. With the pi
-integration installed (`herdr integration install pi`, idempotent,
-re-run after herdr upgrades), conversations even resume after a server
-restart — though an in-flight task does not survive a reboot. `Ctrl-b`
-then `?` lists every key; pane focus also works prefix-free with
-`Ctrl-Alt` + `h/j/k/l`, matching nvim's window movement. Config is
+A terminal workspace manager for coding agents — spaces, tabs, and panes
+owned by a background server, with an **agents** sidebar that shows each
+pi conversation's live state (working / waiting for input). Launch it from
+a project directory with `herdr`; detach with `Ctrl-b` then `q` (everything
+keeps running on the server); reattach with `herdr` — including over SSH.
+Type `pi` in a herdr pane and it runs bare (no tmux session — herdr is the
+detachable-session layer there), which is what makes the sidebar work.
+Detach is not stopping: panes survive the terminal closing and the TUI
+exiting. What they do not survive is a reboot — after one, herdr restores
+the layout, and with the pi integration installed (`herdr integration
+install pi`, idempotent, re-run after herdr upgrades) your pi conversations
+resume too. `Ctrl-b` then `?` lists every key. Config is
 `~/.config/herdr/config.toml` (chezmoi-managed); updates ride
 `brew upgrade herdr`, never `herdr update`.
 
