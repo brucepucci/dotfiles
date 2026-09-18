@@ -43,7 +43,8 @@
 #      (pi cannot ask through the tmux layer; non-tty runs fall back dark),
 #      keeps tmux wrapping for a user-supplied --use-theme (only the
 #      injection is suppressed), and falls through to plain pi inside
-#      tmux / without the binary / from $HOME / for one-shot -p runs —
+#      tmux / inside herdr (HERDR_ENV=1: herdr must see pi as the pane
+#      process) / without the binary / from $HOME / for one-shot -p runs —
 #      exercised with fake tmux+pi shims
 #  12b. the herdr wrapper: any `herdr update` is refused with the brew
 #      path before the binary is consulted (passes with no herdr on
@@ -1219,6 +1220,8 @@ guard_plain() {  # $1 = extra env, $2 = pi args
   [[ ! -s "$TLOG" ]] || die "guard($1 $2): wrapper must not touch tmux"
 }
 guard_plain "TMUX=yes" ""
+guard_plain "HERDR_ENV=1" ""   # inside herdr: structural, beats force --
+                                # herdr must see pi as the pane process
 guard_plain "" "-p 'quick one'"
 guard_plain "" "--mode json 'hello'"
 guard_plain "" "--help"

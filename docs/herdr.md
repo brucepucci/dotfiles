@@ -66,6 +66,20 @@ server; it exits when the last session does. Nothing runs at login. If
 sessions ever become load-bearing across reboots — the tmux.md use case —
 flip to `brew services start herdr` (keep_alive at login) and say so here.
 
+## pi inside herdr
+
+Type `pi` in a herdr pane and it runs **bare** — the `pi()` wrapper
+skips tmux when `HERDR_ENV=1` (see [pi.md](pi.md)). That is what makes
+herdr's sidebar work: herdr detects agents by the pane's foreground
+process and its own docs are explicit that tmux sessions launched inside
+a herdr pane hide the agent behind the tmux client; the tmux server's
+environment snapshot also strips `HERDR_*`, which would silence the
+pi state-reporting integration. herdr's server keeps panes alive across
+detach and TUI exit, so nothing is lost by dropping the tmux layer here —
+herdr is the detachable-session layer, the same job tmux does elsewhere.
+Launch agents from Ghostty tabs (tmux-wrapped) **or** from herdr panes
+(bare, sidebar-visible) — not both layered.
+
 ## Agent integrations
 
 herdr detects coding agents in panes; per-agent state hooks install with

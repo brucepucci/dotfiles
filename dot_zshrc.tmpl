@@ -534,8 +534,14 @@ pi() {
   case "${a[1]:-}" in
     install|remove|uninstall|list|config|auth|update) command pi "$@"; return ;;
   esac
-  # No wrapping inside tmux, without the binary, off a tty, or from $HOME.
-  if [[ -n ${TMUX:-} ]] || ! command -v tmux >/dev/null 2>&1 \
+  # No wrapping inside tmux, inside herdr, without the binary, off a tty,
+  # or from $HOME. herdr sets HERDR_ENV=1 in its own panes: it is already
+  # the persistence layer there (panes live in the herdr server), and its
+  # agent detection sees only the pane's foreground process -- a tmux
+  # client would hide pi from the sidebar (and strip HERDR_* through the
+  # tmux server's env snapshot, disabling herdr's pi integration too).
+  if [[ -n ${TMUX:-} ]] || [[ ${HERDR_ENV:-} == 1 ]] \
+     || ! command -v tmux >/dev/null 2>&1 \
      || [[ $PWD == "$HOME" ]] \
      || { [[ ${PI_TMUX_WRAP:-} != force ]] && ( [[ ! -t 0 || ! -t 1 ]] ) }; then
     command pi "$@"; return

@@ -33,7 +33,10 @@ walkthrough in [tmux.md](tmux.md); the wrapper's own rules:
   `auth-refactor`, which pi also keeps as its conversation display name.
   An explicit topic that's already live is refused with the rejoin command.
 - **Falls through to bare pi** (no session spawned) when: already inside
-  tmux, tmux isn't installed, not on a tty (unless `PI_TMUX_WRAP=force`),
+  tmux, **inside [herdr](herdr.md)** (`HERDR_ENV=1` — herdr is the
+  persistence layer in its own panes, and its agent detection must see
+  pi, not a tmux client), tmux isn't installed, not on a tty (unless
+  `PI_TMUX_WRAP=force`),
   the cwd is `$HOME` (a home directory is not a project name), or the
   invocation is one-shot — any of `-h/--help -v/--version -p/--print
   --mode --list-models`, or a management subcommand (`install`, `config`,

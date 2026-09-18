@@ -41,7 +41,8 @@ dot_zshrc.tmpl              # interactive shell: options, history, aliases,
                             # its own named tmux session (never attaches) and
                             # probes the viewing terminal for the theme side;
                             # the herdr() wrapper -- refuses self-updates
-                            # (`brew upgrade herdr` owns the keg)
+                            # (`brew upgrade herdr` owns the keg); pi() goes
+                            # bare inside herdr panes (HERDR_ENV=1)
                             # TWO conditional renders: tmux_wrap=off defaults
                             # PI_TMUX_WRAP to never; a pinned theme renders
                             # PI_THEME_PINNED (the wrapper must not inject
