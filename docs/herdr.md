@@ -48,7 +48,9 @@ herdr                # opens the TUI: spaces (workspaces) on the left
   zsh — same `~/.zshrc` as everywhere else.
 - **Keys**: `Ctrl-b` then `?` lists everything; the ones that matter early
   are split (`Ctrl-b` `v` / `Ctrl-b` `-`), pane focus (`Ctrl-b` then
-  `h`/`j`/`k`/`l`), and close pane (`Ctrl-b` `x`).
+  `h`/`j`/`k`/`l` — or prefix-free with `Ctrl-Alt` + `h/j/k/l`, the
+  nvim window-movement reflex on a chord nothing else claims), and close
+  pane (`Ctrl-b` `x`).
 - **pi inside herdr**: type `pi` in a pane. The wrapper skips tmux here
   (herdr is the detachable-session layer), so herdr's **agents** sidebar
   lists the conversation with live working/idle state — that only works
