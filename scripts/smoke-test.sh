@@ -45,6 +45,11 @@
 #      injection is suppressed), and falls through to plain pi inside
 #      tmux / without the binary / from $HOME / for one-shot -p runs —
 #      exercised with fake tmux+pi shims
+#  12b. the herdr wrapper: any `herdr update` is refused with the brew
+#      path before the binary is consulted (passes with no herdr on
+#      PATH), everything else reaches the binary verbatim (shim), and
+#      the rendered config validates via `herdr config check` when the
+#      machine has the formula
 #  13. the tmux_wrap setting: "on" (the committed value) renders no env
 #      default and leaves PI_TMUX_WRAP unset; "off" renders
 #      : ${PI_TMUX_WRAP:=never} into ~/.zshrc (second apply against a
@@ -159,6 +164,7 @@ for f in .zshrc .zprofile .config/zsh/ps1.zsh \
          .config/zsh-ghostty/.zshenv .config/ghostty/config \
          .config/ghostty/themes/dotfiles-light \
          .config/ghostty/themes/dotfiles-dark \
+         .config/herdr/config.toml \
          .config/nvim/init.lua .zsh/secrets.example.zsh \
          .tmux.conf; do
   [[ -f "$NEWHOME/$f" ]] || die "missing $f"
@@ -687,6 +693,7 @@ for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
          "$NEWHOME/.pi/agent/themes/dotfiles-dark.json" \
          "$NEWHOME/.pi/agent/extensions/provider-usage.ts" \
          "$NEWHOME/.pi/agent/extensions/title-screen.ts" \
+         "$NEWHOME/.config/herdr/config.toml" \
          "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
          "$NEWHOME/.config/zsh/ps1.zsh" \
          "$NEWHOME/.config/nvim/lua/bruce/plugins/ui.lua" \
@@ -711,6 +718,24 @@ for side in light dark; do
     grep -q "[[:space:]]$role = \"$want\"" "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
       || die "theming.lua $side.$role does not match the $t roles"
   done
+done
+# herdr: same guarantee, against the generated config -- one key per role
+# class (bg role, fg role) plus the terminal's own selection color, per side.
+herdr_val() { # $1 = section, $2 = key -> value from the managed config
+  awk -v sec="$1" -v key="$2" '
+    $0 == "[" sec "]" { f=1; next }
+    /^\[/             { f=0 }
+    f && $1 == key    { gsub(/"/, "", $3); print $3; exit }' \
+    "$NEWHOME/.config/herdr/config.toml"
+}
+for side in light dark; do
+  t="$( [[ $side == light ]] && echo "$LTHEME" || echo "$DTHEME" )"
+  [[ "$(herdr_val "theme.custom.$side" panel_bg)" == "$(themeget "$t" roles.bg)" ]] \
+    || die "herdr $side panel_bg does not match the $t bg role"
+  [[ "$(herdr_val "theme.custom.$side" text)" == "$(themeget "$t" roles.fg)" ]] \
+    || die "herdr $side text does not match the $t fg role"
+  [[ "$(herdr_val "theme.custom.$side" selection_bg)" == "$(themeget "$t" terminal.selection-background)" ]] \
+    || die "herdr $side selection_bg does not match the $t selection color"
 done
 # pi themes: the SSH guarantee, checked against the resolver's own
 # output instead of restated constants. bg/fg/accents/grey ride the
@@ -1270,6 +1295,39 @@ out="$(env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
 ok "creates named sessions, never attaches; guards fall through to plain pi;
     pi update triaged: keg-touching refused, package-only passes through"
 
+step "herdr: update refused with the brew path, passthrough intact, config valid"
+# herdr has no package-only update form, so ANY `herdr update` is a
+# self-update against a brew-owned keg: the wrapper refuses before the
+# binary is consulted -- which is why this passes with no herdr installed
+# at all (PATH holds no herdr here). Passthrough is proven with a shim,
+# same trick as the pi wrapper above; CI has no real binary either.
+out="$(env -i HOME="$NEWHOME" TERM=xterm-256color PATH="/usr/bin:/bin" \
+      /bin/zsh -l -i -c 'herdr update' 2>&1)" \
+  && die "herdr update must be refused"
+[[ "$out" == *'brew upgrade herdr'* ]] \
+  || die "herdr update refusal must name the brew path: $out"
+shim="$WORK/herdr-shim"; mkdir -p "$shim"
+printf '#!/bin/sh\necho "HERDR-SHIM:$*"\n' > "$shim/herdr"
+chmod +x "$shim/herdr"
+# PATH is re-pinned INSIDE the -c command: the login shell's .zprofile
+# rebuilds PATH ahead of the shim (same trick as the pi wrapper test).
+out="$(env -i HOME="$NEWHOME" TERM=xterm-256color \
+      PATH="$shim:/usr/bin:/bin" \
+      /bin/zsh -l -i -c "PATH='$shim:/usr/bin:/bin'; herdr status client" 2>/dev/null)"
+# Substring match: the login shell's greeting (and whatever .zshrc prints
+# while the REAL path is still live) precedes the -c body in $out.
+[[ "$out" == *'HERDR-SHIM:status client'* ]] \
+  || die "herdr passthrough broken -- shim saw: $out"
+# The managed config is the server's own grammar: validate it with the
+# formula's checker when the machine has one. (herdr config check also
+# passes on a MISSING config, so the file's existence is asserted above,
+# in the applied-files loop.)
+if command -v herdr >/dev/null 2>&1; then
+  HERDR_CONFIG_PATH="$NEWHOME/.config/herdr/config.toml" herdr config check >/dev/null \
+    || die "herdr config check rejected the rendered config"
+fi
+ok "herdr update refused with the brew path; passthrough intact; config check ok"
+
 step "tmux_wrap setting: on leaves the env alone, off defaults it to never"
 # settings.toml (repo root) carries tmux_wrap = on|off. The committed value
 # is "on": the applied ~/.zshrc carries no default and PI_TMUX_WRAP stays
@@ -1318,6 +1376,16 @@ grep -qF 'PI_THEME_PINNED="dark"' "$pinnedhome/.zshrc" \
   || die 'theme=dark must render PI_THEME_PINNED="dark" into ~/.zshrc'
 [[ "$(sed -n 's/.*"theme": "\([^"]*\)".*/\1/p' "$pinnedhome/.pi/agent/settings.json")" == "dotfiles-dark" ]] \
   || die "theme=dark: pi settings.json must carry the single dark theme"
+# herdr pins the same way: one custom palette (the dark one), no auto
+# switching, and no light layer at all.
+[[ "$(sed -n 's/^auto_switch = //p' "$pinnedhome/.config/herdr/config.toml")" == false ]] \
+  || die "theme=dark: herdr config must not auto-switch under a pin"
+grep -q '^\[theme.custom.light\]' "$pinnedhome/.config/herdr/config.toml" \
+  && die "theme=dark: herdr config must not carry a light layer under a pin"
+pinbg="$(awk '/^\[theme\.custom\]/{f=1;next} /^\[/{f=0} f && $1=="panel_bg" {gsub(/"/,"",$3); print $3}' \
+  "$pinnedhome/.config/herdr/config.toml")"
+[[ "$pinbg" == "$(python3 "$SOURCE/scripts/theme.py" --get "$DTHEME" roles.bg)" ]] \
+  || die "theme=dark: herdr custom palette is not the dark theme's bg role"
 grep -qF ': ${PI_TMUX_WRAP:=never}' "$pinnedhome/.zshrc" \
   && die "tmux_wrap=on must stay silent even when the theme is pinned"
 : > "$TLOG"; : > "$SESS"; : > "$PLOG"
@@ -1332,7 +1400,8 @@ grep -qF -- '--use-theme' "$TLOG" \
   && die "pinned mode must not inject --use-theme (it would beat the pin)"
 ! grep -qF 'PI_THEME_PINNED=' "$NEWHOME/.zshrc" \
   || die "theme=system (committed) must not render a pin into ~/.zshrc"
-ok "pin renders, wraps without --use-theme; system mode stays unpinned"
+ok "pin renders, wraps without --use-theme; system mode stays unpinned;
+    herdr pins to a single custom palette with no auto switching"
 
 step "chezmoi-runbook skill: generated from AGENTS.md, frontmatter valid"
 # dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl renders

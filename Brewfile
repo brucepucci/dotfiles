@@ -62,7 +62,10 @@ brew "pi-coding-agent"
 # herdr, a terminal multiplexer for coding-agent sessions (Rust client +
 # `herdr server` daemon over a unix socket). `brew services start herdr`
 # runs the daemon at login; or skip the service and let the client start it
-# on demand. Config is XDG: ~/.config/herdr/config.toml (see docs/herdr.md).
+# on demand (the current choice). chezmoi manages ~/.config/herdr/
+# config.toml (theme + update settings), and ~/.zshrc wraps the binary so
+# the self-updater refuses: `brew upgrade herdr` owns upgrades. See
+# docs/herdr.md.
 brew "herdr"
 
 # --- remote session continuity --------------------------------------------

@@ -14,7 +14,7 @@ wasn't wanted.
 | Source file | Installs to | Job |
 |---|---|---|
 | `dot_zprofile` | `~/.zprofile` | login-shell PATH: Homebrew + `~/.local/bin` |
-| `dot_zshrc.tmpl` | `~/.zshrc` | the interactive half: options, history, completion, keybindings, integrations, aliases, clipboard helpers, the `pi()` wrapper, secrets, prompt |
+| `dot_zshrc.tmpl` | `~/.zshrc` | the interactive half: options, history, completion, keybindings, integrations, aliases, clipboard helpers, the `pi()` and `herdr()` wrappers, secrets, prompt |
 | `private_dot_config/zsh/ps1.zsh` | `~/.config/zsh/ps1.zsh` | the prompt |
 | `private_dot_config/zsh-ghostty/dot_zshenv` | `~/.config/zsh-ghostty/.zshenv` | legacy redirect guard (see below) |
 
@@ -168,6 +168,15 @@ Two settings from `settings.toml` render conditionally into this file:
 `tmux_wrap = "off"` becomes a `PI_TMUX_WRAP=never` default, and a pinned
 theme renders `PI_THEME_PINNED` so the wrapper never injects `--use-theme`
 over the pin.
+
+## The `herdr()` wrapper
+
+One trick, same hazard as pi: [herdr](herdr.md) is installed by Homebrew,
+and its own `herdr update` would write into a brew-owned keg. Any
+`herdr update` is refused with the real upgrade path
+(`brew upgrade herdr`); everything else passes through to the binary
+untouched. The managed herdr config turns the background update checks
+off as well, so the seam stays quiet.
 
 ## Secrets
 

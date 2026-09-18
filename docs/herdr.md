@@ -1,4 +1,4 @@
-# herdr — agent multiplexer (evaluation)
+# herdr — agent multiplexer
 
 [herdr](https://herdr.dev) organizes terminal work into workspaces, tabs,
 and panes, recognizes coding agents running in those panes, and exposes
@@ -7,81 +7,76 @@ daemon that everything talks to over a unix socket — the same
 detachable-session idea as [tmux](tmux.md), but aware of what's running
 inside the panes.
 
-**Managed file**: the [Brewfile](../Brewfile) entry only, for now. The
-config is not yet chezmoi-managed — it is still in its test-drive phase
-(see [Open questions](#open-questions)).
+**Managed files**:
+
+- `private_dot_config/herdr/config.toml.tmpl` → `~/.config/herdr/config.toml`
+- the `herdr()` wrapper in `~/.zshrc` (see
+  [zsh.md](zsh.md) — same file as the `pi()` wrapper)
+- the [Brewfile](../Brewfile) entry
+
+herdr's own runtime state (`herdr-server.log`, `herdr-client.log`,
+`session.json`, `.plugins.lock`) lives beside the config and is left
+unmanaged.
 
 ## Install and updates
 
 ```bash
 brew bundle --file="$(chezmoi source-path)/Brewfile"   # installs it with everything else
+brew upgrade herdr                                     # the only upgrade path
 ```
 
-**`brew upgrade`, never `herdr update`.** The binary ships its own
-updater (update channels, background version checks, `herdr update`),
-which — like pi's `pi update` — would stomp a brew-owned keg and break
-`brew upgrade` bookkeeping. Brew owns the file; the repo's one package
-manager owns the version. Same rule as pi — whose `pi` wrapper goes
-further and refuses targetless `pi update` runs with the real upgrade
-path (see [pi.md](pi.md), "The tmux wrapper"); herdr does not yet do
-that, so the discipline is on you.
+**The binary is brew-owned; herdr must never update itself.** herdr ships
+a self-updater (`herdr update`, update channels, background version
+checks) that would stomp a brew keg and desync `brew upgrade`
+bookkeeping — the same hazard as pi's. Two layers refuse it: the `herdr()`
+wrapper in `~/.zshrc` turns any `herdr update` into a refusal naming
+`brew upgrade herdr` (herdr has no package-only update form, unlike pi's
+`update --extensions`, so every update invocation is a self-update), and
+the managed config turns the background checks off. The smoke test asserts
+both. herdr also refuses on its own for Homebrew installs — belt and
+braces.
 
-## The server model
+## The managed config
 
-`herdr status` shows both halves: the CLI version and whether a server
-is running (socket at `~/.config/herdr/herdr.sock`).
+Rendered from `settings.toml` + the vendored theme mirror by
+`scripts/theme.py`, exactly like every other surface:
 
-- **On demand** (current setup): starting the TUI boots the server if
-  needed; it exits when the last session goes away. Nothing runs at
-  login.
-- **As a service**: `brew services start herdr` runs `herdr server` at
-  login with `keep_alive` — the herdr equivalent of the tmux server's
-  always-on role. Only worth it once sessions are load-bearing (see
-  tmux.md for why that matters over SSH).
+- **Theme**: the base is herdr's built-in `terminal` theme; a generated
+  palette rides on top, one token per resolved role — surfaces
+  (`panel_bg` ← bg, `sidebar_bg` ← bg_deep, `surface0` ← statusline,
+  `surface1` ← surface, overlays ← the greys), text (`text` ← fg,
+  `subtext0` ← fg_soft), accents (`accent`/`blue` ← blue, `mauve` ←
+  purple, `teal` ← aqua, `peach` ← orange, plus same-named red/green/
+  yellow), and `selection_bg` ← the theme's own terminal selection color.
+  Under `theme = "system"` the config sets `auto_switch = true` and
+  carries `[theme.custom.light]` + `[theme.custom.dark]`; a pinned mode
+  renders one `[theme.custom]` palette and no auto switching.
+- **Updates**: `version_check = false`, `manifest_check = false`,
+  `channel = "stable"` — brew owns the version.
+- **Onboarding**: off — the config exists from the first apply.
 
-Headless control without the TUI: `herdr workspace create --label …`,
-`herdr status server`, `herdr server stop`.
+Everything is generated; hand edits to `~/.config/herdr/config.toml` are
+wiped by the next apply. herdr hot-reloads the file:
+`herdr server reload-config` (or `prefix+shift+r` inside the TUI).
 
-## Config
+## Server model
 
-XDG: `~/.config/herdr/config.toml`. `herdr --default-config` prints the
-fully-commented default; `herdr server reload-config` hot-reloads it.
-On first run herdr writes onboarding state there itself — the reason
-there is no managed `config.toml` yet.
+On demand (the decision for now): the first TUI or CLI call boots the
+server; it exits when the last session does. Nothing runs at login. If
+sessions ever become load-bearing across reboots — the tmux.md use case —
+flip to `brew services start herdr` (keep_alive at login) and say so here.
 
-Shell completions need no wiring: brew drops `_herdr` into
-`/opt/homebrew/share/zsh/site-functions`, which Homebrew's zsh already
-has on `fpath`.
+## Agent integrations
 
-herdr also ships an agent skill (`herdr --skill`) for agents running
-*inside* herdr panes (gated on `HERDR_ENV=1`): inspecting panes, reading
-output, starting agents. If herdr sticks, that becomes a candidate for
-`dot_pi/agent/skills/` alongside the chezmoi runbook.
-
-**pi integration.** `herdr integration install pi` drops
-`herdr-agent-state.ts` into `~/.pi/agent/extensions/` so pi panes report
-agent state (working / waiting for input) to herdr — it is also what
-enables `[session] resume_agents_on_restore`. Deliberately **not managed
-by this repo**: the file is herdr's own payload, version-locked to the
-herdr protocol — the same class as `~/.pi/agent/npm`, the unmanaged
-payload of pi's `pi install` — and a vendored copy would silently go
-stale on every `brew upgrade herdr`. Re-running the install is
-idempotent and refreshes the file; do it if a herdr upgrade ever changes
-the protocol. If herdr passes evaluation, the README's new-machine list
-gains this one command — documented like `brew bundle`, never automated:
-`chezmoi apply` runs nothing behavioral in this repo.
-
-## Open questions
-
-Things to settle before folding the config into chezmoi:
-
-1. **Theming.** herdr themes are its own built-in names
-   (`kanagawa`, `catppuccin`, …) plus per-token hex overrides, with an
-   `auto_switch` light/dark pair. The dark side maps cleanly
-   (`Kanagawa Wave` → `kanagawa`); Flexoki Light has no herdr built-in,
-   so a managed template would need either a name-mapping table in
-   `settings.toml` or hex overrides derived from the role tables — same
-   pattern as pi's theme templates. Undecided.
-2. **Service or not.** On-demand server vs `brew services start herdr`.
-3. **Update checks.** Whether to set `[update] version_check = false` in
-   a managed config so the brew-vs-self-update seam stays quiet.
+herdr detects coding agents in panes; per-agent state hooks install with
+`herdr integration install …`. **pi integration.** `herdr integration
+install pi` drops `herdr-agent-state.ts` into `~/.pi/agent/extensions/`
+so pi panes report agent state (working / waiting for input) to herdr —
+it is also what enables `[session] resume_agents_on_restore`.
+Deliberately **not managed by this repo**: the file is herdr's own
+payload, version-locked to the herdr protocol — the same class as
+`~/.pi/agent/npm`, the unmanaged payload of pi's `pi install` — and a
+vendored copy would silently go stale on every `brew upgrade herdr`.
+Re-running the install is idempotent and refreshes the file; do it if a
+herdr upgrade ever changes the protocol. Documented like `brew bundle`,
+never automated: `chezmoi apply` runs nothing behavioral in this repo.

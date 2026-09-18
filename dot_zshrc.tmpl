@@ -585,6 +585,21 @@ pi() {
   fi
 }
 
+# herdr sits behind a one-trick wrapper, same hazard as pi: the Brewfile
+# installs it from homebrew/core, and `herdr update` would stomp a
+# brew-owned keg -- herdr's update channel knows nothing about brew. Unlike
+# pi there is no package-only form (no extensions to update in place), so
+# ANY `update` invocation is a self-update and the wrapper refuses them all
+# with the real upgrade path. Everything else passes through untouched.
+herdr() {
+  emulate -L zsh
+  if [[ $1 == update ]]; then
+    print -u2 "herdr: installed via Homebrew -- upgrade herdr itself with: brew upgrade herdr"
+    return 1
+  fi
+  command herdr "$@"
+}
+
 # --- Secrets ----------------------------------------------------------------
 # API keys and tokens (GitHub, Anthropic, ...) live in ~/.zsh/secrets.zsh —
 # outside this repo on purpose; see .chezmoiignore. Optional file: machines
