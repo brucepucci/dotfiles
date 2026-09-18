@@ -181,10 +181,17 @@ globalThis.fetch = async (_url, opts) => {
 	};
 };
 
-const makeCtx = (provider, hasUI = true, authResult = { auth: { apiKey: "test-key" }, source: "OAuth" }) => ({
+// `sink` receives ctx.ui.setStatus writes -- pass a block-local map to keep
+// an instance's row isolated from the shared `statuses` the lifecycle uses.
+const makeCtx = (
+	provider,
+	hasUI = true,
+	authResult = { auth: { apiKey: "test-key" }, source: "OAuth" },
+	sink = statuses,
+) => ({
 	hasUI,
 	ui: {
-		setStatus: (k, v) => statuses.set(k, v),
+		setStatus: (k, v) => sink.set(k, v),
 		notify: () => {},
 		theme: new FakeTheme(),
 	},
@@ -293,16 +300,16 @@ fetchMode = "ok";
 	const h = {};
 	const st = new Map();
 	mod.default({ on: (n, f) => (h[n] = f), ui: { setStatus: (k, v) => st.set(k, v) } });
-	await h.session_start({}, makeCtx("anthropic", true, { auth: { apiKey: "oauth-token" }, source: "OAuth" }));
+	await h.session_start({}, makeCtx("anthropic", true, { auth: { apiKey: "oauth-token" }, source: "OAuth" }, st));
 	await settle();
-	check("M-1: OAuth anthropic still fetched", claudeCalls === before + 1 && (statuses.get("provider-usage") ?? "").includes("claude"), `claudeCalls=+${claudeCalls - before}`);
+	check("M-1: OAuth anthropic still fetched", claudeCalls === before + 1 && (st.get("provider-usage") ?? "").includes("claude"), `claudeCalls=+${claudeCalls - before}`);
 }
 {
 	const before = codexCalls;
 	const h = {};
 	const st = new Map();
 	mod.default({ on: (n, f) => (h[n] = f), ui: { setStatus: (k, v) => st.set(k, v) } });
-	await h.session_start({}, makeCtx("openai-codex", true, { auth: { apiKey: "tok" }, source: "stored" }));
+	await h.session_start({}, makeCtx("openai-codex", true, { auth: { apiKey: "tok" }, source: "stored" }, st));
 	await settle();
 	check("M-1: API-key codex skipped", codexCalls === before && st.get("provider-usage") === undefined, `codexCalls=+${codexCalls - before}`);
 }
