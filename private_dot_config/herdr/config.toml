@@ -11,25 +11,27 @@
 #
 # Updates: the binary is brew-owned, so background checks are off and the
 # self-updater is refused by the `herdr` wrapper in ~/.zshrc -- upgrade
-# with `brew upgrade herdr` like every other formula. Keys: pane focus
-# also works prefix-free via ctrl+alt+hjkl (see the [keys] section).
-# See docs/herdr.md.
+# with `brew upgrade herdr` like every other formula. Keys: ctrl+alt moves
+# the sidebar (agents up/down, spaces left/right) without the prefix --
+# see the [keys] section. See docs/herdr.md.
 onboarding = false
 
 [theme]
 name = "terminal"
 
 [keys]
-# Pane focus, prefix-free: ctrl+alt+h/j/k/l moves between panes without
-# touching the prefix chords. ctrl+alt is herdr's one upstream-safe direct
-# family -- it has no legacy ASCII byte (ctrl+h is backspace, ctrl+j is
-# Enter for anything that reads raw bytes), nothing on macOS or Ghostty
-# claims it, and the collision-free list keeps nvim and zsh untouched.
-# Lists layer the direct chords on top of the prefix chords.
-focus_pane_left  = ["prefix+h", "ctrl+alt+h"]
-focus_pane_down  = ["prefix+j", "ctrl+alt+j"]
-focus_pane_up    = ["prefix+k", "ctrl+alt+k"]
-focus_pane_right = ["prefix+l", "ctrl+alt+l"]
+# Prefix-free sidebar navigation, vim directions: ctrl+alt+j/k moves the
+# agents highlight down/up (focusing an agent switches to its workspace),
+# ctrl+alt+h/l steps across spaces. These were chosen over pane focus --
+# workspaces hold one pane each today, so pane-focus chords would be
+# no-ops; pane focus stays on prefix+h/j/k/l for when splits exist.
+# ctrl+alt is herdr's one upstream-safe direct family: no legacy ASCII
+# byte (ctrl+h is backspace, ctrl+j is Enter for legacy consumers), free
+# in Ghostty and macOS, claimed by nothing else in this setup.
+previous_agent = "ctrl+alt+k"
+next_agent = "ctrl+alt+j"
+previous_workspace = "ctrl+alt+h"
+next_workspace = "ctrl+alt+l"
 
 [update]
 channel = "stable"
