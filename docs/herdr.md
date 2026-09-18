@@ -36,28 +36,6 @@ the managed config turns the background checks off. The smoke test asserts
 both. herdr also refuses on its own for Homebrew installs — belt and
 braces.
 
-## The managed config
-
-A small static file (`private_dot_config/herdr/config.toml`), and
-singularly *not* derived from `settings.toml` — because of the SSH rule:
-
-- **Theme**: herdr's built-in `terminal` theme paints the UI from the
-  rendering terminal's own ANSI palette and default fg/bg (herdr queries
-  OSC 10/11 and the OSC 4 palette at runtime — the same live-probe idea
-  as pi's theme detection). Over SSH the TUI therefore follows the
-  *viewing* terminal, exactly like the prompt and pi, instead of pinning
-  the Mac's palette onto the client. The file carries no hex at all and
-  nothing in it varies with the appearance setting — the smoke test
-  enforces both (a strict no-hex check, and a byte-identical render
-  across pinned and system modes).
-- **Updates**: `version_check = false`, `manifest_check = false`,
-  `channel = "stable"` — brew owns the version.
-- **Onboarding**: off — the config exists from the first apply.
-
-Hand edits to `~/.config/herdr/config.toml` are wiped by the next apply.
-herdr hot-reloads the file: `herdr server reload-config` (or
-`prefix+shift+r` inside the TUI).
-
 ## First session
 
 ```bash
@@ -69,8 +47,8 @@ herdr                # opens the TUI: spaces (workspaces) on the left
 - **New space**: `Ctrl-b` then `Shift+n`. The shell that opens is ordinary
   zsh — same `~/.zshrc` as everywhere else.
 - **Keys**: `Ctrl-b` then `?` lists everything; the ones that matter early
-  are split (`Ctrl-b` `v` / `Ctrl-b` `-`), move (`Ctrl-b` then arrows),
-  and close pane (`Ctrl-b` `x`).
+  are split (`Ctrl-b` `v` / `Ctrl-b` `-`), pane focus (`Ctrl-b` then
+  `h`/`j`/`k`/`l`), and close pane (`Ctrl-b` `x`).
 - **pi inside herdr**: type `pi` in a pane. The wrapper skips tmux here
   (herdr is the detachable-session layer), so herdr's **agents** sidebar
   lists the conversation with live working/idle state — that only works
@@ -93,7 +71,7 @@ server, not in your terminal window. The TUI is just a view.
 Three different events, three different outcomes — don't conflate them:
 
 | Event | Processes (shells, agents, dev servers) | Layout | pi conversations |
-|---|---|---|
+|---|---|---|---|
 | Detach / close the terminal | **keep running** | back on reattach | live, exactly as left |
 | Server restart / reboot | **gone** | restored (shape, cwd, focus) | resumed only with the pi integration installed (`resume_agents_on_restore`, on by default) — the conversation resumes, in-flight process state does not |
 | `brew services start herdr` | starts/**restarts the daemon** at login — it does **not** preserve processes through a reboot | as above | as above |
@@ -104,6 +82,28 @@ reboot any more than it would under tmux. The on-demand default — the
 first TUI or CLI call boots the server, it exits when the last session
 does — is the current choice; flip to `brew services start herdr` if
 the daemon-at-login convenience ever matters.
+
+## The managed config
+
+A small static file (`private_dot_config/herdr/config.toml`), and
+singularly *not* derived from `settings.toml` — because of the SSH rule:
+
+- **Theme**: herdr's built-in `terminal` theme paints the UI from the
+  rendering terminal's own ANSI palette and default fg/bg (herdr queries
+  OSC 10/11 and the OSC 4 palette at runtime — the same live-probe idea
+  as pi's theme detection). Over SSH the TUI therefore follows the
+  *viewing* terminal, exactly like the prompt and pi, instead of pinning
+  the Mac's palette onto the client. The file carries no hex at all and
+  nothing in it varies with the appearance setting — the smoke test
+  enforces both (a strict no-hex check, and a byte-identical render
+  across pinned and system modes).
+- **Updates**: `version_check = false`, `manifest_check = false`,
+  `channel = "stable"` — brew owns the version.
+- **Onboarding**: off — the config exists from the first apply.
+
+Hand edits to `~/.config/herdr/config.toml` are wiped by the next apply.
+herdr hot-reloads the file: `herdr server reload-config` (or
+`prefix+shift+r` inside the TUI).
 
 ## pi inside herdr
 
