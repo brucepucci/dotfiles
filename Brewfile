@@ -58,6 +58,17 @@ brew "fastfetch"            # banner in ~/.zshrc (guarded, optional)
 # with the other secrets -- see README, new-machine step 5.
 brew "pi-coding-agent"
 
+# --- agent multiplexer ----------------------------------------------------
+# herdr, a terminal multiplexer for coding-agent sessions (Rust client +
+# `herdr server` daemon over a unix socket). `brew services start herdr`
+# runs the daemon at login; or skip the service and let the client start it
+# on demand (the current choice). chezmoi manages ~/.config/herdr/
+# config.toml (herdr's terminal-following theme + update settings), and
+# ~/.zshrc wraps the binary so
+# the self-updater refuses: `brew upgrade herdr` owns upgrades. See
+# docs/herdr.md.
+brew "herdr"
+
 # --- remote session continuity --------------------------------------------
 # tmux keeps sessions alive across disconnects: leave the desk, reattach
 # from a phone over SSH (README "Picking up from another device"). 3.5+ is

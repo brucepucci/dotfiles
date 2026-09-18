@@ -14,7 +14,7 @@ wasn't wanted.
 | Source file | Installs to | Job |
 |---|---|---|
 | `dot_zprofile` | `~/.zprofile` | login-shell PATH: Homebrew + `~/.local/bin` |
-| `dot_zshrc.tmpl` | `~/.zshrc` | the interactive half: options, history, completion, keybindings, integrations, aliases, clipboard helpers, the `pi()` wrapper, secrets, prompt |
+| `dot_zshrc.tmpl` | `~/.zshrc` | the interactive half: options, history, completion, keybindings, integrations, aliases, clipboard helpers, the `pi()` and `herdr()` wrappers, secrets, prompt |
 | `private_dot_config/zsh/ps1.zsh` | `~/.config/zsh/ps1.zsh` | the prompt |
 | `private_dot_config/zsh-ghostty/dot_zshenv` | `~/.config/zsh-ghostty/.zshenv` | legacy redirect guard (see below) |
 
@@ -157,17 +157,27 @@ device's clipboard over SSH, stays tmux's OSC 52 job (see
 ## The `pi()` wrapper
 
 The largest custom piece of `~/.zshrc`: typing `pi` in a project directory
-always starts a **new** conversation, wrapped in its own named, detachable
+normally starts a **new** conversation, wrapped in its own named, detachable
 tmux session that dies when pi exits. Rejoining is deliberately explicit
 (`tmux attach -t <name>`), so `pi` never attaches to a stray session. The
 full story — naming, guards, and the theme probe that decides light/dark
 from the *viewing* terminal before the session exists — is in
-[pi.md](pi.md) and [tmux.md](tmux.md).
+[pi.md](pi.md) and [tmux.md](tmux.md). (Inside [herdr](herdr.md) panes the
+wrapper stands down: pi runs bare there — see [herdr.md](herdr.md).)
 
 Two settings from `settings.toml` render conditionally into this file:
 `tmux_wrap = "off"` becomes a `PI_TMUX_WRAP=never` default, and a pinned
 theme renders `PI_THEME_PINNED` so the wrapper never injects `--use-theme`
 over the pin.
+
+## The `herdr()` wrapper
+
+One trick, same hazard as pi: [herdr](herdr.md) is installed by Homebrew,
+and its own `herdr update` would write into a brew-owned keg. Any
+`herdr update` is refused with the real upgrade path
+(`brew upgrade herdr`); everything else passes through to the binary
+untouched. The managed herdr config turns the background update checks
+off as well, so the seam stays quiet.
 
 ## Secrets
 

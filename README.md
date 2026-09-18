@@ -2,7 +2,7 @@
 
 A chezmoi-managed terminal setup for an **agent-first** workflow: Neovim is
 the bulk of it, plus the one zsh shell every terminal and SSH session
-shares, Ghostty, git tooling (delta, lazygit), tmux, and the
+shares, Ghostty, git tooling (delta, lazygit), tmux, herdr, and the
 [pi](https://github.com/earendil-works/pi) coding agent running Z.ai's GLM
 models. Built around a simple reality: most code is now *written* by an
 agent in one terminal split and *reviewed* by a human in the other — so
@@ -25,6 +25,7 @@ New to the repo? Each tool has its own page in [docs/](docs/):
 | Ghostty | [docs/ghostty.md](docs/ghostty.md) | the terminal — appearance, ssh terminfo auto-install, the font, themes generated from this repo's mirror |
 | Colors | [docs/theming.md](docs/theming.md) | the whole palette system: two theme names drive every surface, from a theme mirror committed in the repo |
 | tmux + SSH | [docs/tmux.md](docs/tmux.md) | detachable sessions, the phone/SSH workflow, the managed config explained |
+| herdr | [docs/herdr.md](docs/herdr.md) | the agent multiplexer: spaces and panes with a live agents sidebar, pi running bare inside it |
 | Git tooling | [docs/git.md](docs/git.md) | gitconfig, delta, lazygit, gh — the shell side |
 | pi | [docs/pi.md](docs/pi.md) | the coding agent: settings, themes, the tmux wrapper, keys |
 | Maintaining this repo | [docs/developing.md](docs/developing.md) | the developer guide: editing, testing, common tasks, rules |
@@ -82,7 +83,9 @@ The decisions, so future-you doesn't have to re-derive them:
   via `git log -p` on the lockfile.
 - **tmux only for detachability.** Local windows are Ghostty's job; tmux
   exists so sessions survive disconnects and rejoin from anywhere — and
-  `pi` wraps itself automatically.
+  `pi` wraps itself automatically. [herdr](docs/herdr.md) is the same idea
+  one level up for agent work: panes owned by a server, with a live
+  agents sidebar; inside its panes pi runs bare.
 
 ## New machine
 
@@ -160,6 +163,7 @@ non-Homebrew install.
 | `~/.config/nvim/` | The editor (17 plugins, pinned) | [nvim.md](docs/nvim.md) |
 | `~/.config/ghostty/config` + `~/.config/ghostty/themes/` | The terminal's appearance + ssh terminfo auto-install — nothing shell-related; two theme files generated from the mirror | [ghostty.md](docs/ghostty.md) |
 | `~/.tmux.conf` | Detachable sessions: pi's extended-keys, OSC 52 clipboard, truecolor | [tmux.md](docs/tmux.md) |
+| `~/.config/herdr/config.toml` | herdr's terminal-following theme + update policy | [herdr.md](docs/herdr.md) |
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts | [git.md](docs/git.md) |
 | `~/.config/lazygit/config.yml` | delta as lazygit's diff renderer | [git.md](docs/git.md) |
 | `~/.local/bin/delta-theme` | Appearance-aware delta wrapper | [git.md](docs/git.md) |
@@ -224,8 +228,8 @@ designated-successors table, rollback — is in
 ## Picking up from another device (SSH)
 
 The Mac is a server for your working sessions. pi conversations are
-already detachable — typing `pi` in a project directory always starts a
-new conversation in its own named tmux session:
+already detachable. **From a terminal tab** (the default path), typing
+`pi` starts a new conversation in its own named tmux session:
 
 ```bash
 cd code/chezmoi
@@ -238,13 +242,20 @@ The session dies when pi exits, so `tmux ls` lists exactly the live
 conversations. Anything that isn't pi — nvim, a dev server — wraps by
 hand: `tmux new -s work` … `tmux attach -t work`.
 
+**Or from [herdr](docs/herdr.md)** (the agent multiplexer): launch `herdr`
+in a project, open a pane, and type `pi` — it runs bare there (no tmux
+session), herdr's sidebar shows each conversation's live state, and
+`herdr` reattaches from anywhere. Same persistence, agent-aware. Pick one
+home per conversation: tmux (from tabs) or herdr (from its panes) — not
+both layered.
+
 Why this works from anywhere: the SSH session reads the same `~/.zshrc`
-as the desk terminal (same history, same prompt), and the prompt + pi's
-TUI render in the *viewing* terminal's indexed palette — SSH from a
-light-mode phone and everything renders light, automatically, because the
-terminal in your hand decides. The pi wrapper even probes the connecting
-terminal for its light/dark side before creating the session, because
-pi's own detection can't see through the tmux layer.
+as the desk terminal (same history, same prompt), and the prompt, pi's
+TUI, and herdr's UI all render in the *viewing* terminal's palette — SSH
+from a light-mode phone and everything renders light, automatically,
+because the terminal in your hand decides. The pi wrapper even probes the
+connecting terminal for its light/dark side before creating the session,
+because pi's own detection can't see through the tmux layer.
 
 Getting in: enable **Remote Login** (System Settings → General → Sharing);
 use Blink Shell or Termius on the phone; put both ends on
@@ -267,7 +278,8 @@ config, setting by setting, plus the keys and the SSH setup).
 | Run the test suite | `scripts/smoke-test.sh` (~1s; `--nvim` for plugin restore) |
 | Change themes | edit `settings.toml` → `chezmoi apply` |
 | Update plugins | `:Lazy update` → `chezmoi re-add ~/.config/nvim/lazy-lock.json` |
-| List / rejoin pi conversations | `tmux ls` / `tmux a -t <name>` |
+| List / rejoin pi conversations (from a terminal tab) | `tmux ls` / `tmux a -t <name>` |
+| Open herdr / detach / reattach | `herdr` / `Ctrl-b` `q` / `herdr` — see [docs/herdr.md](docs/herdr.md) |
 | Resume last pi conversation | `pi -c` |
 | In-nvim cheatsheet / keymap search | `<leader>?` / `<leader>fk` |
 | Health check | `:checkhealth`, `:Lazy check` |

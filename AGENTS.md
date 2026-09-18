@@ -39,7 +39,10 @@ dot_zshrc.tmpl              # interactive shell: options, history, aliases,
                             # pbcopy/pbpaste), prompt; the pi() wrapper --
                             # every new conversation gets
                             # its own named tmux session (never attaches) and
-                            # probes the viewing terminal for the theme side.
+                            # probes the viewing terminal for the theme side;
+                            # the herdr() wrapper -- refuses self-updates
+                            # (`brew upgrade herdr` owns the keg); pi() goes
+                            # bare inside herdr panes (HERDR_ENV=1)
                             # TWO conditional renders: tmux_wrap=off defaults
                             # PI_TMUX_WRAP to never; a pinned theme renders
                             # PI_THEME_PINNED (the wrapper must not inject
@@ -101,6 +104,11 @@ private_dot_config/ghostty/config.tmpl # terminal appearance + ssh terminfo — 
                             # without the entry the remote zle garbles)
 private_dot_config/ghostty/themes/      # those two theme files, rendered from
                             # the same resolved palettes every surface uses
+private_dot_config/herdr/   # config.toml -- the herdr agent multiplexer's
+                            # config: herdr's terminal theme (UI colors ride
+                            # the rendering terminal's own palette -- the SSH
+                            # rule; no hex, identical across modes) + update
+                            # checks off (brew owns upgrades)
 dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # .json.tmpl — the pi TUI's themes, generated from
                             # the active themes' roles (stable file names);

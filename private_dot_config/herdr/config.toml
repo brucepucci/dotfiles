@@ -1,0 +1,39 @@
+# ~/.config/herdr/config.toml -- managed by chezmoi (this repo); edit here,
+# then `chezmoi apply`. herdr's own state (herdr-server.log, session.json,
+# .plugins.lock) lives beside this file -- chezmoi leaves that alone.
+#
+# Theme: the `terminal` built-in paints herdr's UI from the rendering
+# terminal's own ANSI palette and default fg/bg (herdr queries OSC 10/11
+# and OSC 4 at runtime). That is the repo's SSH rule, enforced: over SSH
+# the TUI follows the viewing terminal, exactly like the prompt and pi --
+# no literal hexes anywhere in this file, and nothing in it varies with
+# settings.toml's appearance mode.
+#
+# Updates: the binary is brew-owned, so background checks are off and the
+# self-updater is refused by the `herdr` wrapper in ~/.zshrc -- upgrade
+# with `brew upgrade herdr` like every other formula. Keys: ctrl+alt moves
+# the sidebar (agents up/down, spaces left/right) without the prefix --
+# see the [keys] section. See docs/herdr.md.
+onboarding = false
+
+[theme]
+name = "terminal"
+
+[keys]
+# Prefix-free sidebar navigation, vim directions: ctrl+alt+j/k moves the
+# agents highlight down/up (focusing an agent switches to its workspace),
+# ctrl+alt+h/l steps across spaces. These were chosen over pane focus --
+# workspaces hold one pane each today, so pane-focus chords would be
+# no-ops; pane focus stays on prefix+h/j/k/l for when splits exist.
+# ctrl+alt is herdr's one upstream-safe direct family: no legacy ASCII
+# byte (ctrl+h is backspace, ctrl+j is Enter for legacy consumers), free
+# in Ghostty and macOS, claimed by nothing else in this setup.
+previous_agent = "ctrl+alt+k"
+next_agent = "ctrl+alt+j"
+previous_workspace = "ctrl+alt+h"
+next_workspace = "ctrl+alt+l"
+
+[update]
+channel = "stable"
+version_check = false
+manifest_check = false

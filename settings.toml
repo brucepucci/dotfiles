@@ -29,6 +29,9 @@
 #   pi TUI         themes in the palette's own indexed slots -- they follow
 #                  the viewing terminal, even over SSH
 #   nvim + lualine a colorscheme generated from the palette's 16 colors
+#   herdr TUI      herdr's terminal theme: UI colors ride the rendering
+#                  terminal's own ANSI palette and defaults (SSH-honest,
+#                  no hex; the config does not vary with the mode)
 #
 # The names are resolved at apply time against the theme mirror committed
 # in themes/ (a verbatim copy of iTerm2-Color-Schemes' ghostty/ directory,

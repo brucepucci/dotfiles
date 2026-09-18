@@ -534,8 +534,14 @@ pi() {
   case "${a[1]:-}" in
     install|remove|uninstall|list|config|auth|update) command pi "$@"; return ;;
   esac
-  # No wrapping inside tmux, without the binary, off a tty, or from $HOME.
-  if [[ -n ${TMUX:-} ]] || ! command -v tmux >/dev/null 2>&1 \
+  # No wrapping inside tmux, inside herdr, without the binary, off a tty,
+  # or from $HOME. herdr sets HERDR_ENV=1 in its own panes: it is already
+  # the persistence layer there (panes live in the herdr server), and its
+  # agent detection sees only the pane's foreground process -- a tmux
+  # client would hide pi from the sidebar (and strip HERDR_* through the
+  # tmux server's env snapshot, disabling herdr's pi integration too).
+  if [[ -n ${TMUX:-} ]] || [[ ${HERDR_ENV:-} == 1 ]] \
+     || ! command -v tmux >/dev/null 2>&1 \
      || [[ $PWD == "$HOME" ]] \
      || { [[ ${PI_TMUX_WRAP:-} != force ]] && ( [[ ! -t 0 || ! -t 1 ]] ) }; then
     command pi "$@"; return
@@ -583,6 +589,21 @@ pi() {
   else
     command tmux new-session -s "$sess" "command pi ${(j: :)quoted}"
   fi
+}
+
+# herdr sits behind a one-trick wrapper, same hazard as pi: the Brewfile
+# installs it from homebrew/core, and `herdr update` would stomp a
+# brew-owned keg -- herdr's update channel knows nothing about brew. Unlike
+# pi there is no package-only form (no extensions to update in place), so
+# ANY `update` invocation is a self-update and the wrapper refuses them all
+# with the real upgrade path. Everything else passes through untouched.
+herdr() {
+  emulate -L zsh
+  if [[ $1 == update ]]; then
+    print -u2 "herdr: installed via Homebrew -- upgrade herdr itself with: brew upgrade herdr"
+    return 1
+  fi
+  command herdr "$@"
 }
 
 # --- Secrets ----------------------------------------------------------------

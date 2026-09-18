@@ -19,11 +19,12 @@ troubleshooting) is also installed inside the editor at
 `~/.config/nvim/docs/tmux.md`, reachable from nvim with `<leader>?` —
 useful when you're already SSH'd in. This page is the repo reference.
 
-## pi wraps itself
+## pi wraps itself (outside herdr)
 
-You do not run tmux for pi. Typing `pi` in a project directory always
-starts a **new** conversation, wrapped in its own named tmux session (the
-wrapper is in `~/.zshrc` — details in [pi.md](pi.md)):
+You do not run tmux for pi. Typing `pi` in a project directory — from a
+plain terminal tab — starts a **new** conversation, wrapped in its own
+named tmux session (the wrapper is in `~/.zshrc` — details in
+[pi.md](pi.md)):
 
 ```bash
 cd code/chezmoi
@@ -31,6 +32,11 @@ pi                   # -> "pi: tmux session \"chezmoi\" (detach Ctrl-b d; rejoin
 # ... work; detach with Ctrl-b d, or just close the terminal
 tmux a -t chezmoi    # rejoin from ANY terminal: desk, laptop, phone over SSH
 ```
+
+> **Inside [herdr](herdr.md) this does not apply:** there the wrapper
+> stands down and pi runs bare in the herdr pane — herdr is the
+> detachable-session layer in its own panes, and its agents sidebar only
+> sees pi that way. Everything on this page is the Ghostty-tab path.
 
 - **Naming**: the project directory's basename; a collision mints a
   numbered sibling (`chezmoi-2`, `chezmoi-3`, …); `pi -n "auth refactor"`

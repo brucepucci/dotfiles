@@ -80,15 +80,20 @@ touching the repo's settings.
 | **nvim + lualine** | A colorscheme **generated** from the theme's roles at apply time (`core/theming.lua` is nvim's only rendered file; everything else is static Lua reading it) |
 | **delta** | `syntax-theme = none` — bat syntax colors off, so diffs render in the theme's own ANSI palette; the `delta-theme` wrapper picks light/dark per invocation |
 | **pi's TUI** | Theme files whose vars ride terminal-indexed colors, so pi follows the *viewing* terminal — even over SSH |
+| **herdr** | herdr's built-in `terminal` theme: the UI queries the rendering terminal's own ANSI palette and default fg/bg at runtime (OSC 10/11 + OSC 4). Static config, no hex, no resolver — and appearance-independent: a theme swap needs no re-apply because herdr follows the terminal it renders in |
 
 ## The SSH rule: indexed colors, not hexes
 
-Surfaces that travel over SSH — the prompt, pi's TUI — avoid hexes
-entirely. A hex describes a color on the *rendering* machine; an indexed
+Surfaces that travel over SSH — the prompt, pi's TUI, herdr's UI — avoid
+hexes entirely. A hex describes a color on the *rendering* machine; an
+indexed
 slot (0–15) is resolved by the *viewing* terminal through whatever palette
-it is running. SSH from a light-mode laptop into this Mac and the prompt
-and pi render light, automatically, because the terminal in your hands
-decides — the Mac never ships a palette across the wire.
+it is running. SSH from a light-mode laptop into this Mac and the prompt,
+pi, and herdr render light, automatically, because the terminal in your
+hands decides — the Mac never ships a palette across the wire. (herdr
+takes the purest form of this rule: instead of indexed slots, its
+`terminal` theme asks the terminal for its live palette, so its config is
+color-free and never regenerated.)
 
 The deliberate exceptions in pi's themes:
 
