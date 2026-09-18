@@ -37,12 +37,16 @@ walkthrough in [tmux.md](tmux.md); the wrapper's own rules:
   the cwd is `$HOME` (a home directory is not a project name), or the
   invocation is one-shot — any of `-h/--help -v/--version -p/--print
   --mode --list-models`, or a management subcommand (`install`, `config`,
-  `auth`, …). One-shot runs must never spawn a tmux server: the
-  session would flash the alternate screen and swallow the output.
-- **Refuses `pi update`** — the one subcommand that never falls through:
-  the Brewfile installs pi from Homebrew, so self-update would write into
-  a brew-owned keg. The wrapper prints the real upgrade path
-  (`brew upgrade pi-coding-agent`) and fails.
+  `auth`, package-only `update`, …). One-shot runs must never spawn a
+  tmux server: the session would flash the alternate screen and swallow
+  the output.
+- **Triages `pi update`** — the one subcommand the wrapper inspects: the
+  Brewfile installs pi from Homebrew, so any variant that would touch the
+  pi binary itself (bare `update`, `--self`, `--force`, `--all`) is
+  refused with the real upgrade path (`brew upgrade pi-coding-agent`).
+  Package and model-catalog updates (`--extensions`, `--models`, an
+  `npm:`/`git:` spec) only write under `~/.pi/agent` and fall through
+  like every other management subcommand.
 - **Typeahead is preserved**: keystrokes that arrive while the theme probe
   holds the terminal are stashed and re-injected into the session.
 
@@ -104,6 +108,9 @@ is one:
   across every tool and bash at once, so a deny can't be overridden by a
   per-tool allow). Unpinned, so `pi update --extensions` moves it — pin
   with `npm:@gotgenes/pi-permission-system@<version>` to freeze it.
+  Package-only `update` variants fall through the shell wrapper like any
+  management subcommand (see the tmux-wrapper section above); only the
+  keg-touching ones are refused.
 
 Three distinct pieces, only two of them managed:
 
