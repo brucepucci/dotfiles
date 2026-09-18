@@ -117,7 +117,13 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # small left indent, captioned
                             # with the model + effort at install (roles only;
                             # re-installed on every session switch;
-                            # /builtin-header restores pi's own header)
+                            # /builtin-header restores pi's own header);
+                            # extensions/private_pi-permission-system/
+                            # config.json — policy for the npm-installed
+                            # @gotgenes/pi-permission-system gate
+                            # (settings.json "packages"; its payload under
+                            # ~/.pi/agent/npm comes from `pi install`,
+                            # unmanaged)
 docs/                      # repo-level docs, never installed: one page per
                             # tool + developing.md (the maintainer guide)
 ```

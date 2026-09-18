@@ -474,14 +474,46 @@ pi() {
   local __pi_typed=''
   local -i user_theme=0
   local -a a=("$@") quoted=()
-  # `update` is refused before anything else, wrap setting included: the
-  # Brewfile installs pi from homebrew/core, so pi's self-update would
-  # write into a brew-owned keg. Everything else proceeds normally.
-  case "${a[1]:-}" in
-    update)
-      print -u2 "pi: installed via Homebrew -- upgrade with: brew upgrade pi-coding-agent (not \"pi update\")"
-      return 1 ;;
-  esac
+  # `update` is triaged before anything else, wrap setting included: the
+  # Brewfile installs pi from homebrew/core, so anything that would touch
+  # the pi binary itself must not write into a brew-owned keg. Require an
+  # EXPLICIT package or model-catalog target rather than inferring safety
+  # from the absence of prohibited flags: pi's grammar (0.85.x) resolves
+  # bare `update`, `self`/`pi` positionals, and targetless runs -- trust
+  # flags included, in any spelling (`-a`, `-na`, `--approve`,
+  # `--no-approve`), plus empty positionals -- to self- or combined
+  # updates. So every argument must be a whitelisted target or flag
+  # (--extensions, --models, --extension with a spec value, an
+  # npm:/git:/path spec) and at least one target must be present; any
+  # unlisted flag, short or long, refuses with the brew path.
+  if [[ ${a[1]:-} == update ]]; then
+    local -i __pi_update_pkg=0 __pi_ext_value=0
+    local u
+    for u in "${a[@]:1}"; do
+      if (( __pi_ext_value )); then
+        __pi_ext_value=0
+        # --extension's value: a non-empty, non-flag package spec
+        if [[ -n $u && $u != -* && $u != self && $u != pi ]]; then
+          __pi_update_pkg=1
+          continue
+        fi
+        __pi_update_pkg=0
+        break
+      fi
+      case "$u" in
+        --extensions|--models) __pi_update_pkg=1 ;;
+        --extension)           __pi_ext_value=1 ;;
+        -*)                    __pi_update_pkg=0; break ;;  # any unlisted flag
+        self|pi|"")             __pi_update_pkg=0; break ;;  # aliases, empty
+        *)                     __pi_update_pkg=1 ;;         # package spec
+      esac
+    done
+    (( __pi_ext_value )) && __pi_update_pkg=0  # dangling --extension
+    if (( ! __pi_update_pkg )); then
+      print -u2 "pi: installed via Homebrew -- upgrade pi itself with: brew upgrade pi-coding-agent (packages: pi update --extensions)"
+      return 1
+    fi
+  fi
   if [[ ${PI_TMUX_WRAP:-} == never ]]; then command pi "$@"; return; fi
   # One-shot invocations must never spawn a tmux server: the session would
   # flash the alternate screen and swallow the output when it dies. Flags
@@ -500,7 +532,7 @@ pi() {
     esac
   done
   case "${a[1]:-}" in
-    install|remove|uninstall|list|config|auth) command pi "$@"; return ;;
+    install|remove|uninstall|list|config|auth|update) command pi "$@"; return ;;
   esac
   # No wrapping inside tmux, without the binary, off a tty, or from $HOME.
   if [[ -n ${TMUX:-} ]] || ! command -v tmux >/dev/null 2>&1 \

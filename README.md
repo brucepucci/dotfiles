@@ -299,9 +299,18 @@ whole verification runbook for you, any time: `/skill:chezmoi-runbook`.
   and commit — the runbook is in
   [docs/developing.md](docs/developing.md#update-plugins).
 - **pi** — unpinned Homebrew formula; `brew upgrade pi-coding-agent` lands
-  the latest (plus its model catalogs). Not `pi update` — the binary lives
-  in a brew-owned keg, the formula turns pi's own version check off, and
-  the shell wrapper refuses `pi update` outright.
+  the latest (plus its model catalogs). Never `pi update` for the binary —
+  it lives in a brew-owned keg, the formula turns pi's own version check
+  off, and the shell wrapper requires an explicit package/model target
+  before `pi update` passes through: bare, `self`/`pi`,
+  `--self`/`--force`/`--all`, targetless trust flags (`-a`, `--approve`,
+  …), empty positionals, and any unlisted flag all refuse — default-deny.
+  Its npm
+  packages — the `packages` entries in
+  [docs/pi.md](docs/pi.md#packages-npm-extensions) — update separately:
+  `pi update --extensions` moves all unpinned specs,
+  `pi update npm:@gotgenes/pi-permission-system` one; those fall through
+  the wrapper. Pin `@<version>` to freeze a package.
   Its `lastChangelogVersion` self-bump shows as one
   drifting field in `chezmoi diff` — harmless. Model defaults saved via
   `/model` + Ctrl+S must be folded into the template by hand:

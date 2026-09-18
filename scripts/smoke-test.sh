@@ -1221,7 +1221,54 @@ env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
     /bin/zsh -l -i -c "PATH='$nobin'; cd '$proj' && pi" \
     >/dev/null 2>&1 || true
 [[ -s "$PLOG" ]] || die "without tmux the wrapper must fall through to pi"
-ok "creates named sessions, never attaches; guards fall through to plain pi"
+# 5. `pi update` triage, classified by pi's target grammar: the wrapper
+# requires an EXPLICIT package or model-catalog target and refuses
+# everything else -- bare update, self/pi aliases (including behind
+# --extensions), --self/--force/--all, targetless trust flags in any
+# spelling (-a/-na/--approve/--no-approve), empty positionals, and any
+# unlisted flag, short or long (default-deny) -- with the brew path. The
+# fake pi must never run for refused forms; explicit targets fall
+# through to plain pi -- verbatim, and never as a tmux session, under
+# force-wrap and PI_TMUX_WRAP=never alike.
+: > "$TLOG"; : > "$PLOG"
+rc=0; out="$(wrap_zsh "$proj" "update")" || rc=$?
+(( rc != 0 )) || die "bare pi update must be refused"
+[[ "$out" == *'brew upgrade pi-coding-agent'* ]] \
+  || die "update refusal must name the brew path: $out"
+[[ ! -s "$PLOG" ]] || die "refused pi update must not run pi"
+for u in "--self" "--force" "--all" "--approve" "--no-approve" \
+         "self" "pi" "--extensions self" "--extensions pi" \
+         "--approve npm:@x/y" \
+         "-a" "-na" "''" "-x" "--extension self" "--extension"; do
+  : > "$PLOG"
+  wrap_zsh "$proj" "update $u" >/dev/null 2>&1 \
+    && die "pi update $u must be refused"
+  [[ ! -s "$PLOG" ]] || die "pi update $u must not run pi"
+done
+for u in "--extensions" "--models" "npm:@gotgenes/pi-permission-system" \
+         "--extension npm:@foo/bar"; do
+  : > "$TLOG"; : > "$PLOG"
+  wrap_zsh "$proj" "update $u" >/dev/null 2>&1 \
+    || die "package-only pi update $u must pass through"
+  grep -qxF "pi update $u" "$PLOG" \
+    || die "pi update $u must reach pi verbatim: $(cat "$PLOG")"
+  [[ ! -s "$TLOG" ]] || die "pi update $u must not spawn a tmux session"
+done
+guard_plain "PI_TMUX_WRAP=never" "update --extensions"
+# refusal must not depend on the wrap mode: under PI_TMUX_WRAP=never the
+# triage still fires (it precedes the wrap check entirely)
+: > "$TLOG"; : > "$PLOG"
+out="$(env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
+    PATH="$wbin:/usr/bin:/bin" FAKE_SESS="$SESS" FAKE_LOG="$TLOG" \
+    FAKE_PI="$PLOG" PI_TMUX_WRAP=never \
+    /bin/zsh -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$proj' && pi update -a" 2>&1)" \
+  && die "pi update -a must be refused under PI_TMUX_WRAP=never"
+[[ "$out" == *'brew upgrade pi-coding-agent'* ]] \
+  || die "never-mode refusal must name the brew path: $out"
+[[ ! -s "$PLOG" ]] || die "never-mode refusal must not run pi"
+[[ ! -s "$TLOG" ]] || die "never-mode refusal must not touch tmux"
+ok "creates named sessions, never attaches; guards fall through to plain pi;
+    pi update triaged: keg-touching refused, package-only passes through"
 
 step "tmux_wrap setting: on leaves the env alone, off defaults it to never"
 # settings.toml (repo root) carries tmux_wrap = on|off. The committed value

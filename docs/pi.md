@@ -15,6 +15,7 @@ Three pieces, kept deliberately separate:
 | The chezmoi-runbook skill | `dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl` → `~/.pi/agent/skills/chezmoi-runbook/SKILL.md` (`/skill:chezmoi-runbook`) | **yes — generated from AGENTS.md at apply time** |
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
 | The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
+| The permission-system package | `"packages"` in `dot_pi/agent/settings.json.tmpl` + `dot_pi/agent/extensions/pi-permission-system/config.json` → policy config | **yes — entry in the template; config a plain static file** |
 | The API key | `ZAI_API_KEY` in `~/.zsh/secrets.zsh` (or `~/.pi/agent/auth.json` via `/login`) | **no — a secret, never in the repo** |
 
 ## The tmux wrapper (`pi()` in `~/.zshrc`)
@@ -36,12 +37,20 @@ walkthrough in [tmux.md](tmux.md); the wrapper's own rules:
   the cwd is `$HOME` (a home directory is not a project name), or the
   invocation is one-shot — any of `-h/--help -v/--version -p/--print
   --mode --list-models`, or a management subcommand (`install`, `config`,
-  `auth`, …). One-shot runs must never spawn a tmux server: the
-  session would flash the alternate screen and swallow the output.
-- **Refuses `pi update`** — the one subcommand that never falls through:
-  the Brewfile installs pi from Homebrew, so self-update would write into
-  a brew-owned keg. The wrapper prints the real upgrade path
-  (`brew upgrade pi-coding-agent`) and fails.
+  `auth`, package-only `update`, …). One-shot runs must never spawn a
+  tmux server: the session would flash the alternate screen and swallow
+  the output.
+- **Triages `pi update`** — the one subcommand the wrapper inspects: the
+  Brewfile installs pi from Homebrew, so the wrapper requires an
+  **explicit** package or model-catalog target (`--extensions`,
+  `--models`, `--extension <source>`, an `npm:`/`git:` spec — the only
+  things that stay inside `~/.pi/agent`) and refuses everything else
+  with the real upgrade path (`brew upgrade pi-coding-agent`): bare
+  `update`, the `self`/`pi` aliases, `--self`/`--force`/`--all`,
+  targetless runs in any spelling — trust flags `-a`/`-na`/
+  `--approve`/`--no-approve` or an empty positional — and every
+  unlisted flag, short or long (default-deny). Targeted forms fall
+  through like every other management subcommand.
 - **Typeahead is preserved**: keystrokes that arrive while the theme probe
   holds the terminal are stashed and re-injected into the session.
 
@@ -75,9 +84,10 @@ viewing terminal even over SSH — the reasoning is in
 ```json
 {
   "defaultProvider": "zai",
-  "defaultModel": "glm-5.3",
-  "enabledModels": [ ... anthropic and zai models ... ],
-  "theme": "dotfiles-light/dotfiles-dark"
+  "defaultModel": "glm-5.3-flash",
+  "enabledModels": [ ... zai and openai-codex models ... ],
+  "theme": "dotfiles-light/dotfiles-dark",
+  "packages": ["npm:@gotgenes/pi-permission-system"]
 }
 ```
 
@@ -91,6 +101,36 @@ viewing terminal even over SSH — the reasoning is in
   template-sourced, `chezmoi re-add` skips it: after changing defaults via
   `/model`, fold them into `dot_pi/agent/settings.json.tmpl` by hand (see
   [developing.md](developing.md#pi-self-bumps)).
+
+## Packages (npm extensions)
+
+`packages` in `settings.json` carries npm-installed extensions. Today that
+is one:
+
+- **`@gotgenes/pi-permission-system`** — permission gates over tool, bash,
+  path, MCP, and skill access (`allow` / `ask` / `deny`; `path` rules cut
+  across every tool and bash at once, so a deny can't be overridden by a
+  per-tool allow). Unpinned, so `pi update --extensions` moves it — pin
+  with `npm:@gotgenes/pi-permission-system@<version>` to freeze it.
+  Package-only `update` variants fall through the shell wrapper like any
+  management subcommand (see the tmux-wrapper section above); only the
+  keg-touching ones are refused.
+
+Three distinct pieces, only two of them managed:
+
+| Piece | Where | Managed? |
+|---|---|---|
+| The settings entry | `"packages"` in `dot_pi/agent/settings.json.tmpl` | **yes** |
+| The policy config | `~/.pi/agent/extensions/pi-permission-system/config.json`, source `dot_pi/agent/extensions/private_pi-permission-system/config.json` | **yes — plain static file** (currently `yoloMode: true`: `ask` results auto-approve) |
+| The package payload | `~/.pi/agent/npm/…`, installed by `pi install npm:@gotgenes/pi-permission-system` | **no — npm's tree, ignored** |
+
+On a **fresh machine**, `chezmoi apply` writes the entry but not the
+payload — pi auto-installs missing *project* packages at startup, never
+user-scope ones. Run `pi install npm:@gotgenes/pi-permission-system`
+once after the first apply (idempotent — it reconciles the existing
+install). `pi list` shows what's registered; the review log lands in
+`~/.pi/agent/extensions/pi-permission-system/logs/` (unmanaged,
+ignored).
 
 ## The chezmoi-runbook skill (managed)
 
