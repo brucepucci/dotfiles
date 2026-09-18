@@ -58,6 +58,19 @@ herdr also ships an agent skill (`herdr --skill`) for agents running
 output, starting agents. If herdr sticks, that becomes a candidate for
 `dot_pi/agent/skills/` alongside the chezmoi runbook.
 
+**pi integration.** `herdr integration install pi` drops
+`herdr-agent-state.ts` into `~/.pi/agent/extensions/` so pi panes report
+agent state (working / waiting for input) to herdr — it is also what
+enables `[session] resume_agents_on_restore`. Deliberately **not managed
+by this repo**: the file is herdr's own payload, version-locked to the
+herdr protocol — the same class as `~/.pi/agent/npm`, the unmanaged
+payload of pi's `pi install` — and a vendored copy would silently go
+stale on every `brew upgrade herdr`. Re-running the install is
+idempotent and refreshes the file; do it if a herdr upgrade ever changes
+the protocol. If herdr passes evaluation, the README's new-machine list
+gains this one command — documented like `brew bundle`, never automated:
+`chezmoi apply` runs nothing behavioral in this repo.
+
 ## Open questions
 
 Things to settle before folding the config into chezmoi:
