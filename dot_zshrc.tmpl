@@ -475,22 +475,31 @@ pi() {
   local -i user_theme=0
   local -a a=("$@") quoted=()
   # `update` is triaged before anything else, wrap setting included: the
-  # Brewfile installs pi from homebrew/core, so any variant that would
-  # touch the pi binary itself (bare update, --self, --force, --all)
-  # must not write into a brew-owned keg. Package and model-catalog
-  # updates (--extensions, --models, npm:/git: specs) only write under
-  # ~/.pi/agent and pass through.
+  # Brewfile installs pi from homebrew/core, so anything that would touch
+  # the pi binary itself must not write into a brew-owned keg. Default
+  # DENY, classified by pi's own target grammar (0.85.x): bare `update`,
+  # `self`/`pi` positionals (also behind --extensions, where they widen to
+  # a combined update), --self/--force/--all, and targetless runs whose
+  # only arguments are trust flags (e.g. `pi update --approve`) all
+  # resolve to self- or combined updates. Only an explicit package or
+  # model-catalog target (--extensions, --models, --extension <source>,
+  # an npm:/git:/path spec) stays inside ~/.pi/agent; anything else --
+  # including unrecognized flags -- refuses rather than guessing.
   if [[ ${a[1]:-} == update ]]; then
-    local -i __pi_update_keg=0
+    local -i __pi_update_pkg=1
     if (( ${#a} < 2 )); then
-      __pi_update_keg=1                 # bare `pi update` = self-update
+      __pi_update_pkg=0                 # bare `pi update` = self-update
     else
       local u
       for u in "${a[@]:1}"; do
-        case "$u" in --self|--force|--all) __pi_update_keg=1 ;; esac
+        case "$u" in
+          --extensions|--models|--extension) ;;
+          --*)                                __pi_update_pkg=0 ;;
+          self|pi)                            __pi_update_pkg=0 ;;
+        esac
       done
     fi
-    if (( __pi_update_keg )); then
+    if (( ! __pi_update_pkg )); then
       print -u2 "pi: installed via Homebrew -- upgrade pi itself with: brew upgrade pi-coding-agent (packages: pi update --extensions)"
       return 1
     fi

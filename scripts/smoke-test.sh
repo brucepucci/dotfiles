@@ -1221,23 +1221,31 @@ env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
     /bin/zsh -l -i -c "PATH='$nobin'; cd '$proj' && pi" \
     >/dev/null 2>&1 || true
 [[ -s "$PLOG" ]] || die "without tmux the wrapper must fall through to pi"
-# 5. `pi update` triage: keg-touching variants (bare, --self, --force,
-# --all) are refused with the brew path and the fake pi never runs;
-# package/model-catalog variants fall through to plain pi -- verbatim,
-# and never as a tmux session.
+# 5. `pi update` triage, classified by pi's target grammar: bare update,
+# self/pi aliases (including behind --extensions), --self/--force/--all,
+# and targetless trust-flag runs (--approve/--no-approve) all resolve to
+# self- or combined updates and are refused with the brew path; the
+# classifier is default-deny, so ANY unrecognized flag refuses too even
+# beside a package spec. The fake pi must never run for refused forms;
+# only explicit package or model-catalog targets fall through to plain
+# pi -- verbatim, and never as a tmux session, under force-wrap and
+# PI_TMUX_WRAP=never alike.
 : > "$TLOG"; : > "$PLOG"
 rc=0; out="$(wrap_zsh "$proj" "update")" || rc=$?
 (( rc != 0 )) || die "bare pi update must be refused"
 [[ "$out" == *'brew upgrade pi-coding-agent'* ]] \
   || die "update refusal must name the brew path: $out"
 [[ ! -s "$PLOG" ]] || die "refused pi update must not run pi"
-for u in "--self" "--force" "--all" "--extensions --self"; do
+for u in "--self" "--force" "--all" "--approve" "--no-approve" \
+         "self" "pi" "--extensions self" "--extensions pi" \
+         "--approve npm:@x/y"; do
   : > "$PLOG"
   wrap_zsh "$proj" "update $u" >/dev/null 2>&1 \
     && die "pi update $u must be refused"
   [[ ! -s "$PLOG" ]] || die "pi update $u must not run pi"
 done
-for u in "--extensions" "--models" "npm:@gotgenes/pi-permission-system"; do
+for u in "--extensions" "--models" "npm:@gotgenes/pi-permission-system" \
+         "--extension npm:@foo/bar"; do
   : > "$TLOG"; : > "$PLOG"
   wrap_zsh "$proj" "update $u" >/dev/null 2>&1 \
     || die "package-only pi update $u must pass through"
@@ -1245,6 +1253,7 @@ for u in "--extensions" "--models" "npm:@gotgenes/pi-permission-system"; do
     || die "pi update $u must reach pi verbatim: $(cat "$PLOG")"
   [[ ! -s "$TLOG" ]] || die "pi update $u must not spawn a tmux session"
 done
+guard_plain "PI_TMUX_WRAP=never" "update --extensions"
 ok "creates named sessions, never attaches; guards fall through to plain pi;
     pi update triaged: keg-touching refused, package-only passes through"
 

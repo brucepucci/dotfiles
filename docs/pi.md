@@ -41,12 +41,17 @@ walkthrough in [tmux.md](tmux.md); the wrapper's own rules:
   tmux server: the session would flash the alternate screen and swallow
   the output.
 - **Triages `pi update`** — the one subcommand the wrapper inspects: the
-  Brewfile installs pi from Homebrew, so any variant that would touch the
-  pi binary itself (bare `update`, `--self`, `--force`, `--all`) is
-  refused with the real upgrade path (`brew upgrade pi-coding-agent`).
-  Package and model-catalog updates (`--extensions`, `--models`, an
-  `npm:`/`git:` spec) only write under `~/.pi/agent` and fall through
-  like every other management subcommand.
+  Brewfile installs pi from Homebrew, so anything whose target is the pi
+  binary itself is refused with the real upgrade path
+  (`brew upgrade pi-coding-agent`) — bare `update`, the `self`/`pi`
+  aliases (also behind `--extensions`, where they widen to a combined
+  update), `--self`, `--force`, `--all`, and targetless runs whose only
+  arguments are trust flags (`pi update --approve`). The classifier is
+  default-deny: any flag it doesn't recognize refuses rather than
+  guesses. Package and model-catalog targets (`--extensions`,
+  `--models`, `--extension <source>`, an `npm:`/`git:` spec) only write
+  under `~/.pi/agent` and fall through like every other management
+  subcommand.
 - **Typeahead is preserved**: keystrokes that arrive while the theme probe
   holds the terminal are stashed and re-injected into the session.
 
