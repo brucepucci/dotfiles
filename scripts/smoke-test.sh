@@ -1329,8 +1329,22 @@ grep -qF 'version_check = false' "$NEWHOME/.config/herdr/config.toml" \
   || die "herdr background version checks must stay off (brew owns upgrades)"
 grep -qF 'manifest_check = false' "$NEWHOME/.config/herdr/config.toml" \
   || die "herdr manifest checks must stay off (brew owns upgrades)"
+# The ctrl+alt chords drive the SIDEBAR: j/k move the agents highlight,
+# h/l step across spaces. They deliberately do not drive pane focus --
+# workspaces hold one pane each, so pane-focus chords would be silent
+# no-ops, and herdr config check accepts either action, so pin the intent.
+grep -qF 'previous_agent = "ctrl+alt+k"' "$NEWHOME/.config/herdr/config.toml" \
+  || die "herdr ctrl+alt+k must drive previous_agent (sidebar up)"
+grep -qF 'next_agent = "ctrl+alt+j"' "$NEWHOME/.config/herdr/config.toml" \
+  || die "herdr ctrl+alt+j must drive next_agent (sidebar down)"
+grep -qF 'previous_workspace = "ctrl+alt+h"' "$NEWHOME/.config/herdr/config.toml" \
+  || die "herdr ctrl+alt+h must drive previous_workspace"
+grep -qF 'next_workspace = "ctrl+alt+l"' "$NEWHOME/.config/herdr/config.toml" \
+  || die "herdr ctrl+alt+l must drive next_workspace"
+grep -qE 'focus_pane_[a-z]+ = .*ctrl\+alt' "$NEWHOME/.config/herdr/config.toml" \
+  && die "herdr ctrl+alt must not drive pane focus (no-op with one pane per workspace)"
 ok "herdr update refused with the brew path; passthrough intact; config check ok;
-    terminal-relative colors, update checks off"
+    terminal-relative colors, update checks off, ctrl+alt drives the sidebar"
 
 step "tmux_wrap setting: on leaves the env alone, off defaults it to never"
 # settings.toml (repo root) carries tmux_wrap = on|off. The committed value

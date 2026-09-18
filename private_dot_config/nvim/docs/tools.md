@@ -273,20 +273,23 @@ defaults come from chezmoi as
 inside pi is an alternative that stores it in `~/.pi/agent/auth.json`.
 
 ### herdr *(CLI)*
-A terminal workspace manager for coding agents — spaces, tabs, and panes
-owned by a background server, with an **agents** sidebar that shows each
-pi conversation's live state (working / waiting for input). Launch it from
-a project directory with `herdr`; detach with `Ctrl-b` then `q` (everything
-keeps running on the server); reattach with `herdr` — including over SSH.
-Type `pi` in a herdr pane and it runs bare (no tmux session — herdr is the
-detachable-session layer there), which is what makes the sidebar work.
-Detach is not stopping: panes survive the terminal closing and the TUI
-exiting. What they do not survive is a reboot — after one, herdr restores
-the layout, and with the pi integration installed (`herdr integration
-install pi`, idempotent, re-run after herdr upgrades) your pi conversations
-resume too. `Ctrl-b` then `?` lists every key. Config is
-`~/.config/herdr/config.toml` (chezmoi-managed); updates ride
-`brew upgrade herdr`, never `herdr update`.
+The agent manager — a terminal workspace manager for coding agents:
+spaces, tabs, and panes owned by a background server, with an **agents**
+sidebar that shows each pi conversation's live state (working / waiting
+for input). pi runs bare everywhere on this Mac because herdr owns agent
+sessions. Launch it from a project directory with `herdr`; type `pi` in a
+pane; detach with `Ctrl-b` then `q` (everything keeps running on the
+server); reattach with `herdr` — including over SSH. Sidebar navigation
+is prefix-free: `Ctrl–Option (Alt)` + `j`/`k` moves the agents highlight
+down/up, `Ctrl–Option (Alt)` + `h`/`l` steps across spaces, and landing
+on an agent jumps straight to its workspace. Detach is not stopping:
+panes survive the terminal closing and the TUI exiting. What they do not
+survive is a reboot — after one, herdr restores the layout, and with the
+pi integration installed (`herdr integration install pi`, idempotent,
+re-run after herdr upgrades) your pi conversations resume too. `Ctrl-b`
+then `?` lists every key. Config is `~/.config/herdr/config.toml`
+(chezmoi-managed); updates ride `brew upgrade herdr`, never
+`herdr update`.
 
 ---
 
