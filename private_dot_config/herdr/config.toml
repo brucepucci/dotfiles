@@ -1,0 +1,23 @@
+# ~/.config/herdr/config.toml -- managed by chezmoi (this repo); edit here,
+# then `chezmoi apply`. herdr's own state (herdr-server.log, session.json,
+# .plugins.lock) lives beside this file -- chezmoi leaves that alone.
+#
+# Theme: the `terminal` built-in paints herdr's UI from the rendering
+# terminal's own ANSI palette and default fg/bg (herdr queries OSC 10/11
+# and OSC 4 at runtime). That is the repo's SSH rule, enforced: over SSH
+# the TUI follows the viewing terminal, exactly like the prompt and pi --
+# no literal hexes anywhere in this file, and nothing in it varies with
+# settings.toml's appearance mode.
+#
+# Updates: the binary is brew-owned, so background checks are off and the
+# self-updater is refused by the `herdr` wrapper in ~/.zshrc -- upgrade
+# with `brew upgrade herdr` like every other formula. See docs/herdr.md.
+onboarding = false
+
+[theme]
+name = "terminal"
+
+[update]
+channel = "stable"
+version_check = false
+manifest_check = false

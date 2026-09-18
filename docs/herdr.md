@@ -9,7 +9,7 @@ inside the panes.
 
 **Managed files**:
 
-- `private_dot_config/herdr/config.toml.tmpl` → `~/.config/herdr/config.toml`
+- `private_dot_config/herdr/config.toml` → `~/.config/herdr/config.toml`
 - the `herdr()` wrapper in `~/.zshrc` (see
   [zsh.md](zsh.md) — same file as the `pi()` wrapper)
 - the [Brewfile](../Brewfile) entry
@@ -38,26 +38,25 @@ braces.
 
 ## The managed config
 
-Rendered from `settings.toml` + the vendored theme mirror by
-`scripts/theme.py`, exactly like every other surface:
+A small static file (`private_dot_config/herdr/config.toml`), and
+singularly *not* derived from `settings.toml` — because of the SSH rule:
 
-- **Theme**: the base is herdr's built-in `terminal` theme; a generated
-  palette rides on top, one token per resolved role — surfaces
-  (`panel_bg` ← bg, `sidebar_bg` ← bg_deep, `surface0` ← statusline,
-  `surface1` ← surface, overlays ← the greys), text (`text` ← fg,
-  `subtext0` ← fg_soft), accents (`accent`/`blue` ← blue, `mauve` ←
-  purple, `teal` ← aqua, `peach` ← orange, plus same-named red/green/
-  yellow), and `selection_bg` ← the theme's own terminal selection color.
-  Under `theme = "system"` the config sets `auto_switch = true` and
-  carries `[theme.custom.light]` + `[theme.custom.dark]`; a pinned mode
-  renders one `[theme.custom]` palette and no auto switching.
+- **Theme**: herdr's built-in `terminal` theme paints the UI from the
+  rendering terminal's own ANSI palette and default fg/bg (herdr queries
+  OSC 10/11 and the OSC 4 palette at runtime — the same live-probe idea
+  as pi's theme detection). Over SSH the TUI therefore follows the
+  *viewing* terminal, exactly like the prompt and pi, instead of pinning
+  the Mac's palette onto the client. The file carries no hex at all and
+  nothing in it varies with the appearance setting — the smoke test
+  enforces both (a strict no-hex check, and a byte-identical render
+  across pinned and system modes).
 - **Updates**: `version_check = false`, `manifest_check = false`,
   `channel = "stable"` — brew owns the version.
 - **Onboarding**: off — the config exists from the first apply.
 
-Everything is generated; hand edits to `~/.config/herdr/config.toml` are
-wiped by the next apply. herdr hot-reloads the file:
-`herdr server reload-config` (or `prefix+shift+r` inside the TUI).
+Hand edits to `~/.config/herdr/config.toml` are wiped by the next apply.
+herdr hot-reloads the file: `herdr server reload-config` (or
+`prefix+shift+r` inside the TUI).
 
 ## Server model
 

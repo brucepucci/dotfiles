@@ -104,11 +104,10 @@ private_dot_config/ghostty/config.tmpl # terminal appearance + ssh terminfo — 
                             # without the entry the remote zle garbles)
 private_dot_config/ghostty/themes/      # those two theme files, rendered from
                             # the same resolved palettes every surface uses
-private_dot_config/herdr/   # config.toml.tmpl -- the herdr agent
-                            # multiplexer's config: a generated palette
-                            # (roles + the terminal's own selection color)
-                            # per appearance, auto_switch under theme=system
-                            # / one custom palette when pinned; update
+private_dot_config/herdr/   # config.toml -- the herdr agent multiplexer's
+                            # config: herdr's terminal theme (UI colors ride
+                            # the rendering terminal's own palette -- the SSH
+                            # rule; no hex, identical across modes) + update
                             # checks off (brew owns upgrades)
 dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # .json.tmpl — the pi TUI's themes, generated from

@@ -694,7 +694,6 @@ for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
          "$NEWHOME/.pi/agent/themes/dotfiles-dark.json" \
          "$NEWHOME/.pi/agent/extensions/provider-usage.ts" \
          "$NEWHOME/.pi/agent/extensions/title-screen.ts" \
-         "$NEWHOME/.config/herdr/config.toml" \
          "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
          "$NEWHOME/.config/zsh/ps1.zsh" \
          "$NEWHOME/.config/nvim/lua/bruce/plugins/ui.lua" \
@@ -720,24 +719,8 @@ for side in light dark; do
       || die "theming.lua $side.$role does not match the $t roles"
   done
 done
-# herdr: same guarantee, against the generated config -- one key per role
-# class (bg role, fg role) plus the terminal's own selection color, per side.
-herdr_val() { # $1 = section, $2 = key -> value from the managed config
-  awk -v sec="$1" -v key="$2" '
-    $0 == "[" sec "]" { f=1; next }
-    /^\[/             { f=0 }
-    f && $1 == key    { gsub(/"/, "", $3); print $3; exit }' \
-    "$NEWHOME/.config/herdr/config.toml"
-}
-for side in light dark; do
-  t="$( [[ $side == light ]] && echo "$LTHEME" || echo "$DTHEME" )"
-  [[ "$(herdr_val "theme.custom.$side" panel_bg)" == "$(themeget "$t" roles.bg)" ]] \
-    || die "herdr $side panel_bg does not match the $t bg role"
-  [[ "$(herdr_val "theme.custom.$side" text)" == "$(themeget "$t" roles.fg)" ]] \
-    || die "herdr $side text does not match the $t fg role"
-  [[ "$(herdr_val "theme.custom.$side" selection_bg)" == "$(themeget "$t" terminal.selection-background)" ]] \
-    || die "herdr $side selection_bg does not match the $t selection color"
-done
+# herdr: same guarantee, against the managed config -- enforced in the
+# herdr step below (terminal-relative colors: no hex at all).
 # pi themes: the SSH guarantee, checked against the resolver's own
 # output instead of restated constants. bg/fg/accents/grey ride the
 # viewing terminal's slots, shades no slot can carry ride the xterm
@@ -1329,7 +1312,25 @@ if command -v herdr >/dev/null 2>&1; then
   HERDR_CONFIG_PATH="$NEWHOME/.config/herdr/config.toml" herdr config check >/dev/null \
     || die "herdr config check rejected the rendered config"
 fi
-ok "herdr update refused with the brew path; passthrough intact; config check ok"
+# Terminal-relative colors, per docs/developing.md's SSH rule: herdr's
+# `terminal` theme paints from the rendering terminal's own palette, so
+# over SSH the TUI follows the viewer like the prompt and pi. A hex here
+# would pin the Mac's palette onto whatever terminal renders it.
+grep -qE '#[0-9a-fA-F]{6}' "$NEWHOME/.config/herdr/config.toml" \
+  && die "herdr config must carry no hex colors (terminal theme, viewer's palette)"
+grep -qF 'name = "terminal"' "$NEWHOME/.config/herdr/config.toml" \
+  || die 'herdr theme must be the terminal-following built-in'
+# The documented update policy: brew owns the version, so background
+# checks stay off (config check above accepts either boolean -- this is
+# the assertion that actually pins the policy).
+grep -qF 'onboarding = false' "$NEWHOME/.config/herdr/config.toml" \
+  || die "herdr onboarding must stay off (the config exists from first apply)"
+grep -qF 'version_check = false' "$NEWHOME/.config/herdr/config.toml" \
+  || die "herdr background version checks must stay off (brew owns upgrades)"
+grep -qF 'manifest_check = false' "$NEWHOME/.config/herdr/config.toml" \
+  || die "herdr manifest checks must stay off (brew owns upgrades)"
+ok "herdr update refused with the brew path; passthrough intact; config check ok;
+    terminal-relative colors, update checks off"
 
 step "tmux_wrap setting: on leaves the env alone, off defaults it to never"
 # settings.toml (repo root) carries tmux_wrap = on|off. The committed value
@@ -1379,16 +1380,11 @@ grep -qF 'PI_THEME_PINNED="dark"' "$pinnedhome/.zshrc" \
   || die 'theme=dark must render PI_THEME_PINNED="dark" into ~/.zshrc'
 [[ "$(sed -n 's/.*"theme": "\([^"]*\)".*/\1/p' "$pinnedhome/.pi/agent/settings.json")" == "dotfiles-dark" ]] \
   || die "theme=dark: pi settings.json must carry the single dark theme"
-# herdr pins the same way: one custom palette (the dark one), no auto
-# switching, and no light layer at all.
-[[ "$(sed -n 's/^auto_switch = //p' "$pinnedhome/.config/herdr/config.toml")" == false ]] \
-  || die "theme=dark: herdr config must not auto-switch under a pin"
-grep -q '^\[theme.custom.light\]' "$pinnedhome/.config/herdr/config.toml" \
-  && die "theme=dark: herdr config must not carry a light layer under a pin"
-pinbg="$(awk '/^\[theme\.custom\]/{f=1;next} /^\[/{f=0} f && $1=="panel_bg" {gsub(/"/,"",$3); print $3}' \
-  "$pinnedhome/.config/herdr/config.toml")"
-[[ "$pinbg" == "$(python3 "$SOURCE/scripts/theme.py" --get "$DTHEME" roles.bg)" ]] \
-  || die "theme=dark: herdr custom palette is not the dark theme's bg role"
+# herdr does not vary with the appearance pin at all: the terminal theme
+# follows the viewing terminal, so the pinned render is byte-identical to
+# the system-mode one.
+cmp -s "$NEWHOME/.config/herdr/config.toml" "$pinnedhome/.config/herdr/config.toml" \
+  || die "theme=dark: herdr config must not vary with the appearance setting"
 grep -qF ': ${PI_TMUX_WRAP:=never}' "$pinnedhome/.zshrc" \
   && die "tmux_wrap=on must stay silent even when the theme is pinned"
 : > "$TLOG"; : > "$SESS"; : > "$PLOG"
@@ -1404,7 +1400,7 @@ grep -qF -- '--use-theme' "$TLOG" \
 ! grep -qF 'PI_THEME_PINNED=' "$NEWHOME/.zshrc" \
   || die "theme=system (committed) must not render a pin into ~/.zshrc"
 ok "pin renders, wraps without --use-theme; system mode stays unpinned;
-    herdr pins to a single custom palette with no auto switching"
+    herdr's config is byte-identical across appearance modes"
 
 step "chezmoi-runbook skill: generated from AGENTS.md, frontmatter valid"
 # dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl renders
