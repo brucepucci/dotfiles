@@ -3,10 +3,10 @@
 A chezmoi-managed terminal setup for an **agent-first** workflow: Neovim is
 the bulk of it, plus the one zsh shell every terminal and SSH session
 shares, Ghostty, git tooling (delta, lazygit), tmux, herdr, and the
-[pi](https://github.com/earendil-works/pi) coding agent, using GPT-6 Luna
-through ChatGPT/Codex by default, with Z.ai's GLM models available as an
-alternative. Built around a simple reality: most code is now *written* by an
-agent in one terminal split and *reviewed* by a human in the other — so
+[pi](https://github.com/earendil-works/pi) coding agent, using GPT-6 Sol
+with high reasoning through ChatGPT/Codex by default, with Z.ai's GLM
+models available as an alternative. Built around a simple reality: most code
+is now *written* by an agent in one terminal split and *reviewed* by a human in the other — so
 the editor is tuned for reading diffs and deciding what to keep, the shell
 is tuned for hopping between machines, and everything else stays out of
 the way.

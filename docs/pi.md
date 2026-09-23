@@ -2,10 +2,10 @@
 
 [`pi`](https://github.com/earendil-works/pi) is the terminal coding agent
 this whole setup orbits: an agent you converse with in the terminal, which
-reads files, runs commands, and edits code. By default it runs GPT-6 Luna
-through ChatGPT/Codex; the scoped model list contains the GPT-6 Astra, Luna,
-and Sol models. The working arrangement is pi in one Ghostty split,
-nvim in the other — pi writes, nvim reviews (see [nvim.md](nvim.md)).
+reads files, runs commands, and edits code. By default it runs GPT-6 Sol
+with high reasoning through ChatGPT/Codex; the scoped model list contains
+the GPT-6 Astra, Luna, and Sol models. The working arrangement is pi in one
+Ghostty split, nvim in the other — pi writes, nvim reviews (see [nvim.md](nvim.md)).
 
 Three pieces, kept deliberately separate:
 
@@ -93,8 +93,8 @@ viewing terminal even over SSH — the reasoning is in
 ```json
 {
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-6-luna",
-  "defaultThinkingLevel": "max",
+  "defaultModel": "gpt-6-sol",
+  "defaultThinkingLevel": "high",
   "enabledModels": [
     "openai-codex/gpt-6-astra",
     "openai-codex/gpt-6-luna",
@@ -212,7 +212,7 @@ one-liner instead of a wrapped block:
   ████████    ████
   ████        ████
   ████        ████
-  gpt-6-luna · max
+  gpt-6-sol · high
 ```
 
 - The glyph is the pi logo mark itself (pi.dev's logo: a squared "P"
