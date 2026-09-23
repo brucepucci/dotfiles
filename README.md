@@ -3,8 +3,9 @@
 A chezmoi-managed terminal setup for an **agent-first** workflow: Neovim is
 the bulk of it, plus the one zsh shell every terminal and SSH session
 shares, Ghostty, git tooling (delta, lazygit), tmux, herdr, and the
-[pi](https://github.com/earendil-works/pi) coding agent running Z.ai's GLM
-models. Built around a simple reality: most code is now *written* by an
+[pi](https://github.com/earendil-works/pi) coding agent, using GPT-6 Luna
+through ChatGPT/Codex by default, with Z.ai's GLM models available as an
+alternative. Built around a simple reality: most code is now *written* by an
 agent in one terminal split and *reviewed* by a human in the other — so
 the editor is tuned for reading diffs and deciding what to keep, the shell
 is tuned for hopping between machines, and everything else stays out of
@@ -118,20 +119,19 @@ chezmoi apply
 # 5. Plugins, at the exact revisions pinned in lazy-lock.json
 nvim --headless "+Lazy! restore" +qa
 
-# 6. The one manual step: secrets never go in git. Create
-#    ~/.zsh/secrets.zsh from the installed template and fill in your keys:
+# 6. Optional secrets (never in git), for Z.ai and other tools:
 cp ~/.zsh/secrets.example.zsh ~/.zsh/secrets.zsh
 chmod 600 ~/.zsh/secrets.zsh
-$EDITOR ~/.zsh/secrets.zsh   # ZAI_API_KEY (https://z.ai), GITHUB_TOKEN, ...
-#    pi reads ZAI_API_KEY from the environment; gh keeps working via its
-#    own hosts.yml either way. (pi's /login is an alternative: it writes
-#    ~/.pi/agent/auth.json, which then takes precedence over the variable.)
+$EDITOR ~/.zsh/secrets.zsh   # optional ZAI_API_KEY (https://z.ai), GITHUB_TOKEN, ...
+#    pi's default ChatGPT/Codex provider is authenticated in pi with
+#    `/login` -> choose ChatGPT/Codex. For the Z.ai alternative, set
+#    ZAI_API_KEY or choose Z.ai in `/login`; gh uses its own hosts.yml.
 ```
 
-Then open Ghostty and run `nvim` — or `pi`, once step 6 is done. That is
-the whole thing: nothing left to configure by hand — editor, terminal,
-shell, git tooling, and coding agent are all in place. From here on, every
-change is an edit in this repo plus `chezmoi apply`.
+Then open Ghostty and run `nvim` — or `pi` and use `/login` → ChatGPT/Codex
+to authenticate the default provider. Z.ai remains available by setting
+`ZAI_API_KEY` or choosing Z.ai in `/login`. From here on, every change is
+an edit in this repo plus `chezmoi apply`.
 
 > **Step 1 is not optional.** `chezmoi init` clones over HTTPS, and this repo
 > is private, so without a credential helper it fails with
@@ -177,7 +177,7 @@ palette overrides the resolver reads first), and `LICENSE`.
 Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
 generated), `~/.zsh/secrets.zsh` (API keys — a secret), `~/.ssh/`,
 `~/.config/gh/hosts.yml` (auth token), and on the pi side
-`~/.pi/agent/auth.json` (optional key copy from `/login`),
+`~/.pi/agent/auth.json` (provider credentials from `/login`),
 `~/.pi/agent/sessions/` (transcripts), and `~/.pi/agent/models-store.json`
 (a catalog cache pi refetches itself).
 

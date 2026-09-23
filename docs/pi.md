@@ -2,8 +2,9 @@
 
 [`pi`](https://github.com/earendil-works/pi) is the terminal coding agent
 this whole setup orbits: an agent you converse with in the terminal, which
-reads files, runs commands, and edits code. It runs Z.ai's GLM models on
-their Coding Plan. The working arrangement is pi in one Ghostty split,
+reads files, runs commands, and edits code. By default it runs GPT-6 Luna
+through ChatGPT/Codex; the scoped model list contains the GPT-6 Astra, Luna,
+and Sol models. The working arrangement is pi in one Ghostty split,
 nvim in the other — pi writes, nvim reviews (see [nvim.md](nvim.md)).
 
 Three pieces, kept deliberately separate:
@@ -16,7 +17,7 @@ Three pieces, kept deliberately separate:
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
 | The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
 | The permission-system package | `"packages"` in `dot_pi/agent/settings.json.tmpl` + `dot_pi/agent/extensions/pi-permission-system/config.json` → policy config | **yes — entry in the template; config a plain static file** |
-| The API key | `ZAI_API_KEY` in `~/.zsh/secrets.zsh` (or `~/.pi/agent/auth.json` via `/login`) | **no — a secret, never in the repo** |
+| Provider credentials | ChatGPT/Codex (default) via `/login`; Z.ai as an alternative via `ZAI_API_KEY` in `~/.zsh/secrets.zsh` or `/login` | **no — credentials are secrets, never in the repo** |
 
 ## The tmux wrapper (`pi()` in `~/.zshrc`)
 
@@ -91,9 +92,14 @@ viewing terminal even over SSH — the reasoning is in
 
 ```json
 {
-  "defaultProvider": "zai",
-  "defaultModel": "glm-5.3-flash",
-  "enabledModels": [ ... zai and openai-codex models ... ],
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-6-luna",
+  "defaultThinkingLevel": "max",
+  "enabledModels": [
+    "openai-codex/gpt-6-astra",
+    "openai-codex/gpt-6-luna",
+    "openai-codex/gpt-6-sol"
+  ],
   "theme": "dotfiles-light/dotfiles-dark",
   "packages": ["npm:@gotgenes/pi-permission-system"]
 }
@@ -206,7 +212,7 @@ one-liner instead of a wrapped block:
   ████████    ████
   ████        ████
   ████        ████
-  glm-5.3 · high
+  gpt-6-luna · max
 ```
 
 - The glyph is the pi logo mark itself (pi.dev's logo: a squared "P"
@@ -246,7 +252,7 @@ Inside a conversation (pi's own bindings, not custom):
 | `Shift+Enter` | Newline without submitting (needs the extended-keys tmux settings; phone clients must speak them) |
 | `Alt-⌦` (alt+delete) | Kill next word — matched in zsh for parity |
 | `/model` | Change model; **Ctrl+S** in that picker saves it as the default (that's what drifts settings.json) |
-| `/login` | Store the Z.ai key in `~/.pi/agent/auth.json` — takes precedence over `ZAI_API_KEY` when present |
+| `/login` | Choose ChatGPT/Codex for the default provider, or Z.ai as an alternative; Z.ai credentials in `auth.json` take precedence over `ZAI_API_KEY` |
 | `/export` | Read-only HTML dump of the conversation |
 
 From the shell:
