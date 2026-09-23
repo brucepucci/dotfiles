@@ -17,7 +17,7 @@ Three pieces, kept deliberately separate:
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
 | The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
 | The permission-system package | `"packages"` in `dot_pi/agent/settings.json.tmpl` + `dot_pi/agent/extensions/pi-permission-system/config.json` → policy config | **yes — entry in the template; config a plain static file** |
-| The API key | `ZAI_API_KEY` in `~/.zsh/secrets.zsh` (or `~/.pi/agent/auth.json` via `/login`) | **no — a secret, never in the repo** |
+| Provider credentials | ChatGPT/Codex (default) via `/login`; Z.ai as an alternative via `ZAI_API_KEY` in `~/.zsh/secrets.zsh` or `/login` | **no — credentials are secrets, never in the repo** |
 
 ## The tmux wrapper (`pi()` in `~/.zshrc`)
 
@@ -252,7 +252,7 @@ Inside a conversation (pi's own bindings, not custom):
 | `Shift+Enter` | Newline without submitting (needs the extended-keys tmux settings; phone clients must speak them) |
 | `Alt-⌦` (alt+delete) | Kill next word — matched in zsh for parity |
 | `/model` | Change model; **Ctrl+S** in that picker saves it as the default (that's what drifts settings.json) |
-| `/login` | Store the Z.ai key in `~/.pi/agent/auth.json` — takes precedence over `ZAI_API_KEY` when present |
+| `/login` | Choose ChatGPT/Codex for the default provider, or Z.ai as an alternative; Z.ai credentials in `auth.json` take precedence over `ZAI_API_KEY` |
 | `/export` | Read-only HTML dump of the conversation |
 
 From the shell:

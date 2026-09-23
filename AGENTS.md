@@ -9,7 +9,8 @@ A chezmoi-managed dotfiles repo for an agent-focused terminal workflow:
 Neovim is the bulk of it, plus the zsh shell config shared by every terminal
 and SSH session, Ghostty (theme + ssh terminfo auto-install), git tooling
 (delta, lazygit), tmux
-(detachable sessions), and the pi coding agent (Z.ai/GLM models).
+(detachable sessions), and the pi coding agent (GPT-6 via ChatGPT/Codex by
+default, with Z.ai/GLM also available).
 
 `docs/` at the repo root (never installed -- see `.chezmoiignore`) holds one
 page per tool plus `docs/developing.md`, the long-form maintainer guide:
@@ -155,9 +156,11 @@ shell env lines there. History is one shared file, `~/.zsh_history`.
 
 **Secrets never go in this repo.** They live in `~/.zsh/secrets.zsh`
 (`private_dot_zsh/secrets.example.zsh` is the template; the real file is in
-`.chezmoiignore`). That includes the Z.ai key: `ZAI_API_KEY`. pi's `/login`
-may also write a copy to `~/.pi/agent/auth.json`, which takes precedence
-over the env var when present — also unmanaged, also never committed.
+`.chezmoiignore`). That includes the Z.ai key: `ZAI_API_KEY`. The default
+ChatGPT/Codex provider is authenticated through pi's `/login`, which stores
+provider credentials in `~/.pi/agent/auth.json` — unmanaged, never
+committed. `/login` also supports Z.ai as an alternative to the environment
+variable.
 
 **No `pcall(require, ...)` guards.** The previous config wrapped every plugin
 file in `local ok, x = pcall(require, "..."); if not ok then return end`. That
