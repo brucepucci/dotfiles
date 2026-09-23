@@ -2,8 +2,9 @@
 
 [`pi`](https://github.com/earendil-works/pi) is the terminal coding agent
 this whole setup orbits: an agent you converse with in the terminal, which
-reads files, runs commands, and edits code. It runs Z.ai's GLM models on
-their Coding Plan. The working arrangement is pi in one Ghostty split,
+reads files, runs commands, and edits code. By default it runs GPT-6 Luna
+through ChatGPT/Codex; the scoped model list contains the GPT-6 Astra, Luna,
+and Sol models. The working arrangement is pi in one Ghostty split,
 nvim in the other — pi writes, nvim reviews (see [nvim.md](nvim.md)).
 
 Three pieces, kept deliberately separate:
@@ -91,9 +92,14 @@ viewing terminal even over SSH — the reasoning is in
 
 ```json
 {
-  "defaultProvider": "zai",
-  "defaultModel": "glm-5.3-flash",
-  "enabledModels": [ ... zai and openai-codex models ... ],
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-6-luna",
+  "defaultThinkingLevel": "max",
+  "enabledModels": [
+    "openai-codex/gpt-6-astra",
+    "openai-codex/gpt-6-luna",
+    "openai-codex/gpt-6-sol"
+  ],
   "theme": "dotfiles-light/dotfiles-dark",
   "packages": ["npm:@gotgenes/pi-permission-system"]
 }
@@ -206,7 +212,7 @@ one-liner instead of a wrapped block:
   ████████    ████
   ████        ████
   ████        ████
-  glm-5.3 · high
+  gpt-6-luna · max
 ```
 
 - The glyph is the pi logo mark itself (pi.dev's logo: a squared "P"
