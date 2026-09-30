@@ -33,7 +33,7 @@ const deferred = () => {
 };
 
 async function run({ reason = "startup", mode = "tui", offline = false, stdout = "{}", code = 0,
-	updateCode = 0, shutdown = false, npmResult, ui } = {}) {
+	killed = false, updateCode = 0, shutdown = false, npmResult, ui } = {}) {
 	const handlers = {};
 	const commands = {};
 	const calls = [];
@@ -44,7 +44,7 @@ async function run({ reason = "startup", mode = "tui", offline = false, stdout =
 		registerCommand: (name, command) => { commands[name] = command; },
 		exec: async (cmd, args, options) => {
 			calls.push([cmd, args, options]);
-			if (cmd === "npm") return npmResult ? npmResult : { stdout, code, stderr: "", killed: false };
+			if (cmd === "npm") return npmResult ? npmResult : { stdout, code, stderr: "", killed };
 			return { stdout: "", code: updateCode, stderr: updateCode ? "failed" : "", killed: false };
 		},
 	});
@@ -86,6 +86,21 @@ try {
 		&& result.notifications.some(([s, level]) => s.includes("Could not check") && level === "warning"));
 	result = await run({ stdout: "invalid", code: 1 });
 	check("invalid npm output reports uncertainty", result.notifications.some(([s, level]) => s.includes("Could not check") && level === "warning"));
+	result = await run({ stdout: JSON.stringify({ error: { code: "ECONNREFUSED" } }), code: 1 });
+	check("npm code-1 registry failure is not up to date", result.notifications.length === 1
+		&& result.notifications[0][1] === "warning");
+	result = await run({ stdout: "", code: 0, killed: true });
+	check("killed npm check is not up to date", result.notifications.length === 1
+		&& result.notifications[0][1] === "warning");
+	result = await run({ stdout: "", code: 0 });
+	check("empty npm output is not up to date", result.notifications.length === 1
+		&& result.notifications[0][1] === "warning");
+	result = await run({ stdout: "{}", code: 1 });
+	check("code-1 without updates is inconclusive", result.notifications.length === 1
+		&& result.notifications[0][1] === "warning");
+	result = await run({ stdout: JSON.stringify({ pkg: { latest: "2.0.0" } }), code: 1 });
+	check("incomplete npm entry is inconclusive", result.notifications.length === 1
+		&& result.notifications[0][1] === "warning");
 	result = await run({ reason: "reload", stdout: outdated });
 	check("reload does not recheck", result.calls.length === 0);
 	result = await run({ mode: "print", stdout: outdated });

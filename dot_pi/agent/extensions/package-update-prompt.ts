@@ -73,17 +73,29 @@ export default function (pi: ExtensionAPI) {
 				timeout: 5000,
 			});
 			if (signal.aborted) return;
-			if (result.code !== 0 && result.code !== 1) {
+			if (result.killed || (result.code !== 0 && result.code !== 1) || !result.stdout.trim()) {
 				ctx.ui.notify("Could not check Pi package updates; starting normally.", "warning");
 				return;
 			}
-			const outdated = JSON.parse(result.stdout || "{}") as Record<string, { current?: string; latest?: string }>;
-			const updates = Object.entries(outdated)
-				.filter(([, info]) => info && info.current && info.latest && info.current !== info.latest)
+			const outdated: unknown = JSON.parse(result.stdout);
+			if (!outdated || typeof outdated !== "object" || Array.isArray(outdated) || "error" in outdated) {
+				throw new Error("Invalid npm outdated response");
+			}
+			const entries = Object.entries(outdated);
+			if (entries.some(([, info]) => !info || typeof info !== "object"
+				|| typeof info.current !== "string" || typeof info.latest !== "string")) {
+				throw new Error("Invalid npm outdated package entry");
+			}
+			const updates = entries
+				.filter(([, info]) => info.current !== info.latest)
 				.map(([name, info]) => `${name}: ${info.current} → ${info.latest}`);
 			if (signal.aborted) return;
 			if (!updates.length) {
-				ctx.ui.notify("Installed npm Pi packages are up to date.", "info");
+				if (result.code === 1) {
+					ctx.ui.notify("Could not check Pi package updates; starting normally.", "warning");
+				} else {
+					ctx.ui.notify("Installed npm Pi packages are up to date.", "info");
+				}
 				return;
 			}
 			ctx.ui.notify(`Pi package updates available: ${updates.join(", ")}. Run /update-pi-packages to install.`, "info");
