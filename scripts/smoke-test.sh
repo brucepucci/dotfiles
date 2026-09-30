@@ -638,6 +638,10 @@ node "$SOURCE/scripts/test-provider-usage.mjs" \
   || die "title-screen.ts missing from ~/.pi/agent/extensions"
 node "$SOURCE/scripts/test-title-screen.mjs" \
   || die "title-screen unit harness failed"
+[[ -f "$NEWHOME/.pi/agent/extensions/package-update-prompt.ts" ]] \
+  || die "package-update-prompt.ts missing from ~/.pi/agent/extensions"
+node "$SOURCE/scripts/test-package-update-prompt.mjs" \
+  || die "package-update-prompt unit harness failed"
 out="$(fresh_zsh '[[ $path[(r)$HOME/.local/bin] ]] && echo lbin=yes')"
 [[ "$out" == *lbin=yes* ]] || die "login PATH does not include ~/.local/bin"
 # The wrapper itself, hermetically: fake `defaults` + fake `delta`, both
@@ -694,6 +698,7 @@ for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
          "$NEWHOME/.pi/agent/themes/dotfiles-dark.json" \
          "$NEWHOME/.pi/agent/extensions/provider-usage.ts" \
          "$NEWHOME/.pi/agent/extensions/title-screen.ts" \
+         "$NEWHOME/.pi/agent/extensions/package-update-prompt.ts" \
          "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
          "$NEWHOME/.config/zsh/ps1.zsh" \
          "$NEWHOME/.config/nvim/lua/bruce/plugins/ui.lua" \

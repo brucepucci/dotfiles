@@ -16,6 +16,7 @@ Three pieces, kept deliberately separate:
 | The chezmoi-runbook skill | `dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl` → `~/.pi/agent/skills/chezmoi-runbook/SKILL.md` (`/skill:chezmoi-runbook`) | **yes — generated from AGENTS.md at apply time** |
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
 | The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
+| The package-update prompt extension | `dot_pi/agent/extensions/package-update-prompt.ts` → `~/.pi/agent/extensions/package-update-prompt.ts` | **yes — plain static file** |
 | The permission-system package | `"packages"` in `dot_pi/agent/settings.json.tmpl` + `dot_pi/agent/extensions/pi-permission-system/config.json` → policy config | **yes — entry in the template; config a plain static file** |
 | Provider credentials | ChatGPT/Codex (default) via `/login`; Z.ai as an alternative via `ZAI_API_KEY` in `~/.zsh/secrets.zsh` or `/login` | **no — credentials are secrets, never in the repo** |
 
@@ -145,6 +146,24 @@ once after the first apply (idempotent — it reconciles the existing
 install). `pi list` shows what's registered; the review log lands in
 `~/.pi/agent/extensions/pi-permission-system/logs/` (unmanaged,
 ignored).
+
+## The package-update prompt (managed)
+
+On interactive Pi startup, `package-update-prompt.ts` checks the installed
+user-scope npm package tree for newer versions. If any are found, it shows the
+versions and asks before running `pi update --extensions --no-approve` from
+`$HOME` (so trusted project packages are not updated by surprise). Declining makes no changes;
+a successful update asks you to **restart Pi** so the newly installed code is
+loaded. The check runs asynchronously once per process and skips offline,
+noninteractive, and subsequent session-switch/reload events; check failures
+never block startup. `scripts/test-package-update-prompt.mjs` tests the
+confirmation and safety paths without network access.
+
+This is for npm-installed Pi packages (currently the permission-system
+package), not the repo-managed TypeScript extensions or Pi itself. The latter
+are updated via `chezmoi apply` and `brew upgrade pi-coding-agent`,
+respectively. Pi's own startup update notice may also appear; it does not
+prompt for confirmation.
 
 ## The chezmoi-runbook skill (managed)
 
