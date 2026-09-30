@@ -211,6 +211,15 @@ grep -qF "set -g window-status-current-format ' | #I:#W#{?window_flags,#{window_
 [[ ! -e "$NEWHOME/.zsh/secrets.zsh" ]] || die "~/.zsh/secrets.zsh was applied"
 ok "full tree rendered, diff empty, no secrets applied"
 
+step "SSH address book: aliases and credential separation (offline)"
+[[ -f "$NEWHOME/.ssh/hosts.conf" ]] || die "missing ~/.ssh/hosts.conf"
+[[ "$(stat -f '%Lp' "$NEWHOME/.ssh")" == "700" ]] || die "~/.ssh must be mode 700"
+[[ "$(stat -f '%Lp' "$NEWHOME/.ssh/hosts.conf")" == "600" ]] || die "hosts.conf must be mode 600"
+[[ ! -e "$NEWHOME/.ssh/config" ]] || die "client-local SSH config was applied"
+[[ ! -e "$NEWHOME/.ssh/authorized_keys" ]] || die "server SSH authorization was applied"
+python3 "$SOURCE/scripts/test-ssh-address-book.py" "$NEWHOME/.ssh/hosts.conf"
+ok "shared aliases rendered privately; client credentials remain unmanaged"
+
 step "ghostty config stays free of shell settings"
 if grep -E '^[[:space:]]*(command|env)[[:space:]]*=' "$NEWHOME/.config/ghostty/config" >/dev/null; then
   die "ghostty config sets a shell command/env line"

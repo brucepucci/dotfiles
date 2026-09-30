@@ -26,6 +26,7 @@ New to the repo? Each tool has its own page in [docs/](docs/):
 | Ghostty | [docs/ghostty.md](docs/ghostty.md) | the terminal — appearance, ssh terminfo auto-install, the font, themes generated from this repo's mirror |
 | Colors | [docs/theming.md](docs/theming.md) | the whole palette system: two theme names drive every surface, from a theme mirror committed in the repo |
 | tmux + SSH | [docs/tmux.md](docs/tmux.md) | detachable sessions, the phone/SSH workflow, the managed config explained |
+| SSH address book | [docs/ssh.md](docs/ssh.md) | shared Mac host aliases, local credentials, canonical host identities |
 | herdr | [docs/herdr.md](docs/herdr.md) | the agent multiplexer: spaces and panes with a live agents sidebar, pi running bare inside it |
 | Git tooling | [docs/git.md](docs/git.md) | gitconfig, delta, lazygit, gh — the shell side |
 | pi | [docs/pi.md](docs/pi.md) | the coding agent: settings, themes, the tmux wrapper, keys |
