@@ -63,21 +63,32 @@ try {
 	check("one confirmation; successful update requires restart", result.prompts === 1
 		&& result.notifications.some(([s]) => s.includes("Restart Pi")));
 	result = await run({ stdout: outdated, accept: false });
-	check("decline never runs update", result.prompts === 1 && result.calls.length === 1);
+	check("decline never runs update and reports skipped status", result.prompts === 1 && result.calls.length === 1
+		&& result.notifications.some(([s]) => s === "Pi package updates skipped."));
 	result = await run({ stdout: outdated, updateCode: 1 });
 	check("update errors are reported", result.notifications.some(([, level]) => level === "error"));
 	result = await run({ stdout: "{}" });
-	check("no updates, no prompt", result.prompts === 0 && result.calls.length === 1);
+	check("no updates: up-to-date notice, no prompt", result.prompts === 0 && result.calls.length === 1
+		&& result.notifications.some(([s]) => s === "Installed npm Pi packages are up to date."));
 	result = await run({ stdout: "invalid", code: 2 });
-	check("failed npm probe does not prompt", result.prompts === 0 && result.calls.length === 1);
+	check("failed npm probe reports uncertainty, not up-to-date", result.prompts === 0 && result.calls.length === 1
+		&& result.notifications.some(([s, level]) => s.includes("Could not check") && level === "warning"));
+	result = await run({ stdout: "invalid", code: 1 });
+	check("invalid npm output reports uncertainty", result.notifications.some(([s, level]) => s.includes("Could not check") && level === "warning"));
 	result = await run({ reason: "reload", stdout: outdated });
 	check("reload does not re-prompt", result.calls.length === 0);
 	result = await run({ mode: "print", stdout: outdated });
-	check("noninteractive modes do not probe", result.calls.length === 0);
+	check("noninteractive modes do not probe or notify", result.calls.length === 0 && result.notifications.length === 0);
 	result = await run({ offline: true, stdout: outdated });
-	check("offline mode does not probe", result.calls.length === 0);
+	check("offline mode reports skipped check", result.calls.length === 0
+		&& result.notifications.some(([s]) => s.includes("offline")));
 	result = await run({ stdout: outdated, shutdown: true });
-	check("shutdown cancels the pending prompt", result.prompts === 0 && result.calls.length === 1);
+	check("shutdown cancels the pending prompt", result.prompts === 0 && result.calls.length === 1
+		&& result.notifications.length === 0);
+	rmSync(join(dir, "npm", "package.json"));
+	result = await run();
+	check("no installed packages: notice without probe", result.calls.length === 0
+		&& result.notifications.some(([s]) => s.includes("No installed npm Pi packages")));
 } finally {
 	if (oldDir === undefined) delete process.env.PI_CODING_AGENT_DIR;
 	else process.env.PI_CODING_AGENT_DIR = oldDir;

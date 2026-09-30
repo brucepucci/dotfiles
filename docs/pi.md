@@ -154,10 +154,12 @@ user-scope npm package tree for newer versions. If any are found, it shows the
 versions and asks before running `pi update --extensions --no-approve` from
 `$HOME` (so trusted project packages are not updated by surprise). Declining makes no changes;
 a successful update asks you to **restart Pi** so the newly installed code is
-loaded. The check runs asynchronously once per process and skips offline,
-noninteractive, and subsequent session-switch/reload events; check failures
-never block startup. `scripts/test-package-update-prompt.mjs` tests the
-confirmation and safety paths without network access.
+loaded. The check runs asynchronously once per process. Interactive startups
+always get a status: up to date, an update prompt (or skipped/updated outcome),
+no installed npm packages, offline check skipped, or a warning if the check
+fails. Noninteractive and subsequent session-switch/reload events stay silent;
+check failures never block startup. `scripts/test-package-update-prompt.mjs`
+tests the confirmation and safety paths without network access.
 
 This is for npm-installed Pi packages (currently the permission-system
 package), not the repo-managed TypeScript extensions or Pi itself. The latter

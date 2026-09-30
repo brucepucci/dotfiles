@@ -15,29 +15,48 @@ export default function (pi: ExtensionAPI) {
 			controller = undefined;
 			return;
 		}
-		if (ctx.mode !== "tui" || process.env.PI_OFFLINE) return;
+		if (ctx.mode !== "tui") return;
+		if (process.env.PI_OFFLINE) {
+			ctx.ui.notify("Pi package update check skipped (offline).", "info");
+			return;
+		}
 		const agentDir = process.env.PI_CODING_AGENT_DIR || join(homedir(), ".pi", "agent");
 		const npmDir = join(agentDir, "npm");
-		if (!existsSync(join(npmDir, "package.json"))) return;
+		if (!existsSync(join(npmDir, "package.json"))) {
+			ctx.ui.notify("No installed npm Pi packages to check.", "info");
+			return;
+		}
 
 		controller = new AbortController();
 		const signal = controller.signal;
 		// Don't hold up the UI while npm checks the registry. A failed or timed-out
-		// check leaves the conversation alone; no package changes without consent.
+		// check reports its status without blocking; no changes without consent.
 		void (async () => {
 			const result = await pi.exec("npm", ["outdated", "--json", "--depth=0"], {
 				cwd: npmDir,
 				signal,
 				timeout: 5000,
 			});
-			if (signal.aborted || (result.code !== 0 && result.code !== 1)) return;
+			if (signal.aborted) return;
+			if (result.code !== 0 && result.code !== 1) {
+				ctx.ui.notify("Could not check Pi package updates; starting normally.", "warning");
+				return;
+			}
 			const outdated = JSON.parse(result.stdout || "{}") as Record<string, { current?: string; latest?: string }>;
 			const updates = Object.entries(outdated)
 				.filter(([, info]) => info && info.current && info.latest && info.current !== info.latest)
 				.map(([name, info]) => `${name}: ${info.current} → ${info.latest}`);
-			if (!updates.length || signal.aborted) return;
+			if (signal.aborted) return;
+			if (!updates.length) {
+				ctx.ui.notify("Installed npm Pi packages are up to date.", "info");
+				return;
+			}
 			const accepted = await ctx.ui.confirm("Pi package updates", `${updates.join("\n")}\n\nUpdate all Pi packages now?`);
-			if (!accepted || signal.aborted) return;
+			if (signal.aborted) return;
+			if (!accepted) {
+				ctx.ui.notify("Pi package updates skipped.", "info");
+				return;
+			}
 			ctx.ui.notify("Updating Pi packages…", "info");
 			// Update user packages only: never reconcile a project's packages just
 			// because a global npm update appeared in this check.
