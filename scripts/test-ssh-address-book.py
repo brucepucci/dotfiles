@@ -7,14 +7,12 @@ import tempfile
 
 source = Path(__file__).resolve().parents[1]
 book = Path(sys.argv[1]) if len(sys.argv) > 1 else source / "private_dot_ssh/private_hosts.conf"
-regular = "air mm mini rpi o3c-pi mm-lan mini-lan rpi-lan o3c-pi-wifi rpi-eth o3c-pi-eth"
+regular = "mm mini rpi o3c-pi mm-lan mini-lan rpi-lan o3c-pi-wifi rpi-eth o3c-pi-eth"
 mini = "bruces-mac-mini.cyprus-temperature.ts.net"
-air = "bruces-macbook-air.cyprus-temperature.ts.net"
 pi = "o3c-pi.cyprus-temperature.ts.net"
 expected = {
     "mm": (mini, mini, "brucepucci"),
     "mini": (mini, mini, "brucepucci"),
-    "air": (air, air, "bp"),
     "rpi": (pi, pi, "brucepucci"),
     "o3c-pi": (pi, pi, "brucepucci"),
     "mm-lan": ("192.168.1.64", mini, "brucepucci"),
@@ -34,8 +32,11 @@ with tempfile.TemporaryDirectory(prefix="ssh-address-book-") as tmp:
             f"    IdentityFile ~/.ssh/{daily}\n"
             "    IdentitiesOnly yes\n"
             "    PreferredAuthentications publickey\n"
-            "Host *-breakglass\n"
+            "Host mm-breakglass mini-breakglass mm-lan-breakglass mini-lan-breakglass\n"
             "    IdentityFile ~/.ssh/breakglass.pub\n"
+            "Host rpi-breakglass o3c-pi-breakglass rpi-lan-breakglass o3c-pi-wifi-breakglass rpi-eth-breakglass o3c-pi-eth-breakglass\n"
+            "    IdentityFile ~/.ssh/breakglass-rpi.pub\n"
+            "Host *-breakglass\n"
             "    IdentityAgent none\n"
             "    IdentitiesOnly yes\n"
             "    PreferredAuthentications publickey\n"
@@ -62,7 +63,7 @@ with tempfile.TemporaryDirectory(prefix="ssh-address-book-") as tmp:
                     "forwardagent": "no",
                 }.items():
                     assert values.get(key) == [value], (name, key, values.get(key))
-                identity = "breakglass.pub" if emergency else daily
+                identity = ("breakglass.pub" if hostkeyalias == mini else "breakglass-rpi.pub") if emergency else daily
                 assert values["identityfile"] == [f"~/.ssh/{identity}"], (name, values["identityfile"])
                 if emergency:
                     assert values["identityagent"] == ["none"], name

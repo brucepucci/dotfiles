@@ -31,7 +31,7 @@ docs/
 .ssh/id_*
 .ssh/*_key
 .ssh/*.pem
-.ssh/breakglass.pub
+.ssh/breakglass*.pub
 .ssh/authorized_keys*
 .ssh/known_hosts*
 .ssh/agent

@@ -2,8 +2,9 @@
 
 `private_dot_ssh/private_hosts.conf` installs `~/.ssh/hosts.conf` on the Macs.
 It is an address book: aliases, destination usernames, hostnames, and host-key
-names, not credentials or server authorization. Keeping it here makes `ssh mm`,
-`ssh air`, and `ssh rpi` resolve consistently on both Macs.
+names, not credentials or server authorization. Keeping it here makes `ssh mm`
+and `ssh rpi` resolve consistently on both Macs. The Air is a client only;
+inbound SSH to the Air and phone provisioning are outside the current scope.
 
 The private source prefix controls file permissions; it does **not** encrypt
 anything or make a committed file secret. This address book contains public
@@ -28,8 +29,18 @@ its independent 4096-bit `id_rsa`. Do not copy a private key between clients.
 Do not put an `IdentityFile` under `Host *`, because identity entries accumulate
 and can leak daily identities into emergency profiles.
 
-Emergency aliases use a public-key selector (`breakglass.pub`) and a separately
-configured 1Password agent. A client without a supported/unlocked recovery
+Emergency aliases use a server-specific public-key selector and a separately
+configured 1Password agent:
+
+| Destination | Public selector | 1Password item |
+| --- | --- | --- |
+| Mini | `breakglass.pub` (existing name preserved) | `breakglass-mm (Mac mini rescue)` |
+| Pi | `breakglass-rpi.pub` | `breakglass-rpi (Raspberry Pi rescue)` |
+
+Only the public selectors live on disk; the emergency private keys stay in
+1Password. The CLI can create a key item and retrieve its public field, but an
+SSH login still requires the SSH agent to approve/sign. CLI authorization and
+agent approval are separate. A client without a supported/unlocked recovery
 agent must not silently use a daily key instead. Keep agent forwarding off.
 
 `HostKeyAlias` uses the server's canonical Tailscale hostname even for LAN
@@ -40,14 +51,15 @@ failover. Their addresses need rechecking if DHCP changes.
 ## Scope and verification
 
 This repo remains macOS-only. It does not install an SSH server, edit
-`authorized_keys`, manage tailnet policy, or install dotfiles on the Pi. The
-portable address-book file can be copied separately to another SSH client;
-that does not make the rest of this repo a Linux configuration.
+`authorized_keys`, manage tailnet policy, or install dotfiles on the Pi. A Pi
+that only accepts inbound SSH does not need this address book or an outbound
+client key. The portable address-book file can be copied separately if another
+client is deliberately added; that does not make this a Linux configuration.
 
 The detailed rollout, recovery procedures, phone instructions, and current
 verification record are maintained in `/Users/bp/gh/ssh-setup` on the Air.
 
-After applying, check `ssh -G mm`, `ssh -G air`, and `ssh -G rpi` for effective
+After applying, check `ssh -G mm` and `ssh -G rpi` for effective
 hostname, user, key files, host-key alias, and agent forwarding. Then test real
 public-key-only logins. Config expansion alone is not an authentication test.
 
