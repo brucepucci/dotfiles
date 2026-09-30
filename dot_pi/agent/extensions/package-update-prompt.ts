@@ -3,16 +3,51 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-// Pi's own startup check notifies about package updates but does not offer
-// confirmation. Check the installed npm packages here, then let pi's package
-// manager perform the update (not npm directly, and never `pi update` bare).
+// The background check must never open a dialog: Pi's extension selectors
+// don't queue, so an unsolicited prompt can strand an active permission gate.
+// An explicit slash command is the user's consent to update packages.
 export default function (pi: ExtensionAPI) {
 	let controller: AbortController | undefined;
+	let updateController: AbortController | undefined;
+
+	pi.registerCommand("update-pi-packages", {
+		description: "Update user-installed Pi packages (restart Pi afterward)",
+		handler: async (_args, ctx) => {
+			if (ctx.mode !== "tui") return;
+			if (updateController) {
+				ctx.ui.notify("Pi package update already in progress.", "info");
+				return;
+			}
+			controller?.abort(); // Don't report stale check results after an update.
+			controller = undefined;
+			const current = new AbortController();
+			updateController = current;
+			ctx.ui.notify("Updating Pi packages…", "info");
+			try {
+				// Never touch the Homebrew-owned Pi binary or trusted project packages.
+				const result = await pi.exec("pi", ["update", "--extensions", "--no-approve"], {
+					cwd: homedir(), signal: current.signal,
+				});
+				if (current.signal.aborted) return;
+				if (result.code !== 0) {
+					ctx.ui.notify(`Package update failed: ${result.stderr.trim() || result.stdout.trim() || `exit ${result.code}`}`, "error");
+				} else {
+					ctx.ui.notify("Pi packages updated. Restart Pi to load the new versions.", "info");
+				}
+			} catch (error) {
+				if (!current.signal.aborted) ctx.ui.notify(`Package update failed: ${String(error)}`, "error");
+			} finally {
+				if (updateController === current) updateController = undefined;
+			}
+		},
+	});
 
 	pi.on("session_start", (event, ctx) => {
 		if (event.reason !== "startup") {
-			controller?.abort(); // Don't prompt for a session that was just replaced.
+			controller?.abort();
 			controller = undefined;
+			updateController?.abort();
+			updateController = undefined;
 			return;
 		}
 		if (ctx.mode !== "tui") return;
@@ -29,8 +64,8 @@ export default function (pi: ExtensionAPI) {
 
 		controller = new AbortController();
 		const signal = controller.signal;
-		// Don't hold up the UI while npm checks the registry. A failed or timed-out
-		// check reports its status without blocking; no changes without consent.
+		// Don't hold up the UI while npm checks the registry; results are
+		// notifications only, even if an agent permission dialog is active.
 		void (async () => {
 			const result = await pi.exec("npm", ["outdated", "--json", "--depth=0"], {
 				cwd: npmDir,
@@ -51,22 +86,7 @@ export default function (pi: ExtensionAPI) {
 				ctx.ui.notify("Installed npm Pi packages are up to date.", "info");
 				return;
 			}
-			const accepted = await ctx.ui.confirm("Pi package updates", `${updates.join("\n")}\n\nUpdate all Pi packages now?`);
-			if (signal.aborted) return;
-			if (!accepted) {
-				ctx.ui.notify("Pi package updates skipped.", "info");
-				return;
-			}
-			ctx.ui.notify("Updating Pi packages…", "info");
-			// Update user packages only: never reconcile a project's packages just
-			// because a global npm update appeared in this check.
-			const update = await pi.exec("pi", ["update", "--extensions", "--no-approve"], { cwd: homedir(), signal });
-			if (signal.aborted) return;
-			if (update.code !== 0) {
-				ctx.ui.notify(`Package update failed: ${update.stderr.trim() || update.stdout.trim() || `exit ${update.code}`}`, "error");
-			} else {
-				ctx.ui.notify("Pi packages updated. Restart Pi to load the new versions.", "info");
-			}
+			ctx.ui.notify(`Pi package updates available: ${updates.join(", ")}. Run /update-pi-packages to install.`, "info");
 		})().catch(() => {
 			if (!signal.aborted) ctx.ui.notify("Could not check Pi package updates; starting normally.", "warning");
 		});
@@ -75,5 +95,7 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_shutdown", () => {
 		controller?.abort();
 		controller = undefined;
+		updateController?.abort();
+		updateController = undefined;
 	});
 }

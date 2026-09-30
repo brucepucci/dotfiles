@@ -147,25 +147,28 @@ install). `pi list` shows what's registered; the review log lands in
 `~/.pi/agent/extensions/pi-permission-system/logs/` (unmanaged,
 ignored).
 
-## The package-update prompt (managed)
+## The package-update notice (managed)
 
 On interactive Pi startup, `package-update-prompt.ts` checks the installed
-user-scope npm package tree for newer versions. If any are found, it shows the
-versions and asks before running `pi update --extensions --no-approve` from
-`$HOME` (so trusted project packages are not updated by surprise). Declining makes no changes;
-a successful update asks you to **restart Pi** so the newly installed code is
-loaded. The check runs asynchronously once per process. Interactive startups
-always get a status: up to date, an update prompt (or skipped/updated outcome),
-no installed npm packages, offline check skipped, or a warning if the check
-fails. Noninteractive and subsequent session-switch/reload events stay silent;
-check failures never block startup. `scripts/test-package-update-prompt.mjs`
-tests the confirmation and safety paths without network access.
+user-scope npm package tree for newer versions. It reports the outcome:
+up to date, available updates with versions and the `/update-pi-packages`
+command, no installed npm packages, offline check skipped, or a warning if the
+check fails. The check runs asynchronously once per process and **never opens a
+dialog**: a late modal could overwrite an active permission request and leave
+that tool stuck. Noninteractive and subsequent session-switch/reload events
+stay silent; failures never block startup. The test in
+`scripts/test-package-update-prompt.mjs` holds an npm result pending while a
+real Pi permission selector is open, then verifies the selector still resolves.
+
+Running `/update-pi-packages` is explicit consent to update: it runs
+`pi update --extensions --no-approve` from `$HOME` (so trusted project packages
+are not updated by surprise) without another modal. After a successful update,
+**restart Pi** to load the new code.
 
 This is for npm-installed Pi packages (currently the permission-system
 package), not the repo-managed TypeScript extensions or Pi itself. The latter
 are updated via `chezmoi apply` and `brew upgrade pi-coding-agent`,
-respectively. Pi's own startup update notice may also appear; it does not
-prompt for confirmation.
+respectively. Pi's own startup update notice may also appear.
 
 ## The chezmoi-runbook skill (managed)
 

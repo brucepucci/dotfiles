@@ -130,9 +130,10 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # /builtin-header restores pi's own header);
                             # extensions/package-update-prompt.ts — on TUI
                             # startup, reports npm pi package update status
-                            # and asks before `pi update --extensions` (restart
-                            # pi afterward to load changed code); no pi
-                            # self-update or noninteractive prompts;
+                            # without a modal; /update-pi-packages explicitly
+                            # runs `pi update --extensions` (restart pi to
+                            # load changed code); no pi self-update or
+                            # noninteractive prompts;
                             # extensions/private_pi-permission-system/
                             # config.json — policy for the npm-installed
                             # @gotgenes/pi-permission-system gate
