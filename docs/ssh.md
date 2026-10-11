@@ -3,8 +3,21 @@
 `private_dot_ssh/private_hosts.conf` installs `~/.ssh/hosts.conf` on the Macs.
 It is an address book: aliases, destination usernames, hostnames, and host-key
 names, not credentials or server authorization. Keeping it here makes `ssh mm`
-and `ssh rpi` resolve consistently on both Macs. The Air is a client only;
-inbound SSH to the Air and phone provisioning are outside the current scope.
+and `ssh rpi` resolve consistently on both Macs. This configures outbound SSH
+client behavior, including on a Mac that also accepts inbound SSH.
+
+## Ownership
+
+| Responsibility | Source of truth |
+| --- | --- |
+| Mac terminal environment, shared SSH aliases, and offline config tests | This dotfiles repo |
+| Device roles, network expectations, enrollment, server hardening, recovery, and live verification records | Private [ssh-setup](https://github.com/brucepucci/ssh-setup) runbook |
+| Client keys/agents/trust and server authorization | Local configuration or credential store; neither repo deploys them |
+
+Start infrastructure work at [ssh-setup's README](https://github.com/brucepucci/ssh-setup/blob/main/README.md)
+and [onboarding guide](https://github.com/brucepucci/ssh-setup/blob/main/ONBOARDING.md).
+Those links require access to the private repo. It is not a dependency of
+`chezmoi apply`. Keep operational procedures there, not duplicated here.
 
 The private source prefix controls file permissions; it does **not** encrypt
 anything or make a committed file secret. This address book contains public
@@ -23,25 +36,15 @@ Host *
 The `Host *` reset matters: an included file ends in a host block. Without a
 reset, following settings can accidentally belong to that last block.
 
-Configure daily fleet aliases explicitly with the client's local private key
-and `IdentitiesOnly yes`. The Air currently uses `id_ed25519`; the mini uses
-its independent 4096-bit `id_rsa`. Do not copy a private key between clients.
-Do not put an `IdentityFile` under `Host *`, because identity entries accumulate
-and can leak daily identities into emergency profiles.
+Configure daily fleet aliases explicitly with the client's own local private
+key and `IdentitiesOnly yes`; do not copy keys between clients. Do not put an
+`IdentityFile` under `Host *`, because identity entries accumulate and can leak
+daily identities into emergency profiles. Keep agent forwarding off.
 
-Emergency aliases use a server-specific public-key selector and a separately
-configured 1Password agent:
-
-| Destination | Public selector | 1Password item |
-| --- | --- | --- |
-| Mini | `breakglass.pub` (existing name preserved) | `breakglass-mm (Mac mini rescue)` |
-| Pi | `breakglass-rpi.pub` | `breakglass-rpi (Raspberry Pi rescue)` |
-
-Only the public selectors live on disk; the emergency private keys stay in
-1Password. The CLI can create a key item and retrieve its public field, but an
-SSH login still requires the SSH agent to approve/sign. CLI authorization and
-agent approval are separate. A client without a supported/unlocked recovery
-agent must not silently use a daily key instead. Keep agent forwarding off.
+Emergency aliases need separate local identity/agent profiles; an alias alone
+does not provide recovery access. They must not silently fall back to daily
+keys. Client-specific key choices, public selectors, 1Password setup, and
+recovery procedures belong in [ssh-setup's credential plan](https://github.com/brucepucci/ssh-setup/blob/main/PLAN.md#5-server-specific-1password-rescue-keys).
 
 `HostKeyAlias` uses the server's canonical Tailscale hostname even for LAN
 connections. Verify the server's fingerprint before enrollment; never bypass
@@ -56,8 +59,16 @@ that only accepts inbound SSH does not need this address book or an outbound
 client key. The portable address-book file can be copied separately if another
 client is deliberately added; that does not make this a Linux configuration.
 
-The detailed rollout, recovery procedures, phone instructions, and current
-verification record are maintained in `/Users/bp/gh/ssh-setup` on the Air.
+Applying dotfiles installs the address book but does not add the local
+`Include` or enroll credentials. It does not alter Remote Login, `sshd`,
+`authorized_keys`, firewall rules, or tailnet grants. On a Mac used only for
+inbound SSH, the address book can remain unused; no outbound key is required.
+
+Review `chezmoi diff` before applying the whole terminal configuration. When
+applying remotely, keep the existing session open and prove a second login
+works before closing it. Record per-host apply results in
+[ssh-setup's status](https://github.com/brucepucci/ssh-setup/blob/main/STATUS.md),
+separately from historical live SSH tests.
 
 After applying, check `ssh -G mm` and `ssh -G rpi` for effective
 hostname, user, key files, host-key alias, and agent forwarding. Then test real
