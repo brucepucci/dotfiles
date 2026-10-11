@@ -1,0 +1,2 @@
+# Retire the formerly vendored Pi code review skill on existing installs.
+.pi/agent/skills/code-review-skill

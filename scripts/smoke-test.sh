@@ -121,9 +121,8 @@
 #      proven, not assumed), one process per case so one window-local
 #      value cannot hide a leak
 #
-#  23. the vendored code-review-skill: installed byte-for-byte, including
-#      MIT license and provenance; frontmatter and linked resources valid;
-#      upstream analyzer unit tests run against the installed scripts
+#  23. the retired code review skill: absent on fresh installs; apply
+#      removes an old installed copy without touching unrelated user skills
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see docs/developing.md's test
@@ -1483,41 +1482,22 @@ for cmd in \
 done
 ok "rendered, frontmatter valid, sections embedded with commands intact"
 
-step "code-review-skill: vendored payload, frontmatter, resources, analyzer"
-REVIEW_SOURCE="$SOURCE/dot_pi/agent/skills/code-review-skill"
+step "retired code review skill: fresh install and upgrade cleanup"
 REVIEW_TARGET="$NEWHOME/.pi/agent/skills/code-review-skill"
-if ! python3 - "$REVIEW_SOURCE" "$REVIEW_TARGET" <<'PY'
-from pathlib import Path
-import re, sys
-source, target = map(Path, sys.argv[1:])
-source_files = {p.relative_to(source) for p in source.rglob('*') if p.is_file()}
-target_files = {p.relative_to(target) for p in target.rglob('*') if p.is_file()}
-assert source_files == target_files, "installed skill file inventory differs"
-for path in source_files:
-    assert (source / path).read_bytes() == (target / path).read_bytes(), path
-for path in ('SKILL.md', 'LICENSE', 'SOURCE.md', 'scripts/pr-analyzer.py',
-             'scripts/test_pr_analyzer.py'):
-    assert (target / path).is_file(), f"missing {path}"
-text = (target / 'SKILL.md').read_text()
-m = re.match(r'---\n(.*?\n)---\n', text, re.S)
-assert m, "skill frontmatter missing or unclosed"
-assert re.search(r'^name: code-review-skill$', m[1], re.M), "wrong skill name"
-desc = re.search(r'^description: \|\n((?:  .+\n)+)', m[1], re.M)
-assert desc, "missing block description"
-assert 0 < len(' '.join(desc[1].split())) <= 1024, "invalid description length"
-links = re.findall(r'\]\(((?:reference|assets|scripts)/[^)]+)\)', text)
-assert links, "skill lost its bundled resource links"
-for link in links:
-    assert (target / link).is_file(), f"missing linked resource: {link}"
-assert 'MIT License' in (target / 'LICENSE').read_text(), "MIT license missing"
-assert re.search(r'commit `[0-9a-f]{40}`', (target / 'SOURCE.md').read_text()), \
-    "upstream commit missing from provenance"
-PY
-then die "code-review-skill install invalid (see python output above)"
-fi
-python3 -B "$REVIEW_TARGET/scripts/test_pr_analyzer.py" \
-  || die "code-review-skill analyzer tests failed"
-ok "vendored files installed verbatim, resources intact, analyzer tests pass"
+USER_SKILL="$NEWHOME/.pi/agent/skills/user-skill/SKILL.md"
+[[ ! -e "$REVIEW_TARGET" ]] || die "retired skill present on fresh install"
+mkdir -p "$REVIEW_TARGET/reference" "$(dirname "$USER_SKILL")"
+printf 'old skill\n' > "$REVIEW_TARGET/SKILL.md"
+printf 'old resource\n' > "$REVIEW_TARGET/reference/guide.md"
+printf 'user-owned skill\n' > "$USER_SKILL"
+chezmoi --source "$SOURCE" --destination "$NEWHOME" apply
+[[ ! -e "$REVIEW_TARGET" ]] || die "apply did not remove the retired skill"
+grep -qxF 'user-owned skill' "$USER_SKILL" \
+  || die "apply changed an unrelated user skill"
+[[ -f "$SKILL" ]] || die "apply removed the chezmoi-runbook skill"
+[[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff)" ]] \
+  || die "chezmoi diff is not empty after skill cleanup"
+ok "retired skill removed; runbook and unrelated user skills preserved"
 
 step "theme probe: reply parsing on a real pty"
 # __pi_theme_side needs a tty, so wrap_zsh above cannot exercise it --

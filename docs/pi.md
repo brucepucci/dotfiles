@@ -14,7 +14,6 @@ The pieces, kept deliberately separate:
 | The binary | Homebrew: `pi-coding-agent` (in the Brewfile; the formula wraps the npm package in its own keg and pulls `node`) | installed, not configured, by this repo |
 | Settings + themes | `dot_pi/agent/` → `~/.pi/agent/settings.json`, `~/.pi/agent/themes/dotfiles-{light,dark}.json` | **yes — chezmoi templates** |
 | The chezmoi-runbook skill | `dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl` → `~/.pi/agent/skills/chezmoi-runbook/SKILL.md` (`/skill:chezmoi-runbook`) | **yes — generated from AGENTS.md at apply time** |
-| The code-review-skill skill | `dot_pi/agent/skills/code-review-skill/` → `~/.pi/agent/skills/code-review-skill/` (`/skill:code-review-skill`) | **yes — vendored static files, MIT license retained** |
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
 | The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
 | The package-update notice extension | `dot_pi/agent/extensions/package-update-prompt.ts` → `~/.pi/agent/extensions/package-update-prompt.ts` | **yes — plain static file** |
@@ -182,31 +181,9 @@ never edit the skill (or its template's extracted regions) by hand. Apply fails
 loudly if the sections disappear from AGENTS.md; the smoke test checks
 the render and the frontmatter.
 
-## The code-review-skill skill (managed)
-
-[`awesome-skills/code-review-skill`](https://github.com/awesome-skills/code-review-skill)
-is vendored under `dot_pi/agent/skills/code-review-skill/` and installed to
-`~/.pi/agent/skills/code-review-skill/`. It provides systematic code review,
-architecture/performance/security checklists, language-specific guides,
-review templates, and an optional Python diff analyzer. Invoke
-`/skill:code-review-skill` in any pi session; run `/reload` after the first
-apply to discover it in an existing session.
-
-The skill and supporting files are copied verbatim, with the upstream MIT
-license. `SOURCE.md` records the exact upstream commit and included files.
-Supporting paths resolve from the skill directory; use `python3` on this
-Mac for the analyzer (upstream's example spells it `python`):
-
-```bash
-git diff main...HEAD | python3 ~/.pi/agent/skills/code-review-skill/scripts/pr-analyzer.py
-```
-
-There is no package install or network fetch at apply time. Updates are
-manual source-repo changes, **not** `pi update --extensions`; see
-[developing.md](developing.md#update-the-vendored-code-review-skill).
-The smoke test checks the installed payload, frontmatter, linked resources,
-and the upstream analyzer tests. This general-purpose skill does not
-replace a project's AGENTS.md rules or the chezmoi verification runbook.
+The former vendored code review skill has been retired. `.chezmoiremove`
+removes `~/.pi/agent/skills/code-review-skill/` on apply, leaving other skills
+alone. Run `/reload` in existing pi sessions to refresh skill discovery.
 
 ## The provider-usage extension (managed)
 
