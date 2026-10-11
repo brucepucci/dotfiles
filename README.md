@@ -104,7 +104,7 @@ Six commands on macOS. Order matters — see the notes.
 # 0. Homebrew, if this machine has never had it
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# 1. Tools and GitHub credentials (the public clone does not require login).
+# 1. Tools and GitHub credentials (this private clone requires access).
 brew install chezmoi gh
 gh auth login            # choose HTTPS
 gh auth setup-git        # installs the git credential helper
@@ -141,10 +141,11 @@ to authenticate the default provider. Z.ai remains available by setting
 `ZAI_API_KEY` or choosing Z.ai in `/login`. From here on, every change is
 an edit in this repo plus `chezmoi apply`.
 
-> **Install the tools in step 1.** This repo is public, so cloning it does
-> not require authentication. `gh auth login` and `gh auth setup-git` are for
-> authenticated GitHub operations and access to private repos such as
-> `ssh-setup`; skip those commands if you do not need that access.
+> **Step 1 is required.** This repo and `ssh-setup` are private. Authenticate
+> a GitHub account with repo access using `gh auth login`, then configure Git's
+> credential helper with `gh auth setup-git` before `chezmoi init` or pulling
+> updates over HTTPS. Private visibility is not a secret store: keep credentials
+> out of both repos.
 
 > **Do step 3 before step 4.** The Brewfile step must land before apply
 > for the pieces Neovim and the shell need: language servers come from
