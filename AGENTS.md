@@ -116,6 +116,13 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # skills/chezmoi-runbook/SKILL.md — this
                             # runbook as a pi skill (/skill:chezmoi-runbook),
                             # smoke-guarded against this file;
+                            # skills/code-review-skill/ — vendored from
+                            # awesome-skills/code-review-skill, with guides,
+                            # templates, Python diff analyzer + tests, MIT
+                            # LICENSE, and upstream commit in SOURCE.md;
+                            # /skill:code-review-skill; update by hand in
+                            # the source repo, never via pi update (see
+                            # docs/developing.md); project rules still win;
                             # extensions/provider-usage.ts — a
                             # footer row with plan quota (z.ai, Claude Pro
                             # OAuth, ChatGPT/Codex OAuth) and output tok/s

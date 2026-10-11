@@ -1,4 +1,4 @@
-// Unit harness: mock npm/pi; exercise the real Pi 0.87.1 extension selector
+// Unit harness: mock npm/pi; exercise the installed Pi's real extension selector
 // during a delayed registry response. Never contact the registry or update packages.
 import { createRequire } from "node:module";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
@@ -120,6 +120,7 @@ try {
 	initTheme("dark");
 	const piMode = Object.create(InteractiveMode.prototype);
 	piMode.ui = { setFocus: () => {}, requestRender: () => {} };
+	piMode.programStatus = { setBlocked: () => {} };
 	piMode.editorContainer = { clear: () => {}, addChild: () => {} };
 	piMode.editor = {};
 	piMode.disposeActiveSelector = () => {};

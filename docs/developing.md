@@ -125,6 +125,9 @@ the result the way real sessions do. It covers:
   by construction; apply itself fails if the sections vanish), with a
   closed frontmatter block obeying pi's validation rules and the
   load-bearing command lines intact in both files
+- the vendored code-review-skill: installed byte-for-byte with its license
+  and provenance, valid frontmatter and linked resources, plus the upstream
+  Python analyzer's unit tests against the installed scripts
 - the provider-usage pi extension: installed into the scratch HOME, with
   its unit harness (`scripts/test-provider-usage.mjs`, jiti-loaded like
   pi loads it) covering the row format through pi's own status
@@ -253,6 +256,29 @@ The verification runbook lives in AGENTS.md ("Verifying a change",
 `~/.pi/agent/skills/chezmoi-runbook/SKILL.md` from those sections — never edit
 the skill, and don't rename the AGENTS.md headings (apply fails loudly,
 by design). The smoke test checks the render and the frontmatter.
+
+### Update the vendored code review skill
+
+`dot_pi/agent/skills/code-review-skill/` is a static, MIT-licensed copy of
+[`awesome-skills/code-review-skill`](https://github.com/awesome-skills/code-review-skill),
+not a pi package. `SOURCE.md` in that directory records the upstream commit
+and included payload. To update:
+
+1. Fetch upstream into a temporary directory and review the new commit,
+   including instructions and scripts, before installing it.
+2. Replace `SKILL.md`, `reference/`, `assets/`, `scripts/`, and `LICENSE`
+   in the **source repo**, keeping them verbatim. Remove stale files from
+   those payload directories; do not copy the website or git metadata.
+3. Update the pinned commit in `SOURCE.md`; keep that local provenance file.
+4. Run `scripts/smoke-test.sh` (payload/link checks and upstream analyzer
+   tests), then `chezmoi diff && chezmoi apply`. Use `/reload` in pi and
+   confirm `/skill:code-review-skill` is available.
+
+No update runs at apply time, and `pi update --extensions` does not touch
+this skill. Resolve bundled paths from the installed skill directory and
+invoke the optional analyzer with `python3`; see [pi.md](pi.md#the-code-review-skill-skill-managed).
+Project AGENTS.md rules still govern reviews, and the chezmoi-runbook skill
+still owns verification of this repo.
 
 ### Keep the docs honest
 - Repo docs (`docs/`) — this folder; ignored by chezmoi; edit freely.
