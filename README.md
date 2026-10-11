@@ -17,6 +17,13 @@ terminal and every SSH session reads the same `~/.zshrc`, and the prompt
 and pi render in the *viewing* terminal's palette, so a client from any OS
 looks right. Installing this on Linux or WSL is explicitly out of scope.
 
+**A terminal environment, not a fleet provisioner.** This repo also owns the
+shared outbound SSH address book, but applying it does not enable SSH servers,
+grant access, or change firewall/router/Tailscale policy. Infrastructure
+onboarding, security, recovery, and live verification belong in the separate
+private [ssh-setup runbook](https://github.com/brucepucci/ssh-setup).
+See [docs/ssh.md](docs/ssh.md) for the integration boundary.
+
 New to the repo? Each tool has its own page in [docs/](docs/):
 
 | Tool / area | Doc | What it covers |
@@ -97,11 +104,11 @@ Six commands on macOS. Order matters — see the notes.
 # 0. Homebrew, if this machine has never had it
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# 1. Credentials. This repo is PRIVATE, so chezmoi's clone needs them.
+# 1. Tools and GitHub credentials (this private clone requires access).
 brew install chezmoi gh
 gh auth login            # choose HTTPS
 gh auth setup-git        # installs the git credential helper
-#    (needed for the initial private clone; apply re-provides the helper
+#    (for authenticated GitHub operations; apply re-provides the helper
 #    from dot_gitconfig.tmpl afterwards, keychain-free)
 
 # 2. Clone the repo (the color system reads this repo's own committed
@@ -134,10 +141,11 @@ to authenticate the default provider. Z.ai remains available by setting
 `ZAI_API_KEY` or choosing Z.ai in `/login`. From here on, every change is
 an edit in this repo plus `chezmoi apply`.
 
-> **Step 1 is not optional.** `chezmoi init` clones over HTTPS, and this repo
-> is private, so without a credential helper it fails with
-> `Authentication failed`. No SSH key is registered on this account either, so
-> `--ssh` is not a fallback.
+> **Step 1 is required.** This repo and `ssh-setup` are private. Authenticate
+> a GitHub account with repo access using `gh auth login`, then configure Git's
+> credential helper with `gh auth setup-git` before `chezmoi init` or pulling
+> updates over HTTPS. Private visibility is not a secret store: keep credentials
+> out of both repos.
 
 > **Do step 3 before step 4.** The Brewfile step must land before apply
 > for the pieces Neovim and the shell need: language servers come from
@@ -164,6 +172,7 @@ non-Homebrew install.
 | `~/.config/nvim/` | The editor (17 plugins, pinned) | [nvim.md](docs/nvim.md) |
 | `~/.config/ghostty/config` + `~/.config/ghostty/themes/` | The terminal's appearance + ssh terminfo auto-install — nothing shell-related; two theme files generated from the mirror | [ghostty.md](docs/ghostty.md) |
 | `~/.tmux.conf` | Detachable sessions: pi's extended-keys, OSC 52 clipboard, truecolor | [tmux.md](docs/tmux.md) |
+| `~/.ssh/hosts.conf` | Shared outbound aliases and canonical host-key names; no credentials or server authorization | [ssh.md](docs/ssh.md) |
 | `~/.config/herdr/config.toml` | herdr's terminal-following theme + update policy | [herdr.md](docs/herdr.md) |
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts | [git.md](docs/git.md) |
 | `~/.config/lazygit/config.yml` | delta as lazygit's diff renderer | [git.md](docs/git.md) |
@@ -176,7 +185,8 @@ this README, `AGENTS.md`, `Brewfile`, `scripts/`, `settings.toml`,
 palette overrides the resolver reads first), and `LICENSE`.
 
 Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
-generated), `~/.zsh/secrets.zsh` (API keys — a secret), `~/.ssh/`,
+generated), `~/.zsh/secrets.zsh` (API keys — a secret), everything in
+`~/.ssh/` except `hosts.conf`,
 `~/.config/gh/hosts.yml` (auth token), and on the pi side
 `~/.pi/agent/auth.json` (provider credentials from `/login`),
 `~/.pi/agent/sessions/` (transcripts), and `~/.pi/agent/models-store.json`

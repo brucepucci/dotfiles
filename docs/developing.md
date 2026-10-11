@@ -43,6 +43,14 @@ cross-agent convention). The two should not drift apart; update both.
    like every other action); `<C-h/j/k/l>` are uniformly window movement,
    never actions; terminal mode has no `<C-j>` because the REPL is the
    bottom split.
+10. **Terminal environment, not fleet provisioning.** This repo owns shared
+    outbound SSH aliases and offline config tests. The private
+    [ssh-setup runbook](https://github.com/brucepucci/ssh-setup) owns infrastructure
+    onboarding, network/security expectations, recovery, and live verification
+    records. Do not duplicate those procedures here or make apply enable servers,
+    grant access, distribute credentials, or change firewall/router/tailnet policy.
+    See [ssh.md](ssh.md) for the integration boundary; apply must not depend on
+    the private repo.
 
 ## The daily loop
 

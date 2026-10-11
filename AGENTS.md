@@ -24,6 +24,15 @@ Nothing supports installing on Linux or WSL, and cross-platform machinery
 (OS.linux? gates, distro caveats, Linux CI, alternate install paths) should
 not be reintroduced.
 
+**Terminal environment, not fleet provisioning.** This repo owns shared
+outbound SSH aliases and offline config tests. The private
+[ssh-setup runbook](https://github.com/brucepucci/ssh-setup) owns infrastructure
+onboarding, network/security expectations, recovery, and live verification
+records. Do not duplicate those procedures here or make apply enable servers,
+grant access, distribute credentials, or change firewall/router/tailnet policy.
+See docs/ssh.md for the integration boundary; apply must not depend on the
+private repo.
+
 - **Source of truth:** this repo — `private_dot_config/nvim/` for Neovim.
 - **Target:** the files in `$HOME` (`~/.config/nvim` etc.) — build artifacts.
   **Never edit them directly.** Edit here, then `chezmoi apply`.
