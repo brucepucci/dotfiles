@@ -62,8 +62,9 @@ dot_local/bin/executable_delta-theme.tmpl   # ~/.local/bin: delta, colored for t
 dot_gitconfig.tmpl         # delta fallback syntax-theme from the theme files
 private_dot_ssh/private_hosts.conf # Mac SSH address book only; ~/.ssh/config,
                             # private keys, agent settings, and authorized_keys
-                            # remain unmanaged (docs/ssh.md); offline alias and
-                            # identity-separation checks run in the smoke test
+                            # remain unmanaged (docs/ssh.md); offline alias,
+                            # identity-separation, and custom-key import
+                            # boundary checks run in the smoke test
 dot_tmux.conf              # tmux, minimal on purpose: pi's extended-keys
                             # (Shift+Enter survives the tmux layer) + OSC52
                             # clipboard + truecolor + mouse-wheel copy-mode

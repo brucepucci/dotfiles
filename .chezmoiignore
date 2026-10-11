@@ -25,17 +25,12 @@ docs/
 .zcompdump*
 .zsh/secrets.zsh
 
-# SSH address book is managed; client credentials and server state are not.
-# In particular, private_ source prefixes are permissions, NOT encryption.
-.ssh/config
-.ssh/id_*
-.ssh/*_key
-.ssh/*.pem
-.ssh/breakglass*.pub
-.ssh/authorized_keys*
-.ssh/known_hosts*
-.ssh/agent
-.ssh/setup-backups
+# Only the SSH address book is managed, regardless of credential filenames.
+# private_ source prefixes are permissions, NOT encryption. Keep the parent
+# directory traversable so hosts.conf can still be imported and applied.
+.ssh/**
+!.ssh
+!.ssh/hosts.conf
 
 # Same idea for the pi coding agent (~/.pi/agent/): auth.json (written by
 # /login) holds a copy of the Z.ai API key and is a SECRET, models-store.json

@@ -218,7 +218,8 @@ step "SSH address book: aliases and credential separation (offline)"
 [[ ! -e "$NEWHOME/.ssh/config" ]] || die "client-local SSH config was applied"
 [[ ! -e "$NEWHOME/.ssh/authorized_keys" ]] || die "server SSH authorization was applied"
 python3 "$SOURCE/scripts/test-ssh-address-book.py" "$NEWHOME/.ssh/hosts.conf"
-ok "shared aliases rendered privately; client credentials remain unmanaged"
+python3 "$SOURCE/scripts/test-ssh-import-boundary.py"
+ok "shared aliases rendered privately; custom-named credentials cannot be imported"
 
 step "ghostty config stays free of shell settings"
 if grep -E '^[[:space:]]*(command|env)[[:space:]]*=' "$NEWHOME/.config/ghostty/config" >/dev/null; then

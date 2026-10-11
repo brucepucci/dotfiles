@@ -74,5 +74,9 @@ canonical host-key names, and separation from emergency identities. It does
 not prove that a server accepts a key or that a LAN address is reachable.
 
 No private keys, SSH backups, server authorization files, or known-hosts
-history belong in this repo. Run the normal dotfiles verification runbook
-after changes.
+history belong in this repo. `.chezmoiignore` excludes everything under `.ssh`
+except `hosts.conf`, including custom-named credentials and nested backups.
+The smoke test runs `scripts/test-ssh-import-boundary.py` with a disposable
+private key to verify recursive and explicit imports cannot copy it into the
+source tree, while the address book still installs with private permissions.
+Run the normal dotfiles verification runbook after changes.
