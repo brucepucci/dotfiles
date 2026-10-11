@@ -95,6 +95,11 @@ the result the way real sessions do. It covers:
   multi-argument, missing-file, and `--help` branches all exercised
 - the legacy ZDOTDIR guard repairing a pre-unification Ghostty window
 - the SSH prompt segment; history shared across shells
+- the shared Mac SSH address book: installed file permissions, aliases,
+  destination users, canonical host-key names, and daily/emergency identity
+  separation (offline `ssh -G` checks, no credentials or network required);
+  recursive and explicit imports reject custom-named private keys and nested
+  backups while still managing only `hosts.conf` (disposable test key)
 - secrets staying out; Ghostty config containing no shell settings but
   carrying the ssh-terminfo features line (see [ghostty.md](ghostty.md))
 - the prompt's git-marker spacing and blank-line rules
