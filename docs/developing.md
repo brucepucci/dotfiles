@@ -138,8 +138,9 @@ the result the way real sessions do. It covers:
   by construction; apply itself fails if the sections vanish), with a
   closed frontmatter block obeying pi's validation rules and the
   load-bearing command lines intact in both files
-- retirement of the former code review skill: apply removes its installed
-  directory on upgrades without touching unrelated user skills
+- retirement of the former code review skill and package-update prompt
+  extension: apply removes installed copies on upgrades without touching
+  unrelated user skills or extensions
 - the provider-usage pi extension: installed into the scratch HOME, with
   its unit harness (`scripts/test-provider-usage.mjs`, jiti-loaded like
   pi loads it) covering the row format through pi's own status

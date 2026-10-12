@@ -121,8 +121,9 @@
 #      proven, not assumed), one process per case so one window-local
 #      value cannot hide a leak
 #
-#  23. the retired code review skill: absent on fresh installs; apply
-#      removes an old installed copy without touching unrelated user skills
+#  23. the retired code review skill and package-update prompt extension:
+#      absent on fresh installs; apply removes old installed copies without
+#      touching unrelated user skills or extensions
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see docs/developing.md's test
@@ -651,10 +652,6 @@ node "$SOURCE/scripts/test-provider-usage.mjs" \
   || die "title-screen.ts missing from ~/.pi/agent/extensions"
 node "$SOURCE/scripts/test-title-screen.mjs" \
   || die "title-screen unit harness failed"
-[[ -f "$NEWHOME/.pi/agent/extensions/package-update-prompt.ts" ]] \
-  || die "package-update-prompt.ts missing from ~/.pi/agent/extensions"
-node "$SOURCE/scripts/test-package-update-prompt.mjs" \
-  || die "package-update-prompt unit harness failed"
 out="$(fresh_zsh '[[ $path[(r)$HOME/.local/bin] ]] && echo lbin=yes')"
 [[ "$out" == *lbin=yes* ]] || die "login PATH does not include ~/.local/bin"
 # The wrapper itself, hermetically: fake `defaults` + fake `delta`, both
@@ -711,7 +708,6 @@ for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
          "$NEWHOME/.pi/agent/themes/dotfiles-dark.json" \
          "$NEWHOME/.pi/agent/extensions/provider-usage.ts" \
          "$NEWHOME/.pi/agent/extensions/title-screen.ts" \
-         "$NEWHOME/.pi/agent/extensions/package-update-prompt.ts" \
          "$NEWHOME/.config/nvim/lua/bruce/core/theming.lua" \
          "$NEWHOME/.config/zsh/ps1.zsh" \
          "$NEWHOME/.config/nvim/lua/bruce/plugins/ui.lua" \
@@ -1498,6 +1494,24 @@ grep -qxF 'user-owned skill' "$USER_SKILL" \
 [[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff)" ]] \
   || die "chezmoi diff is not empty after skill cleanup"
 ok "retired skill removed; runbook and unrelated user skills preserved"
+
+step "retired package-update extension: fresh install and upgrade cleanup"
+UPDATE_TARGET="$NEWHOME/.pi/agent/extensions/package-update-prompt.ts"
+USER_EXTENSION="$NEWHOME/.pi/agent/extensions/user-extension.ts"
+[[ ! -e "$UPDATE_TARGET" ]] || die "retired extension present on fresh install"
+printf 'old extension\n' > "$UPDATE_TARGET"
+printf 'user-owned extension\n' > "$USER_EXTENSION"
+chezmoi --source "$SOURCE" --destination "$NEWHOME" apply
+[[ ! -e "$UPDATE_TARGET" ]] || die "apply did not remove the retired extension"
+grep -qxF 'user-owned extension' "$USER_EXTENSION" \
+  || die "apply changed an unrelated user extension"
+for extension in provider-usage title-screen; do
+  [[ -f "$NEWHOME/.pi/agent/extensions/$extension.ts" ]] \
+    || die "apply removed the $extension extension"
+done
+[[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff)" ]] \
+  || die "chezmoi diff is not empty after extension cleanup"
+ok "retired extension removed; managed and unrelated user extensions preserved"
 
 step "theme probe: reply parsing on a real pty"
 # __pi_theme_side needs a tty, so wrap_zsh above cannot exercise it --
