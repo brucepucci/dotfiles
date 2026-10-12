@@ -127,9 +127,6 @@ private_dot_config/herdr/   # config.toml -- the herdr agent multiplexer's
 dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # .json.tmpl — the pi TUI's themes, generated from
                             # the active themes' roles (stable file names);
-                            # skills/chezmoi-runbook/SKILL.md — this
-                            # runbook as a pi skill (/skill:chezmoi-runbook),
-                            # smoke-guarded against this file;
                             # extensions/provider-usage.ts — a
                             # footer row with plan quota (z.ai, Claude Pro
                             # OAuth, ChatGPT/Codex OAuth) and output tok/s
@@ -148,6 +145,9 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # (settings.json "packages"; its payload under
                             # ~/.pi/agent/npm comes from `pi install`,
                             # unmanaged)
+.agents/skills/chezmoi-runbook/SKILL.md # project-local verification skill;
+                            # thin entry point to AGENTS.md + docs/developing.md;
+                            # discovered in this repo, never installed to HOME
 docs/                      # repo-level docs, never installed: one page per
                             # tool + developing.md (the maintainer guide)
 ```
@@ -240,11 +240,13 @@ bad update bisectable via `git log -p -- private_dot_config/nvim/lazy-lock.json`
 
 ## Verifying a change
 
-This runbook also ships as a pi skill (dot_pi/agent/skills/
-chezmoi-runbook/SKILL.md → ~/.pi/agent/skills/, `/skill:chezmoi-runbook`)
-so pi can be told to verify with one command. AGENTS.md stays the source
-of truth: the smoke test asserts every command line the skill teaches
-appears verbatim here, so edit both together or tier 1 fails.
+Verification is required after every change and again before pushing or
+opening a PR, whether or not a skill is invoked. The project-local skill at
+`.agents/skills/chezmoi-runbook/SKILL.md` is a thin entry point to this file
+and docs/developing.md; it copies no commands and is never installed to HOME.
+Start pi in this repo, grant project trust, and use `/skill:chezmoi-runbook`
+to request verification. AGENTS.md remains the source of truth; the smoke
+test checks the skill's frontmatter, links, and local-only installation boundary.
 
 ```bash
 chezmoi cd                  # -> ~/.local/share/chezmoi, if not already there

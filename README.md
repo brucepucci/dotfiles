@@ -177,18 +177,20 @@ non-Homebrew install.
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts | [git.md](docs/git.md) |
 | `~/.config/lazygit/config.yml` | delta as lazygit's diff renderer | [git.md](docs/git.md) |
 | `~/.local/bin/delta-theme` | Appearance-aware delta wrapper | [git.md](docs/git.md) |
-| `~/.pi/agent/settings.json`, `~/.pi/agent/themes/`, `~/.pi/agent/extensions/`, `~/.pi/agent/skills/` | pi's settings, generated theme pair, managed extensions (provider-usage footer, title-screen splash), and `/skill:chezmoi-runbook` (verification, generated from AGENTS.md) | [pi.md](docs/pi.md) |
+| `~/.pi/agent/settings.json`, `~/.pi/agent/themes/`, `~/.pi/agent/extensions/` | pi's settings, generated theme pair, managed extensions (provider-usage footer, title-screen splash), and permission-system policy | [pi.md](docs/pi.md) |
 
 **Upgrading an existing install:** the vendored code review skill and
-package-update prompt extension are retired. `chezmoi apply` removes their
-installed copies; restart pi or run `/reload` to refresh existing sessions.
+package-update prompt extension are retired; the chezmoi-runbook skill is
+now project-local. `chezmoi apply` removes all three former global copies;
+restart pi or run `/reload` to refresh existing sessions.
 Other user skills and extensions are left alone. See
 [pi's retired components](docs/pi.md#retired-components-upgrade-cleanup).
 
 Repo-level files that are **never installed** (see `.chezmoiignore`):
 this README, `AGENTS.md`, `Brewfile`, `scripts/`, `settings.toml`,
 `docs/`, the theme mirror in `themes/`, `themes-local/` (hand-written
-palette overrides the resolver reads first), and `LICENSE`.
+palette overrides the resolver reads first), `.agents/` (project-local agent
+skills, skipped automatically as a literal dot-directory), and `LICENSE`.
 
 Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
 generated), `~/.zsh/secrets.zsh` (API keys — a secret), everything in
@@ -318,8 +320,11 @@ patch treadmill. A few things still deserve a calendar:
 ```
 
 This is what would have caught the old config's silently-dead LSP; silence
-means healthy (missing servers warn by name at startup). And pi can run the
-whole verification runbook for you, any time: `/skill:chezmoi-runbook`.
+means healthy (missing servers warn by name at startup). To ask pi to run the
+verification runbook, start it in this repo, grant project trust, and use
+`/skill:chezmoi-runbook`. The skill lives in `.agents/skills/chezmoi-runbook/`
+and is unavailable in unrelated projects; it points to AGENTS.md and
+[docs/developing.md](docs/developing.md) without duplicating their commands.
 
 ### After updating things
 
