@@ -146,13 +146,11 @@ install). `pi list` shows what's registered; the review log lands in
 `~/.pi/agent/extensions/pi-permission-system/logs/` (unmanaged,
 ignored).
 
-The package-update prompt extension has been retired. `.chezmoiremove`
-removes `~/.pi/agent/extensions/package-update-prompt.ts` on apply. Restart Pi
-or run `/reload` in existing sessions to unload it. Update npm packages
-manually with `pi update --extensions` (run from `$HOME` to avoid updating
-project packages), then restart Pi to load changed code. Repo-managed
-extensions still update via `chezmoi apply`, and Pi itself via
-`brew upgrade pi-coding-agent`.
+Update npm packages manually with `pi update --extensions` (run from `$HOME`
+to avoid updating project packages), then restart Pi to load changed code.
+This setup no longer checks for package updates or provides
+`/update-pi-packages`. Repo-managed extensions still update via `chezmoi apply`,
+and Pi itself via `brew upgrade pi-coding-agent`.
 
 ## The chezmoi-runbook skill (managed)
 
@@ -165,9 +163,20 @@ never edit the skill (or its template's extracted regions) by hand. Apply fails
 loudly if the sections disappear from AGENTS.md; the smoke test checks
 the render and the frontmatter.
 
-The former vendored code review skill has been retired. `.chezmoiremove`
-removes `~/.pi/agent/skills/code-review-skill/` on apply, leaving other skills
-alone. Run `/reload` in existing pi sessions to refresh skill discovery.
+## Retired components (upgrade cleanup)
+
+These components are no longer shipped or listed in the managed inventory:
+
+| Removed component | Installed path removed by `chezmoi apply` |
+|---|---|
+| Vendored code review skill (`/skill:code-review-skill`, guides, templates, analyzer) | `~/.pi/agent/skills/code-review-skill/` |
+| Package-update prompt extension (`/update-pi-packages`, startup package checks) | `~/.pi/agent/extensions/package-update-prompt.ts` |
+
+`.chezmoiremove` removes these exact targets on existing installs; fresh
+installs receive neither. Other user skills and extensions are left alone.
+Restart Pi or run `/reload` after applying to refresh discovery and unload
+the removed extension. The chezmoi-runbook skill, provider-usage and
+title-screen extensions, and permission-system package remain in the setup.
 
 ## The provider-usage extension (managed)
 

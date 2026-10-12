@@ -179,6 +179,12 @@ non-Homebrew install.
 | `~/.local/bin/delta-theme` | Appearance-aware delta wrapper | [git.md](docs/git.md) |
 | `~/.pi/agent/settings.json`, `~/.pi/agent/themes/`, `~/.pi/agent/extensions/`, `~/.pi/agent/skills/` | pi's settings, generated theme pair, managed extensions (provider-usage footer, title-screen splash), and `/skill:chezmoi-runbook` (verification, generated from AGENTS.md) | [pi.md](docs/pi.md) |
 
+**Upgrading an existing install:** the vendored code review skill and
+package-update prompt extension are retired. `chezmoi apply` removes their
+installed copies; restart pi or run `/reload` to refresh existing sessions.
+Other user skills and extensions are left alone. See
+[pi's retired components](docs/pi.md#retired-components-upgrade-cleanup).
+
 Repo-level files that are **never installed** (see `.chezmoiignore`):
 this README, `AGENTS.md`, `Brewfile`, `scripts/`, `settings.toml`,
 `docs/`, the theme mirror in `themes/`, `themes-local/` (hand-written
@@ -333,7 +339,10 @@ whole verification runbook for you, any time: `/skill:chezmoi-runbook`.
   [docs/pi.md](docs/pi.md#packages-npm-extensions) — update separately:
   `pi update --extensions` moves all unpinned specs,
   `pi update npm:@gotgenes/pi-permission-system` one; those fall through
-  the wrapper. Pin `@<version>` to freeze a package.
+  the wrapper. Run from `$HOME` to update only user-scope packages, then
+  restart pi to load changed code. This setup no longer checks for package
+  updates or provides `/update-pi-packages`; updates are manual.
+  Pin `@<version>` to freeze a package.
   Its `lastChangelogVersion` self-bump shows as one
   drifting field in `chezmoi diff` — harmless. Model defaults saved via
   `/model` + Ctrl+S must be folded into the template by hand:
