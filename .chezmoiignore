@@ -9,13 +9,19 @@
 # chezmoi automatically and need no entry here.
 README.md
 AGENTS.md
+GLOSSARY.md
+GLOSSARY-MAP.md
 Brewfile
 LICENSE
 scripts/
 settings.toml
+pi-skills.json
 themes/
 themes-local/
 docs/
+
+# The skills CLI owns its global payload and lock; never import those copies.
+.agents/
 
 # Generated or private files at $HOME. chezmoi only tracks what is
 # explicitly added, but these are listed so an accidental

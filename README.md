@@ -79,8 +79,8 @@ The decisions, so future-you doesn't have to re-derive them:
   `settings.toml` drive every surface — the terminal, prompt, editor,
   statusline, diffs, and pi's TUI — resolved at apply time from a theme
   mirror committed inside this repo (rooted in iTerm2-Color-Schemes), so
-  apply needs no network and no Ghostty install. Surfaces that travel over
-  SSH render in the terminal's indexed color slots so the *viewing*
+  theme rendering needs no network and no Ghostty install. Surfaces that travel
+  over SSH render in the terminal's indexed color slots so the *viewing*
   terminal decides. Managed files carry no hardcoded hex — the lone
   carve-out is pi's two live-derived tool tints, where the fixed xterm
   cube has no honest match. See [docs/theming.md](docs/theming.md).
@@ -121,7 +121,8 @@ chezmoi init brucepucci
 #    zsh-syntax-highlighting), and the pi coding agent
 brew bundle --file="$(chezmoi source-path)/Brewfile"
 
-# 4. Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty
+# 4. Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty;
+#    install the selected global skills through the upstream CLI
 chezmoi apply
 
 # 5. Plugins, at the exact revisions pinned in lazy-lock.json
@@ -148,8 +149,9 @@ an edit in this repo plus `chezmoi apply`.
 > out of both repos.
 
 > **Do step 3 before step 4.** The Brewfile step must land before apply
-> for the pieces Neovim and the shell need: language servers come from
-> Homebrew too, not Mason — launching Neovim earlier is not fatal — it
+> for the pieces Neovim and the shell need, plus Node/npx for skill installation.
+> Language servers come from Homebrew too, not Mason — launching Neovim
+> earlier is not fatal — it
 > warns and names what is missing — but `Lazy! restore` also needs
 > `tree-sitter` to build parsers. (The colors are no longer part of this
 > ordering: they resolve from the theme mirror committed in the repo.)
@@ -179,18 +181,26 @@ non-Homebrew install.
 | `~/.local/bin/delta-theme` | Appearance-aware delta wrapper | [git.md](docs/git.md) |
 | `~/.pi/agent/settings.json`, `~/.pi/agent/themes/`, `~/.pi/agent/extensions/` | pi's settings, generated theme pair, managed extensions (provider-usage footer, title-screen splash), and permission-system policy | [pi.md](docs/pi.md) |
 
-**Upgrading an existing install:** the vendored code review skill and
-package-update prompt extension are retired; the chezmoi-runbook skill is
-now project-local. `chezmoi apply` removes all three former global copies;
+`chezmoi apply` also installs the global skill selection in
+[`pi-skills.json`](pi-skills.json) through the upstream skills CLI. Only missing
+skills or changed source selections are installed; existing skills are not
+updated automatically. First installation needs network access. See
+[upstream skills](docs/pi.md#upstream-skills-global).
+
+**Upgrading an existing install:** the experimental chezmoi grilling copies,
+vendored code review skill and package-update prompt extension are retired;
+the chezmoi-runbook skill is
+now project-local. `chezmoi apply` removes the retired global copies;
 restart pi or run `/reload` to refresh existing sessions.
 Other user skills and extensions are left alone. See
 [pi's retired components](docs/pi.md#retired-components-upgrade-cleanup).
 
 Repo-level files that are **never installed** (see `.chezmoiignore`):
-this README, `AGENTS.md`, `Brewfile`, `scripts/`, `settings.toml`,
+this README, `AGENTS.md`, `Brewfile`, `scripts/`, `settings.toml`, `pi-skills.json`,
 `docs/`, the theme mirror in `themes/`, `themes-local/` (hand-written
 palette overrides the resolver reads first), `.agents/` (project-local agent
-skills, skipped automatically as a literal dot-directory), and `LICENSE`.
+skills, skipped automatically as a literal dot-directory), `LICENSE`, and
+root `GLOSSARY.md` / `GLOSSARY-MAP.md` when created by project skill workflows.
 
 Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
 generated), `~/.zsh/secrets.zsh` (API keys — a secret), everything in
@@ -198,7 +208,9 @@ generated), `~/.zsh/secrets.zsh` (API keys — a secret), everything in
 `~/.config/gh/hosts.yml` (auth token), and on the pi side
 `~/.pi/agent/auth.json` (provider credentials from `/login`),
 `~/.pi/agent/sessions/` (transcripts), and `~/.pi/agent/models-store.json`
-(a catalog cache pi refetches itself).
+(a catalog cache pi refetches itself). The upstream skills CLI owns
+`~/.agents/skills/` and `~/.agents/.skill-lock.json`; chezmoi manages only the
+selection and installation hook, not those files.
 
 ## Changing the settings
 
@@ -352,6 +364,11 @@ and is unavailable in unrelated projects; it points to AGENTS.md and
   drifting field in `chezmoi diff` — harmless. Model defaults saved via
   `/model` + Ctrl+S must be folded into the template by hand:
   [docs/developing.md](docs/developing.md#pi-self-bumps).
+- **Global skills** — `npx skills@latest check -g` checks for updates;
+  `npx skills@latest update -g` refreshes CLI-tracked global skills. Additions
+  to keep on every Mac belong in `pi-skills.json`, then `chezmoi apply`.
+  Removing a selection does not uninstall it. See
+  [the skill guide](docs/pi.md#upstream-skills-global).
 - **Themes** — the mirror in `themes/` is a snapshot: upstream
   iTerm2-Color-Schemes keeps adding schemes, and they work the moment you
   run `scripts/themes-sync.sh` and type their name in `settings.toml`.

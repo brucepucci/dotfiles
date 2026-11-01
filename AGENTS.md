@@ -145,6 +145,9 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # (settings.json "packages"; its payload under
                             # ~/.pi/agent/npm comes from `pi install`,
                             # unmanaged)
+pi-skills.json             # selected global skills; apply's run_after_90-pi-skills
+                            # script uses the upstream CLI for missing/changed
+                            # selections; content + lock in ~/.agents/ stay unmanaged
 .agents/skills/chezmoi-runbook/SKILL.md # project-local verification skill;
                             # thin entry point to AGENTS.md + docs/developing.md;
                             # discovered in this repo, never installed to HOME
@@ -227,6 +230,26 @@ muscle memory. Do not "tidy" them. Two intentional quirks:
   `<C-h>`/`<C-j>`/`<C-k>`/`<C-l>` are uniformly window movement, never actions.
 - Terminal mode has `<C-k>`/`<C-h>`/`<C-l>` but no `<C-j>`, because the REPL is
   the bottom split.
+
+**Upstream skills: selection, not snapshots.** `pi-skills.json` is the committed
+selection. Apply installs missing skills or changed source selections through
+`npx skills@latest`, globally for Pi. Never vendor or patch the payload or import
+`~/.agents/` (CLI-owned content and lock). Existing content is not refreshed by
+apply; updates are manual via `npx skills@latest update -g`. Removed selections
+are not automatically uninstalled. Tier-1 tests must shim npx, never fetch.
+See docs/pi.md for the ownership boundary and stock Pi compatibility limitations.
+
+## Agent skills
+
+### Issue tracker
+Use the current repository's GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+Use the five default triage labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+Single-context: root `GLOSSARY.md` and `docs/adr/`.
+See `docs/agents/domain.md`.
 
 ## After changing plugins
 

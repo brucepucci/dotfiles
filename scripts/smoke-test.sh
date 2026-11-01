@@ -121,6 +121,10 @@
 #      absent on fresh installs; apply removes old installed copies without
 #      touching unrelated user skills or extensions
 #
+#  24. selected global skills: upstream CLI called only for missing/changed
+#      selections, with an offline shim; repeat apply is a no-op and preserves
+#      manual updates, removed selections and unrelated skills
+#
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see docs/developing.md's test
 # pyramid (a disposable macOS VM via tart).
@@ -157,10 +161,20 @@ fresh_zsh() {
 WITH_NVIM=0
 [[ "${1:-}" == "--nvim" ]] && WITH_NVIM=1
 
+# Never execute a real npm download in tier 1. HOME for the fake installer is
+# supplied by the apply adapter from --destination, not the developer's HOME.
+mkdir -p "$WORK/bin"
+printf '#!/bin/sh\nexec node "%s/scripts/lib/fake-skills-cli.mjs" "$@"\n' "$SOURCE" > "$WORK/bin/npx"
+chmod +x "$WORK/bin/npx"
+export PATH="$WORK/bin:$PATH"
+export DOTFILES_SKILLS_TEST_LOG="$WORK/skills-calls.jsonl"
+: > "$DOTFILES_SKILLS_TEST_LOG"
+
 step "chezmoi apply into a pristine HOME"
 chezmoi --source "$SOURCE" --destination "$NEWHOME" apply
-[[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff)" ]] \
-  || die "chezmoi diff is not empty after apply"
+# Always-run scripts appear in diff even when their local check will be a no-op.
+[[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff --exclude=scripts)" ]] \
+  || die "chezmoi file diff is not empty after apply"
 for f in .zshrc .zprofile .config/zsh/ps1.zsh \
          .config/zsh-ghostty/.zshenv .config/ghostty/config \
          .config/ghostty/themes/dotfiles-light \
@@ -210,6 +224,36 @@ grep -qF "set -g window-status-current-format ' | #I:#W#{?window_flags,#{window_
   || die "~/.tmux.conf: current-window entry lacks the separator -- session name blends into the window index"
 [[ ! -e "$NEWHOME/.zsh/secrets.zsh" ]] || die "~/.zsh/secrets.zsh was applied"
 ok "full tree rendered, diff empty, no secrets applied"
+
+step "selected global skills: offline installer and repeat apply"
+node "$SOURCE/scripts/test-pi-skills.mjs"
+python3 - "$SOURCE" "$NEWHOME" "$DOTFILES_SKILLS_TEST_LOG" <<'PY'
+import json, sys
+from pathlib import Path
+source, home, log = map(Path, sys.argv[1:])
+selection = json.loads((source / 'pi-skills.json').read_text())
+lock_path = home / '.agents/.skill-lock.json'
+lock = json.loads(lock_path.read_text()) if lock_path.exists() else {'skills': {}}
+assert set(lock['skills']) == {name for names in selection.values() for name in names}
+for repo, names in selection.items():
+    for name in names:
+        assert lock['skills'][name]['source'] == repo
+        assert (home / '.agents/skills' / name / 'SKILL.md').is_file()
+for call in map(json.loads, log.read_text().splitlines()):
+    assert Path(call['home']).resolve() == home.resolve() and Path(call['cwd']).resolve() == home.resolve()
+assert not (home / 'pi-skills.json').exists(), 'repo selection leaked to HOME'
+assert not (home / '.agents/skills/chezmoi-runbook').exists(), 'local runbook installed globally'
+for name in ('issue-tracker', 'triage-labels', 'domain'):
+    path = f'docs/agents/{name}.md'
+    assert (source / path).is_file(), f'missing project setup: {path}'
+    assert path in (source / 'AGENTS.md').read_text(), f'unlinked project setup: {path}'
+    assert not (home / path).exists(), f'project setup leaked to HOME: {path}'
+PY
+cp "$DOTFILES_SKILLS_TEST_LOG" "$WORK/skills-calls-before"
+chezmoi --source "$SOURCE" --destination "$NEWHOME" apply
+cmp -s "$DOTFILES_SKILLS_TEST_LOG" "$WORK/skills-calls-before" \
+  || die "repeat apply fetched skills"
+ok "selected skills installed through upstream CLI; unchanged apply stays offline"
 
 step "SSH address book: aliases and credential separation (offline)"
 [[ -f "$NEWHOME/.ssh/hosts.conf" ]] || die "missing ~/.ssh/hosts.conf"
@@ -1431,7 +1475,7 @@ SKILL="$SOURCE/.agents/skills/chezmoi-runbook/SKILL.md"
 RUNBOOK_TARGET="$NEWHOME/.pi/agent/skills/chezmoi-runbook"
 [[ -f "$SKILL" ]] || die "project-local chezmoi-runbook skill missing"
 [[ ! -e "$RUNBOOK_TARGET" ]] || die "runbook installed globally on a fresh apply"
-[[ ! -e "$NEWHOME/.agents" ]] || die "repo-local .agents directory installed to HOME"
+[[ ! -e "$NEWHOME/.agents/skills/chezmoi-runbook" ]] || die "repo-local runbook installed to HOME"
 if ! python3 - "$SKILL" "$SOURCE" <<'PY'
 from pathlib import Path
 import re, sys
@@ -1478,13 +1522,18 @@ for cmd in \
 done
 HOME="$NEWHOME" node "$SOURCE/scripts/test-project-skills.mjs" "$SOURCE" "$NEWHOME" \
   || die "project skill discovery harness failed"
-ok "local frontmatter + runbook links valid; nothing installed to HOME"
+ok "local frontmatter + runbook links valid; runbook never installed to HOME"
 
 step "former global skills: fresh install and upgrade cleanup"
 REVIEW_TARGET="$NEWHOME/.pi/agent/skills/code-review-skill"
 USER_SKILL="$NEWHOME/.pi/agent/skills/user-skill/SKILL.md"
 [[ ! -e "$REVIEW_TARGET" ]] || die "retired skill present on fresh install"
-mkdir -p "$REVIEW_TARGET/reference" "$RUNBOOK_TARGET" "$(dirname "$USER_SKILL")"
+mkdir -p "$NEWHOME/.agents"
+cp -R "$NEWHOME/.agents" "$WORK/agents-before-retirement"
+mkdir -p "$REVIEW_TARGET/reference" "$RUNBOOK_TARGET" "$(dirname "$USER_SKILL")" \
+  "$NEWHOME/.pi/agent/skills/grilling" "$NEWHOME/.pi/agent/skills/grill-me"
+printf 'old interview\n' > "$NEWHOME/.pi/agent/skills/grilling/SKILL.md"
+printf 'old wrapper\n' > "$NEWHOME/.pi/agent/skills/grill-me/SKILL.md"
 printf 'old skill\n' > "$REVIEW_TARGET/SKILL.md"
 printf 'old resource\n' > "$REVIEW_TARGET/reference/guide.md"
 printf 'old global runbook\n' > "$RUNBOOK_TARGET/SKILL.md"
@@ -1495,9 +1544,14 @@ grep -qxF 'user-owned skill' "$USER_SKILL" \
   || die "apply changed an unrelated user skill"
 [[ ! -e "$RUNBOOK_TARGET" ]] || die "apply did not remove the global runbook"
 [[ -f "$SKILL" ]] || die "apply removed the project-local runbook"
-[[ ! -e "$NEWHOME/.agents" ]] || die "apply installed the project-local skills"
-[[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff)" ]] \
-  || die "chezmoi diff is not empty after skill cleanup"
+[[ ! -e "$NEWHOME/.agents/skills/chezmoi-runbook" ]] || die "apply installed the project-local runbook"
+for name in grilling grill-me; do
+  [[ ! -e "$NEWHOME/.pi/agent/skills/$name" ]] || die "old chezmoi $name copy survived"
+done
+diff -qr "$WORK/agents-before-retirement" "$NEWHOME/.agents" \
+  || die "retiring legacy skills changed the upstream CLI's files"
+[[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff --exclude=scripts)" ]] \
+  || die "chezmoi file diff is not empty after skill cleanup"
 ok "former global skills removed; local runbook and unrelated user skills preserved"
 
 step "retired package-update extension: fresh install and upgrade cleanup"
@@ -1514,8 +1568,8 @@ for extension in provider-usage title-screen; do
   [[ -f "$NEWHOME/.pi/agent/extensions/$extension.ts" ]] \
     || die "apply removed the $extension extension"
 done
-[[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff)" ]] \
-  || die "chezmoi diff is not empty after extension cleanup"
+[[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff --exclude=scripts)" ]] \
+  || die "chezmoi file diff is not empty after extension cleanup"
 ok "retired extension removed; managed and unrelated user extensions preserved"
 
 step "theme probe: reply parsing on a real pty"
