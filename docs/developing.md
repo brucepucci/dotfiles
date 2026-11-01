@@ -139,6 +139,10 @@ the result the way real sessions do. It covers:
   no duplicated command blocks, and no installation under HOME; when pi is
   installed, its resource loader proves discovery from the repo and its
   subdirectories, exclusion in unrelated projects, and project-trust gating
+- global grilling and grill-me skills: pinned upstream source hashes, MIT
+  attribution, explicit-only wrapper, Pi-native delegation, refresh failure
+  paths, and real discovery even outside trusted projects; vendor sources
+  never install to HOME and apply never fetches upstream
 - retirement of the former global runbook skill, code review skill, and
   package-update prompt extension: apply removes installed copies on upgrades
   without touching unrelated user skills or extensions or the local runbook
@@ -263,6 +267,23 @@ Edit `dot_zshrc.tmpl` / `dot_zprofile` / `ps1.zsh`, apply, and run the
 smoke test (it asserts the structural invariants: integrations after
 compinit, syntax-highlighting last, indexed colors). New interactive-shell
 windows pick it up; existing ones need a restart.
+
+### Refresh the grilling skills
+
+`vendor/pi-skills/` holds exactly two upstream skill snapshots, their MIT
+license, and `SOURCE.json` with the upstream commit and hashes. Refresh it
+manually with `scripts/pi-skills-sync.py`, then review and run the full smoke
+test before applying. The script resolves a commit first and fetches only
+that revision. `--ref <full-commit-sha>` selects a known snapshot. Changed
+wrapper delegation, missing explicit-only invocation, new bundled references,
+and changed licensing require review rather than silent installation.
+
+Keep Pi-specific adaptations in `dot_pi/agent/skills/`, not the mirrored
+files or HOME targets. Templates turn the wrapper's unavailable `Skill` tool
+call into a `read` of grilling, and document the research fallback when no
+subagent tool exists. Preserve the explicit-only wrapper. Never fetch during
+apply, startup, tests, or CI, and do not add a second package-managed copy.
+The complete update/apply commands are in [pi.md](pi.md#refresh-upstream-skills).
 
 ### Edit the runbook / the project-local skill
 The verification commands live in AGENTS.md ("Verifying a change",

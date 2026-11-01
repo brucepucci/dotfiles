@@ -121,6 +121,10 @@
 #      absent on fresh installs; apply removes old installed copies without
 #      touching unrelated user skills or extensions
 #
+#  24. grilling and grill-me: two licensed, pinned upstream snapshots, Pi-native
+#      delegation, explicit-only wrapper, offline refresh guardrails, and global
+#      discovery without installing vendor sources or additional upstream skills
+#
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see docs/developing.md's test
 # pyramid (a disposable macOS VM via tart).
@@ -1479,6 +1483,30 @@ done
 HOME="$NEWHOME" node "$SOURCE/scripts/test-project-skills.mjs" "$SOURCE" "$NEWHOME" \
   || die "project skill discovery harness failed"
 ok "local frontmatter + runbook links valid; nothing installed to HOME"
+
+step "grilling skills: pinned upstream snapshots and Pi-native delegation"
+PYTHONDONTWRITEBYTECODE=1 python3 "$SOURCE/scripts/test-pi-skills.py" \
+  || die "skill refresh guardrail tests failed"
+python3 - "$SOURCE" "$NEWHOME" <<'PY'
+from pathlib import Path
+import sys
+source, home = map(Path, sys.argv[1:])
+vendor = source / "vendor/pi-skills"
+target = home / ".pi/agent/skills"
+assert {p.parent.name for p in target.glob("*/SKILL.md")} == {"grilling", "grill-me"}
+core = (target / "grilling/SKILL.md").read_text()
+assert core.startswith((vendor / "grilling/SKILL.md").read_text())
+assert "## Pi compatibility" in core and "fresh context" in core
+wrapper = (target / "grill-me/SKILL.md").read_text()
+assert "disable-model-invocation: true" in wrapper
+assert "Use the `read` tool" in wrapper
+assert "../grilling/SKILL.md" in wrapper
+assert "Call the Skill tool" not in wrapper
+for name in ("grilling", "grill-me"):
+    assert (target / name / "LICENSE").read_bytes() == (vendor / "LICENSE").read_bytes()
+assert not (home / "vendor").exists(), "vendor snapshots must not install to HOME"
+PY
+ok "two global skills, correct invocation policy, local delegation, and MIT attribution"
 
 step "former global skills: fresh install and upgrade cleanup"
 REVIEW_TARGET="$NEWHOME/.pi/agent/skills/code-review-skill"

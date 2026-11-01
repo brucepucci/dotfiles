@@ -1,0 +1,2 @@
+{{- $upstream := include (joinPath .chezmoi.sourceDir "vendor" "pi-skills" "grill-me" "SKILL.md") -}}
+{{- replace "Call the Skill tool with \"grilling\"." "Use the `read` tool to load `../grilling/SKILL.md` (relative to this skill directory), then follow that skill's interview instructions. Do not improvise an interview without reading it." $upstream -}}

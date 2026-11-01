@@ -145,6 +145,12 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # (settings.json "packages"; its payload under
                             # ~/.pi/agent/npm comes from `pi install`,
                             # unmanaged)
+dot_pi/agent/skills/        # global grilling + explicit-only grill-me;
+                            # templates read pinned vendor/pi-skills snapshots
+                            # and adapt delegation to Pi's read tool
+vendor/pi-skills/           # exact upstream skills, license, commit + hashes;
+                            # ignored by chezmoi, refreshed manually with
+                            # scripts/pi-skills-sync.py, never during apply
 .agents/skills/chezmoi-runbook/SKILL.md # project-local verification skill;
                             # thin entry point to AGENTS.md + docs/developing.md;
                             # discovered in this repo, never installed to HOME
@@ -227,6 +233,14 @@ muscle memory. Do not "tidy" them. Two intentional quirks:
   `<C-h>`/`<C-j>`/`<C-k>`/`<C-l>` are uniformly window movement, never actions.
 - Terminal mode has `<C-k>`/`<C-h>`/`<C-l>` but no `<C-j>`, because the REPL is
   the bottom split.
+
+**Grilling skills are reviewed snapshots.** `vendor/pi-skills/` holds only
+upstream grilling, grill-me, their MIT license, and provenance. Refresh with
+`scripts/pi-skills-sync.py`, review, smoke-test, and apply. Never add fetching to
+templates, startup, or CI. Keep Pi adaptations in the skill templates, preserve
+the explicit-only wrapper, and do not install duplicate package-managed copies.
+The smoke test checks snapshot integrity, refresh failure paths, installed
+licenses/delegation, and actual global discovery when Pi is present.
 
 ## After changing plugins
 

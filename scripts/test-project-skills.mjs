@@ -42,6 +42,13 @@ for (const [label, cwd, trusted, expected] of [
 		assert.equal(matches[0].filePath, skillPath, label);
 		assert.equal(matches[0].sourceInfo.scope, "project", label);
 	}
+	for (const [name, userOnly] of [["grilling", false], ["grill-me", true]]) {
+		const globalMatches = skills.filter((skill) => skill.name === name);
+		assert.equal(globalMatches.length, 1, `${label}: ${name} must load exactly once`);
+		assert.equal(globalMatches[0].filePath, resolve(home, `.pi/agent/skills/${name}/SKILL.md`));
+		assert.equal(globalMatches[0].sourceInfo.scope, "user", `${label}: ${name}`);
+		assert.equal(globalMatches[0].disableModelInvocation, userOnly, `${label}: ${name}`);
+	}
 	assert.equal(diagnostics.length, 0, `${label}: ${JSON.stringify(diagnostics)}`);
-	console.log(`  ok  runbook discovery: ${label}`);
+	console.log(`  ok  runbook and global grilling skill discovery: ${label}`);
 }

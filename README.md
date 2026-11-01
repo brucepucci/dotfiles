@@ -178,6 +178,7 @@ non-Homebrew install.
 | `~/.config/lazygit/config.yml` | delta as lazygit's diff renderer | [git.md](docs/git.md) |
 | `~/.local/bin/delta-theme` | Appearance-aware delta wrapper | [git.md](docs/git.md) |
 | `~/.pi/agent/settings.json`, `~/.pi/agent/themes/`, `~/.pi/agent/extensions/` | pi's settings, generated theme pair, managed extensions (provider-usage footer, title-screen splash), and permission-system policy | [pi.md](docs/pi.md) |
+| `~/.pi/agent/skills/{grilling,grill-me}/` | Global interview skills, with Pi-native delegation and reviewed upstream snapshots | [Grilling skills](docs/pi.md#grilling-skills-global) |
 
 **Upgrading an existing install:** the vendored code review skill and
 package-update prompt extension are retired; the chezmoi-runbook skill is
@@ -189,7 +190,8 @@ Other user skills and extensions are left alone. See
 Repo-level files that are **never installed** (see `.chezmoiignore`):
 this README, `AGENTS.md`, `Brewfile`, `scripts/`, `settings.toml`,
 `docs/`, the theme mirror in `themes/`, `themes-local/` (hand-written
-palette overrides the resolver reads first), `.agents/` (project-local agent
+palette overrides the resolver reads first), `vendor/` (reviewed upstream
+skill sources read by templates), `.agents/` (project-local agent
 skills, skipped automatically as a literal dot-directory), and `LICENSE`.
 
 Not managed, on purpose: `~/.zsh_history` and `.zcompdump*` (private and
@@ -352,6 +354,10 @@ and is unavailable in unrelated projects; it points to AGENTS.md and
   drifting field in `chezmoi diff` — harmless. Model defaults saved via
   `/model` + Ctrl+S must be folded into the template by hand:
   [docs/developing.md](docs/developing.md#pi-self-bumps).
+- **Grilling skills**: run `scripts/pi-skills-sync.py` to refresh exactly
+  `grilling` and `grill-me` from upstream. Review the diff, run the smoke test,
+  then apply and `/reload` Pi. Updates are manual; nothing fetches during
+  startup or apply. See [the refresh guide](docs/pi.md#refresh-upstream-skills).
 - **Themes** — the mirror in `themes/` is a snapshot: upstream
   iTerm2-Color-Schemes keeps adding schemes, and they work the moment you
   run `scripts/themes-sync.sh` and type their name in `settings.toml`.

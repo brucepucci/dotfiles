@@ -14,6 +14,7 @@ The pieces, kept deliberately separate:
 | The binary | Homebrew: `pi-coding-agent` (in the Brewfile; the formula wraps the npm package in its own keg and pulls `node`) | installed, not configured, by this repo |
 | Settings + themes | `dot_pi/agent/` → `~/.pi/agent/settings.json`, `~/.pi/agent/themes/dotfiles-{light,dark}.json` | **yes — chezmoi templates** |
 | The chezmoi-runbook skill | `.agents/skills/chezmoi-runbook/SKILL.md` (`/skill:chezmoi-runbook`) | **repo-local only — never installed to HOME** |
+| The grilling skills | `dot_pi/agent/skills/{grilling,grill-me}/` → `~/.pi/agent/skills/` | **global, chezmoi templates over reviewed upstream snapshots** |
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
 | The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
 | The permission-system package | `"packages"` in `dot_pi/agent/settings.json.tmpl` + `dot_pi/agent/extensions/pi-permission-system/config.json` → policy config | **yes — entry in the template; config a plain static file** |
@@ -151,6 +152,66 @@ to avoid updating project packages), then restart Pi to load changed code.
 This setup no longer checks for package updates or provides
 `/update-pi-packages`. Repo-managed extensions still update via `chezmoi apply`,
 and Pi itself via `brew upgrade pi-coding-agent`.
+
+## Grilling skills (global)
+
+`chezmoi apply` installs **grilling** and **grill-me** into
+`~/.pi/agent/skills/`, available in every project:
+
+```text
+/skill:grill-me Help me design a reliable headless Mac mini server.
+/skill:grilling Stress-test this plan before we implement it.
+```
+
+`grilling` is the interview discipline: independent questions in rounds,
+recommendations, follow-ups, research, and confirmation before implementation.
+It can be reached for automatically. `grill-me` is the explicit-only front
+door (`disable-model-invocation: true`), delegating to the same interview.
+Neither creates a glossary, ADRs, spec, or setup guide by itself. Start a fresh
+conversation when you want to think independently of an earlier proposed plan.
+
+The upstream is [mattpocock/skills](https://github.com/mattpocock/skills).
+`vendor/pi-skills/` contains the two verbatim source files, their MIT license,
+and `SOURCE.json` recording the exact commit and file hashes. This directory
+is ignored by chezmoi; only the two templated skill directories are installed.
+No other upstream skills, packages, extensions, or installers are pulled in.
+
+There are two small Pi adaptations, kept outside the upstream snapshots:
+
+- The wrapper reads `../grilling/SKILL.md` with Pi's `read` tool, rather than
+  calling the upstream's Claude-style `Skill` tool, which Pi does not provide.
+- The interview adds a compatibility note: research subagents need fresh
+  context windows when available; otherwise use the available tools directly.
+  Pi has no built-in subagent tool, so installation does not promise one.
+
+### Refresh upstream skills
+
+Updates are **manual and reviewable**, like the theme mirror. From the checkout
+that will supply your apply:
+
+```bash
+scripts/pi-skills-sync.py
+git diff -- vendor/pi-skills
+scripts/smoke-test.sh
+chezmoi --source "$PWD" diff --recursive \
+  ~/.pi/agent/skills/grilling ~/.pi/agent/skills/grill-me
+chezmoi --source "$PWD" apply \
+  ~/.pi/agent/skills/grilling ~/.pi/agent/skills/grill-me
+```
+
+The refresh command downloads only the two skill files and MIT license from
+one resolved upstream commit. It refuses changed delegation, missing invocation
+policy, new bundled references, or a changed license until the integration is
+reviewed. `scripts/pi-skills-sync.py --ref <full-commit-sha>` restores a specific
+upstream snapshot. Review and commit the source changes through the normal
+branch/PR workflow, then pull and apply on other Macs. `/reload` in Pi, or
+restart it, to pick up applied changes.
+
+Nothing fetches at startup or apply time. `pi update --extensions` and
+`npx skills update` do not update these repo-managed copies. Do not install
+another copy of the same skill through a package manager: Pi reports duplicate
+names and keeps the first one it finds. Edit templates for Pi-specific changes,
+not target files or the mirrored upstream sources.
 
 ## The chezmoi-runbook skill (project-local)
 

@@ -15,6 +15,8 @@ scripts/
 settings.toml
 themes/
 themes-local/
+# Reviewed skill snapshots are read by templates, never installed as ~/vendor.
+vendor/
 docs/
 
 # Generated or private files at $HOME. chezmoi only tracks what is
