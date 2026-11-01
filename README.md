@@ -230,8 +230,10 @@ committed in `themes/` (browse the gallery in
 README); `theme` picks follow-the-OS vs pinned; `tmux_wrap` is the
 one behavior knob. Edit, `chezmoi diff && chezmoi apply`, and every
 surface follows — the full explanation, including what renders where,
-is in [docs/theming.md](docs/theming.md). No prerequisites: the palettes
-live in this repo, so apply needs neither network nor Ghostty.
+is in [docs/theming.md](docs/theming.md). The palettes live in this repo, so
+theme rendering needs neither network nor Ghostty. Apply requires Node; npx
+and network access are also needed when selected global skills are missing or
+source-changed.
 
 ## Editing this config
 

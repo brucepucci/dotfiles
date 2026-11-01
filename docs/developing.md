@@ -198,7 +198,11 @@ nvim --headless some.py '+lua vim.wait(6000, function() return #vim.lsp.get_clie
 
 Expected noise under `:checkhealth`: snacks runs every module's health
 check even when disabled, so magick/ghostscript/tectonic complaints and
-"no kitty graphics protocol" are about image rendering we don't do.
+"no kitty graphics protocol" are about image rendering we don't do. The
+`vim.ui.input` / `vim.ui.select` errors in a headless run are also expected:
+Snacks installs those hooks on `UIEnter`, which headless startup does not fire.
+Both hooks match Snacks after that event. Disabled-module warnings alone are
+not failures of the enabled editor features.
 
 ## Common tasks
 
