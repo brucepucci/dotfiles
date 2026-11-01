@@ -139,7 +139,12 @@ the result the way real sessions do. It covers:
   no duplicated command blocks, and no installation under HOME; when pi is
   installed, its resource loader proves discovery from the repo and its
   subdirectories, exclusion in unrelated projects, and project-trust gating
-- retirement of the former global runbook skill, code review skill, and
+- selected global upstream skills: an offline npx shim proves fresh apply,
+  unchanged no-op, missing-file/registration repair, changed-source installs,
+  preservation of manual updates and removed/unrelated skills, and loud failures;
+  Pi's real resource loader checks global discovery alongside the local runbook
+- retirement of the experimental global grilling copies, former global
+  runbook skill, code review skill, and
   package-update prompt extension: apply removes installed copies on upgrades
   without touching unrelated user skills or extensions or the local runbook
 - the provider-usage pi extension: installed into the scratch HOME, with
@@ -168,8 +173,8 @@ installed — the theme mirror is committed in the repo, so a green run
 there is the standing proof that apply needs no Ghostty. (The resolver's
 palette input is the mirror and nothing else — tier 1 guards that
 behaviorally by resolving with themes/ absent — but the runner still has
-network, so "reads no network at apply time" is a property of the code,
-not something CI enforces.)
+network, so "the theme resolver reads no network" is a property of the code,
+not something CI enforces. Skill installation is separate and shimmed offline.)
 
 **Tier 2 — a real macOS VM, for big changes** (new-machine runs, GUI apps,
 `brew bundle` itself):
@@ -193,7 +198,11 @@ nvim --headless some.py '+lua vim.wait(6000, function() return #vim.lsp.get_clie
 
 Expected noise under `:checkhealth`: snacks runs every module's health
 check even when disabled, so magick/ghostscript/tectonic complaints and
-"no kitty graphics protocol" are about image rendering we don't do.
+"no kitty graphics protocol" are about image rendering we don't do. The
+`vim.ui.input` / `vim.ui.select` errors in a headless run are also expected:
+Snacks installs those hooks on `UIEnter`, which headless startup does not fire.
+Both hooks match Snacks after that event. Disabled-module warnings alone are
+not failures of the enabled editor features.
 
 ## Common tasks
 
@@ -263,6 +272,37 @@ Edit `dot_zshrc.tmpl` / `dot_zprofile` / `ps1.zsh`, apply, and run the
 smoke test (it asserts the structural invariants: integrations after
 compinit, syntax-highlighting last, indexed colors). New interactive-shell
 windows pick it up; existing ones need a restart.
+
+### Change the global skill selection
+
+`pi-skills.json` records skill names grouped by GitHub repository. The
+interactive `npx skills@latest add mattpocock/skills -a pi` command (choose
+Global) is for exploring; deliberately record the choices you want to keep.
+Apply's `run_after_90-pi-skills.sh.tmpl` embeds the small adapter from
+`scripts/install-pi-skills.mjs`. It checks the CLI's global lock and SKILL.md
+locally, installing only missing or source-changed selections through the
+upstream CLI. Node and npx come from the Brewfile. A first install needs the
+network; an unchanged selection does not. Do not vendor, patch, or import the
+CLI-owned `~/.agents/` tree, or commit its runtime lock/hashes. Removing a
+selection does not delete an installed skill.
+
+Updates remain explicit (`npx skills@latest update -g`), and fresh installs
+get current upstream versions. See [pi.md](pi.md#upstream-skills-global) for
+commands and Pi compatibility limitations. Always-run scripts appear in
+`chezmoi diff` even for no-op checks; use `--exclude=scripts` to inspect file
+drift alone. The smoke test shims npx for all scratch applies and tests the
+adapter's failures without downloading anything. Preserve that boundary.
+
+### Project skill setup
+
+`docs/agents/` is this repository's reviewed setup for the engineering skills:
+GitHub Issues inferred from the current repository's remote, the five default
+triage labels, and a single-context root `GLOSSARY.md` plus `docs/adr/` layout.
+AGENTS.md links to these local conventions. They are not global defaults or
+installed into HOME; other projects run `/skill:setup-matt-pocock-skills`
+independently. Apply installs the global skill selection but never creates
+issues or labels or runs project setup. The glossary and ADRs are created
+lazily; root glossary files are explicitly ignored by chezmoi, like docs/.
 
 ### Edit the runbook / the project-local skill
 The verification commands live in AGENTS.md ("Verifying a change",

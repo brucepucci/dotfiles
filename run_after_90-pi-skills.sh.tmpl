@@ -1,0 +1,7 @@
+#!/bin/sh
+# Check locally on every apply; only missing/changed selections invoke npx.
+set -eu
+exec node --input-type=module <<'DOTFILES_PI_SKILLS'
+{{ include (joinPath .chezmoi.sourceDir "scripts" "install-pi-skills.mjs") }}
+installSkills({{ include (joinPath .chezmoi.sourceDir "pi-skills.json") }}, {{ .chezmoi.destDir | toJson }});
+DOTFILES_PI_SKILLS

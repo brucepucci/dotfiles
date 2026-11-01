@@ -1,7 +1,7 @@
 // Exercise project-local runbook discovery through Pi's real resource loader.
 // HOME is the smoke test's scratch HOME, never the user's skills/settings.
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { PI_PACKAGE_DIR } from "./lib/pi-package-dir.mjs";
@@ -18,6 +18,7 @@ const home = resolve(process.argv[3]);
 assert.ok(process.env.HOME, "HOME must be set");
 assert.equal(resolve(process.env.HOME), home, "run this harness with a disposable HOME");
 const skillPath = resolve(source, ".agents/skills/chezmoi-runbook/SKILL.md");
+const selected = Object.values(JSON.parse(readFileSync(resolve(source, "pi-skills.json"), "utf8"))).flat();
 
 for (const [label, cwd, trusted, expected] of [
 	["repo root", source, true, true],
@@ -41,6 +42,15 @@ for (const [label, cwd, trusted, expected] of [
 	if (expected) {
 		assert.equal(matches[0].filePath, skillPath, label);
 		assert.equal(matches[0].sourceInfo.scope, "project", label);
+	}
+	for (const name of selected) {
+		const global = skills.filter((skill) => skill.name === name);
+		assert.equal(global.length, 1, `${label}: global ${name}`);
+		assert.equal(global[0].sourceInfo.scope, "user", name);
+		assert.equal(global[0].filePath, resolve(home, ".agents/skills", name, "SKILL.md"));
+	}
+	if (selected.includes("grill-me")) {
+		assert.equal(skills.find((skill) => skill.name === "grill-me").disableModelInvocation, true);
 	}
 	assert.equal(diagnostics.length, 0, `${label}: ${JSON.stringify(diagnostics)}`);
 	console.log(`  ok  runbook discovery: ${label}`);
