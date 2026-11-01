@@ -87,7 +87,44 @@ try {
 		assert.throws(() => installSkills(selection, home), /unsupported skills lock format/);
 	}
 	assert.equal(calls().length, countBeforeBadLock, "bad lock must not invoke npx");
-	console.log("  ok  selected skills: fresh install, no-op, repair, source changes, preservation and failures");
+	// Exercise the real selection's migration from mixed upstream/fork sources.
+	// A source change must move every remaining engineering skill to the fork,
+	// without reinstalling the already-forked review or Vercel's skill.
+	const selected = JSON.parse(readFileSync(new URL("../pi-skills.json", import.meta.url), "utf8"));
+	assert.deepEqual(Object.keys(selected).sort(), ["brucepucci/skills", "vercel-labs/skills"]);
+	assert.ok(selected["brucepucci/skills"].includes("code-review"));
+	assert.deepEqual(selected["vercel-labs/skills"], ["find-skills"]);
+	const migrationHome = join(work, "migration home");
+	mkdirSync(migrationHome);
+	const migrationLog = join(work, "migration-calls.jsonl");
+	process.env.DOTFILES_SKILLS_TEST_LOG = migrationLog;
+	const migrating = selected["brucepucci/skills"].filter((name) => name !== "code-review");
+	installSkills({
+		"mattpocock/skills": migrating,
+		"brucepucci/skills": ["code-review"],
+		"vercel-labs/skills": selected["vercel-labs/skills"],
+	}, migrationHome);
+	const migrationSkillPath = (name) => join(migrationHome, ".agents/skills", name, "SKILL.md");
+	for (const name of ["code-review", ...selected["vercel-labs/skills"]]) {
+		writeFileSync(migrationSkillPath(name), "already installed from selected source\n");
+	}
+	const migrationCalls = () => readFileSync(migrationLog, "utf8").trim().split("\n").map(JSON.parse);
+	const beforeMigration = migrationCalls().length;
+	installSkills(selected, migrationHome);
+	assert.deepEqual(migrationCalls().slice(beforeMigration).map(({ source, names }) => [source, names]),
+		[["brucepucci/skills", migrating]]);
+	const migratedLock = JSON.parse(readFileSync(join(migrationHome, ".agents/.skill-lock.json"), "utf8"));
+	for (const [source, names] of Object.entries(selected)) {
+		for (const name of names) assert.equal(migratedLock.skills[name].source, source);
+	}
+	for (const name of ["code-review", ...selected["vercel-labs/skills"]]) {
+		assert.equal(readFileSync(migrationSkillPath(name), "utf8"), "already installed from selected source\n");
+	}
+	process.env.FAKE_SKILLS_FAIL = "1";
+	installSkills(selected, migrationHome);
+	assert.equal(migrationCalls().length, beforeMigration + 1, "repeat apply must not refresh migrated skills");
+	delete process.env.FAKE_SKILLS_FAIL;
+	console.log("  ok  selected skills: fresh install, no-op, repair, source changes, fork migration, preservation and failures");
 } finally {
 	process.env.DOTFILES_SKILLS_TEST_LOG = previousLog;
 	delete process.env.FAKE_SKILLS_FAIL;

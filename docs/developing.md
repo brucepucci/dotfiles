@@ -139,9 +139,11 @@ the result the way real sessions do. It covers:
   no duplicated command blocks, and no installation under HOME; when pi is
   installed, its resource loader proves discovery from the repo and its
   subdirectories, exclusion in unrelated projects, and project-trust gating
-- selected global upstream skills: an offline npx shim proves fresh apply,
+- selected global skills: an offline npx shim proves fresh apply,
   unchanged no-op, missing-file/registration repair, changed-source installs,
-  preservation of manual updates and removed/unrelated skills, and loud failures;
+  migration from mixed upstream/fork sources to the fork without reinstalling
+  already-correct skills, preservation of manual updates and removed/unrelated
+  skills, and loud failures;
   Pi's real resource loader checks global discovery alongside the local runbook
 - retirement of the experimental global grilling copies, former global
   runbook skill, code review skill, and
@@ -275,23 +277,82 @@ windows pick it up; existing ones need a restart.
 
 ### Change the global skill selection
 
-`pi-skills.json` records skill names grouped by GitHub repository. The
-interactive `npx skills@latest add mattpocock/skills -a pi` command (choose
+`pi-skills.json` records skill names grouped by GitHub repository. All selected
+engineering/workflow skills come from `brucepucci/skills`, our maintained fork;
+Vercel's `find-skills` remains separately sourced. `mattpocock/skills` is only
+an upstream to merge deliberately into the fork, not a direct installation or
+update source. Maintain skill changes in the fork, not installed files here.
+The interactive `npx skills@latest add brucepucci/skills -a pi` command (choose
 Global) is for exploring; deliberately record the choices you want to keep.
 Apply's `run_after_90-pi-skills.sh.tmpl` embeds the small adapter from
 `scripts/install-pi-skills.mjs`. It checks the CLI's global lock and SKILL.md
 locally, installing only missing or source-changed selections through the
-upstream CLI. Node and npx come from the Brewfile. A first install needs the
+Skills CLI. Node and npx come from the Brewfile. A first install needs the
 network; an unchanged selection does not. Do not vendor, patch, or import the
 CLI-owned `~/.agents/` tree, or commit its runtime lock/hashes. Removing a
 selection does not delete an installed skill.
 
+Changing the source from `mattpocock/skills` to `brucepucci/skills` reinstalls
+those selections on the next apply and replaces their CLI source registrations.
+Already-forked `code-review` and Vercel's `find-skills` are left untouched.
 Updates remain explicit (`npx skills@latest update -g`), and fresh installs
-get current upstream versions. See [pi.md](pi.md#upstream-skills-global) for
-commands and Pi compatibility limitations. Always-run scripts appear in
+get current versions from the selected repositories, not pinned snapshots.
+An update reads each skill's registered source; it does not sync the fork with
+upstream. See [pi.md](pi.md#global-skills) for commands and Pi compatibility
+limitations. Always-run scripts appear in
 `chezmoi diff` even for no-op checks; use `--exclude=scripts` to inspect file
 drift alone. The smoke test shims npx for all scratch applies and tests the
 adapter's failures without downloading anything. Preserve that boundary.
+
+### Maintain and update the skills fork
+
+There are two separate operations: **publish the skill source**, then **update
+installed copies**. Neither `chezmoi apply` nor the Skills CLI merges upstream
+changes into `brucepucci/skills`.
+
+For your own customizations, edit a clean checkout of `brucepucci/skills`, follow
+that repo's agent/contribution guidance, verify, and publish to its default
+branch. Changes to an existing skill need no dotfiles selection change. To
+incorporate upstream updates, use a reviewed integration branch, not a force-sync
+that discards fork-only commits:
+
+```bash
+# In a clean checkout of brucepucci/skills, not this dotfiles repo:
+git remote -v
+# Verify origin is brucepucci/skills. If upstream is absent, add it once:
+git remote add upstream https://github.com/mattpocock/skills.git
+# If upstream already exists, verify its URL instead of adding it again.
+git fetch origin
+git switch main
+git pull --ff-only origin main
+git fetch upstream
+git switch -c sync-upstream-YYYY-MM-DD  # choose a unique branch name
+git merge upstream/main
+```
+
+Resolve conflicts while preserving intentional customizations, especially the
+code-review workflow. Review the entire incoming diff, not only conflicts:
+automatic merges can still change behavior. Check skill names/paths, instructions,
+and source links; update fork docs and run its checks and applicable acceptance
+scenarios. Commit resolutions as needed, then push the integration branch to
+**your fork** and merge it into the fork's default branch after review. Do not
+use `gh repo sync --force`, reset the fork to upstream, or edit CLI-owned copies.
+If upstream renames/removes a selected skill, reconcile `pi-skills.json` here
+and run this repo's smoke test before applying.
+
+After publishing (or just to install changes already published to your fork):
+
+```bash
+npx skills@latest check -g
+npx skills@latest update -g
+# In the running Pi session: /reload (or restart it).
+```
+
+These commands operate on **all CLI-tracked global skills**, including Vercel
+and unrelated user installs. Engineering/workflow skills update from the fork;
+upstream changes that have not been merged/published there are invisible to the
+installer. New or source-changed selections use `chezmoi apply`; unchanged apply
+never refreshes content. Keep runtime locks/hashes out of this repo.
 
 ### Project skill setup
 
