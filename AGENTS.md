@@ -145,9 +145,10 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # (settings.json "packages"; its payload under
                             # ~/.pi/agent/npm comes from `pi install`,
                             # unmanaged)
-pi-skills.json             # selected global skills; apply's run_after_90-pi-skills
-                            # script uses the upstream CLI for missing/changed
-                            # selections; content + lock in ~/.agents/ stay unmanaged
+pi-skills.json             # selected global skills from brucepucci/skills
+                            # + Vercel's find-skills; apply's run_after_90-pi-skills
+                            # uses the Skills CLI for missing/changed selections;
+                            # content + lock in ~/.agents/ stay unmanaged
 .agents/skills/chezmoi-runbook/SKILL.md # project-local verification skill;
                             # thin entry point to AGENTS.md + docs/developing.md;
                             # discovered in this repo, never installed to HOME
@@ -231,13 +232,18 @@ muscle memory. Do not "tidy" them. Two intentional quirks:
 - Terminal mode has `<C-k>`/`<C-h>`/`<C-l>` but no `<C-j>`, because the REPL is
   the bottom split.
 
-**Upstream skills: selection, not snapshots.** `pi-skills.json` is the committed
-selection. Apply installs missing skills or changed source selections through
-`npx skills@latest`, globally for Pi. Never vendor or patch the payload or import
-`~/.agents/` (CLI-owned content and lock). Existing content is not refreshed by
-apply; updates are manual via `npx skills@latest update -g`. Removed selections
-are not automatically uninstalled. Tier-1 tests must shim npx, never fetch.
-See docs/pi.md for the ownership boundary and stock Pi compatibility limitations.
+**Global skills: selection, not snapshots.** `pi-skills.json` is the committed
+selection. Engineering/workflow skills install and update from `brucepucci/skills`;
+Vercel's `find-skills` stays separately sourced. `mattpocock/skills` is only a
+manually merged upstream for the fork, never a direct install/update source.
+Maintain customizations in the fork. Apply installs missing skills or changed
+source selections through `npx skills@latest`, globally for Pi. Keep the CLI-owned
+`~/.agents/` payload and lock unmanaged. Existing content is not refreshed by apply;
+manual `npx skills@latest update -g` downloads from each registered source, not
+from the fork's upstream. Removed selections are not automatically uninstalled.
+Tier-1 tests must shim npx, never fetch. Follow docs/developing.md
+("Maintain and update the skills fork") for upstream merges and publishing;
+see docs/pi.md for ownership and stock Pi compatibility limitations.
 
 ## Agent skills
 

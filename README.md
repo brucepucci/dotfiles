@@ -122,7 +122,7 @@ chezmoi init brucepucci
 brew bundle --file="$(chezmoi source-path)/Brewfile"
 
 # 4. Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty;
-#    install the selected global skills through the upstream CLI
+#    install the selected global skills through the Skills CLI
 chezmoi apply
 
 # 5. Plugins, at the exact revisions pinned in lazy-lock.json
@@ -182,10 +182,13 @@ non-Homebrew install.
 | `~/.pi/agent/settings.json`, `~/.pi/agent/themes/`, `~/.pi/agent/extensions/` | pi's settings, generated theme pair, managed extensions (provider-usage footer, title-screen splash), and permission-system policy | [pi.md](docs/pi.md) |
 
 `chezmoi apply` also installs the global skill selection in
-[`pi-skills.json`](pi-skills.json) through the upstream skills CLI. Only missing
+[`pi-skills.json`](pi-skills.json) through the Skills CLI: engineering/workflow
+skills come from [brucepucci/skills](https://github.com/brucepucci/skills), our
+maintained fork; Vercel's `find-skills` remains separately sourced. Only missing
 skills or changed source selections are installed; existing skills are not
-updated automatically. First installation needs network access. See
-[upstream skills](docs/pi.md#upstream-skills-global).
+updated automatically. First installation and source migrations need network
+access. `mattpocock/skills` is only an upstream we deliberately merge into the
+fork, never a direct install/update source. See [global skills](docs/pi.md#global-skills).
 
 **Upgrading an existing install:** the experimental chezmoi grilling copies,
 vendored code review skill and package-update prompt extension are retired;
@@ -208,7 +211,7 @@ generated), `~/.zsh/secrets.zsh` (API keys — a secret), everything in
 `~/.config/gh/hosts.yml` (auth token), and on the pi side
 `~/.pi/agent/auth.json` (provider credentials from `/login`),
 `~/.pi/agent/sessions/` (transcripts), and `~/.pi/agent/models-store.json`
-(a catalog cache pi refetches itself). The upstream skills CLI owns
+(a catalog cache pi refetches itself). The Skills CLI owns
 `~/.agents/skills/` and `~/.agents/.skill-lock.json`; chezmoi manages only the
 selection and installation hook, not those files.
 
@@ -367,10 +370,14 @@ and is unavailable in unrelated projects; it points to AGENTS.md and
   `/model` + Ctrl+S must be folded into the template by hand:
   [docs/developing.md](docs/developing.md#pi-self-bumps).
 - **Global skills** — `npx skills@latest check -g` checks for updates;
-  `npx skills@latest update -g` refreshes CLI-tracked global skills. Additions
-  to keep on every Mac belong in `pi-skills.json`, then `chezmoi apply`.
+  `npx skills@latest update -g` refreshes all CLI-tracked global skills from
+  their registered sources (our fork for engineering/workflow skills, Vercel
+  for `find-skills`), then run `/reload` in Pi. This does not sync our fork
+  with Matt's upstream: merge, verify, and publish upstream changes to the fork
+  first, following [the fork maintenance workflow](docs/developing.md#maintain-and-update-the-skills-fork).
+  Additions to keep on every Mac belong in `pi-skills.json`, then `chezmoi apply`.
   Removing a selection does not uninstall it. See
-  [the skill guide](docs/pi.md#upstream-skills-global).
+  [the skill guide](docs/pi.md#global-skills).
 - **Themes** — the mirror in `themes/` is a snapshot: upstream
   iTerm2-Color-Schemes keeps adding schemes, and they work the moment you
   run `scripts/themes-sync.sh` and type their name in `settings.toml`.

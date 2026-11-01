@@ -9,4 +9,6 @@ Use GitHub Issues for the repository currently being worked on.
 - When a skill says to publish to the issue tracker, create a GitHub issue.
 - Never default to the repository that distributes the skills.
 
-PRs as a request surface: no.
+PRs as a request surface: no. New work requests belong in Issues, not PRs.
+This does not prohibit reviewing an existing PR: `code-review` accepts a PR
+number/URL and publishes its review on that PR. Local review requests stay local.
