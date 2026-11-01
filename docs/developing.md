@@ -134,13 +134,14 @@ the result the way real sessions do. It covers:
   zsh-syntax-highlighting sourced LAST)
 - sparse custom themes emitting role hexes; pinned-theme mode rendering
   `PI_THEME_PINNED`
-- the chezmoi-runbook skill: generated from AGENTS.md at apply time (drift-proof
-  by construction; apply itself fails if the sections vanish), with a
-  closed frontmatter block obeying pi's validation rules and the
-  load-bearing command lines intact in both files
-- retirement of the former code review skill and package-update prompt
-  extension: apply removes installed copies on upgrades without touching
-  unrelated user skills or extensions
+- the project-local chezmoi-runbook skill: valid frontmatter, working links
+  to AGENTS.md's verification/plugin sections and this maintainer guide,
+  no duplicated command blocks, and no installation under HOME; when pi is
+  installed, its resource loader proves discovery from the repo and its
+  subdirectories, exclusion in unrelated projects, and project-trust gating
+- retirement of the former global runbook skill, code review skill, and
+  package-update prompt extension: apply removes installed copies on upgrades
+  without touching unrelated user skills or extensions or the local runbook
 - the provider-usage pi extension: installed into the scratch HOME, with
   its unit harness (`scripts/test-provider-usage.mjs`, jiti-loaded like
   pi loads it) covering the row format through pi's own status
@@ -263,12 +264,24 @@ smoke test (it asserts the structural invariants: integrations after
 compinit, syntax-highlighting last, indexed colors). New interactive-shell
 windows pick it up; existing ones need a restart.
 
-### Edit the runbook / the pi skill
-The verification runbook lives in AGENTS.md ("Verifying a change",
-"After changing plugins"). Edit it there; `chezmoi apply` regenerates
-`~/.pi/agent/skills/chezmoi-runbook/SKILL.md` from those sections — never edit
-the skill, and don't rename the AGENTS.md headings (apply fails loudly,
-by design). The smoke test checks the render and the frontmatter.
+### Edit the runbook / the project-local skill
+The verification commands live in AGENTS.md ("Verifying a change",
+"After changing plugins"); task-specific guidance lives here. Edit those
+sources directly. `.agents/skills/chezmoi-runbook/SKILL.md` is a committed,
+project-local entry point linking to them, not a generated or installed file.
+Do not duplicate commands in the skill. If headings or paths change, update
+its links too; the smoke test validates their targets and the frontmatter.
+
+Start pi in this repo and grant project trust to discover
+`/skill:chezmoi-runbook` (also available when starting in a repo subdirectory).
+Use `/reload` after editing it in an existing trusted session. It is not
+available in unrelated projects. AGENTS.md's verification requirements still
+apply when the skill is not loaded or project trust is declined.
+
+The literal `.agents/` directory is automatically skipped by chezmoi;
+`chezmoi apply` only removes the former global runbook from
+`~/.pi/agent/skills/chezmoi-runbook/` via `.chezmoiremove`. No generation step
+or installation is needed for the local skill.
 
 ### Keep the docs honest
 - Repo docs (`docs/`) — this folder; ignored by chezmoi; edit freely.

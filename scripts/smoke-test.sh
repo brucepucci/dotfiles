@@ -81,14 +81,10 @@
 #      (fn+Delete) and its esc-prefix twin kill the next word (pi
 #      parity) and forward-delete kills a char -- live bindings
 #      asserted only where the formula exists, shape always
-#  19. the chezmoi-runbook skill: GENERATED from AGENTS.md at apply time
-#      (SKILL.md.tmpl extracts the verify/plugins sections verbatim, so
-#      drift is impossible by construction and apply itself fails loudly
-#      if the sections vanish); tier 1 asserts the render, a closed
-#      frontmatter block obeying pi's validation rules, and the
-#      load-bearing command lines whole-line in both the skill and
-#      AGENTS.md (issue #24; replaces an earlier, softer string-match
-#      guard that truncated at Lua's `#` and matched substrings)
+#  19. the project-local chezmoi-runbook skill: valid frontmatter and links
+#      to AGENTS.md + docs/developing.md, no copied command blocks, never
+#      installed to HOME. When pi is present its real resource loader proves
+#      repo/subdirectory discovery, unrelated-project exclusion, and trust gating
 #  20. the clipboard helpers: clipcopy/clippaste -- the oh-my-zsh
 #      commands, reimplemented for the repo's one platform against
 #      pbcopy/pbpaste -- round-trip a pipe and a file argument
@@ -121,7 +117,7 @@
 #      proven, not assumed), one process per case so one window-local
 #      value cannot hide a leak
 #
-#  23. the retired code review skill and package-update prompt extension:
+#  23. the former global runbook, retired code review skill and update extension:
 #      absent on fresh installs; apply removes old installed copies without
 #      touching unrelated user skills or extensions
 #
@@ -1430,70 +1426,79 @@ grep -qF -- '--use-theme' "$TLOG" \
 ok "pin renders, wraps without --use-theme; system mode stays unpinned;
     herdr's config is byte-identical across appearance modes"
 
-step "chezmoi-runbook skill: generated from AGENTS.md, frontmatter valid"
-# dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl renders
-# ~/.pi/agent/skills/chezmoi-runbook/SKILL.md (a global pi skill location,
-# /skill:chezmoi-runbook) by
-# extracting AGENTS.md's "Verifying a change" and "After changing
-# plugins" sections VERBATIM -- drift between the two is impossible by
-# construction, and apply itself fails loudly if the sections vanish or
-# lose their commands (the template `fail`s). That generation replaced an
-# earlier string-match guard whose comment-stripping truncated commands at
-# Lua's `#` and whose grep -qF matched substrings (review of PR #39).
-# What tier 1 still asserts: the file rendered, the frontmatter parses as
-# a closed block obeying the rules pi validates (name charset/length,
-# description present, 1024-char cap), and the sections arrived carrying
-# their load-bearing command lines -- whole-line (grep -qxF), in BOTH the
-# rendered skill and AGENTS.md, so a mangled extraction or a gutted
-# AGENTS.md section cannot pass silently.
-SKILL="$NEWHOME/.pi/agent/skills/chezmoi-runbook/SKILL.md"
-[[ -f "$SKILL" ]] || die "pi chezmoi-runbook skill did not render under the target HOME"
-if ! python3 - "$SKILL" <<'PY'
+step "chezmoi-runbook skill: project-local, linked to the live runbook"
+SKILL="$SOURCE/.agents/skills/chezmoi-runbook/SKILL.md"
+RUNBOOK_TARGET="$NEWHOME/.pi/agent/skills/chezmoi-runbook"
+[[ -f "$SKILL" ]] || die "project-local chezmoi-runbook skill missing"
+[[ ! -e "$RUNBOOK_TARGET" ]] || die "runbook installed globally on a fresh apply"
+[[ ! -e "$NEWHOME/.agents" ]] || die "repo-local .agents directory installed to HOME"
+if ! python3 - "$SKILL" "$SOURCE" <<'PY'
+from pathlib import Path
 import re, sys
-text = open(sys.argv[1]).read()
+skill = Path(sys.argv[1])
+source = Path(sys.argv[2])
+text = skill.read_text()
 m = re.match(r"---\n(.*?\n)---\n", text, re.S)
 assert m, "frontmatter block (--- ... ---) missing or never closed"
 fm = m.group(1)
 name = re.search(r"^name: (.+)$", fm, re.M)
-desc = re.search(r"^description: (.+)$", fm, re.M | re.S)
-assert name, "frontmatter: name missing"
+desc = re.search(r"^description: (.+)$", fm, re.M)
+assert name and name.group(1) == skill.parent.name == "chezmoi-runbook"
 assert re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", name.group(1)) \
     and len(name.group(1)) <= 64, f"frontmatter: bad name {name.group(1)!r}"
 assert desc and desc.group(1).strip(), "frontmatter: description missing/empty"
 assert len(desc.group(1)) <= 1024, "frontmatter: description over 1024 chars"
+assert "```" not in text, "keep commands in AGENTS.md, not the entry-point skill"
+links = re.findall(r"\[[^\]]+\]\(([^)]+)\)", text)
+required = {
+    "../../../AGENTS.md",
+    "../../../AGENTS.md#verifying-a-change",
+    "../../../AGENTS.md#after-changing-plugins",
+    "../../../docs/developing.md",
+}
+assert required <= set(links), "skill lost a required runbook link"
+for link in links:
+    path, _, anchor = link.partition("#")
+    target = (skill.parent / path).resolve()
+    assert target.is_relative_to(source.resolve()), f"link escapes repo: {link}"
+    assert target.is_file(), f"broken skill link: {link}"
+    if anchor:
+        headings = re.findall(r"^#+ (.+)$", target.read_text(), re.M)
+        anchors = {re.sub(r"[^\w -]", "", h.lower()).replace(" ", "-") for h in headings}
+        assert anchor in anchors, f"missing runbook heading: {link}"
 PY
-then die "skill frontmatter invalid (see python output above)"
+then die "local skill frontmatter or links invalid (see python output above)"
 fi
-grep -q '^## Verifying a change' "$SKILL" \
-  || die "skill: the verify section did not embed from AGENTS.md"
-grep -q '^## After changing plugins' "$SKILL" \
-  || die "skill: the plugins section did not embed from AGENTS.md"
+# Retain whole-line guards on the source runbook's load-bearing commands.
 for cmd in \
   "nvim --headless some.py '+lua vim.wait(6000, function() return #vim.lsp.get_clients({bufnr=0}) >= 2 end); for _,c in ipairs(vim.lsp.get_clients({bufnr=0})) do print(c.name) end' +qa" \
   'chezmoi re-add ~/.config/nvim/lazy-lock.json'; do
-  grep -qxF -- "$cmd" "$SKILL" \
-    || die "skill lost a command line (extraction mangled?): $cmd"
   grep -qxF -- "$cmd" "$SOURCE/AGENTS.md" \
     || die "AGENTS.md lost a command line the runbook needs: $cmd"
 done
-ok "rendered, frontmatter valid, sections embedded with commands intact"
+HOME="$NEWHOME" node "$SOURCE/scripts/test-project-skills.mjs" "$SOURCE" "$NEWHOME" \
+  || die "project skill discovery harness failed"
+ok "local frontmatter + runbook links valid; nothing installed to HOME"
 
-step "retired code review skill: fresh install and upgrade cleanup"
+step "former global skills: fresh install and upgrade cleanup"
 REVIEW_TARGET="$NEWHOME/.pi/agent/skills/code-review-skill"
 USER_SKILL="$NEWHOME/.pi/agent/skills/user-skill/SKILL.md"
 [[ ! -e "$REVIEW_TARGET" ]] || die "retired skill present on fresh install"
-mkdir -p "$REVIEW_TARGET/reference" "$(dirname "$USER_SKILL")"
+mkdir -p "$REVIEW_TARGET/reference" "$RUNBOOK_TARGET" "$(dirname "$USER_SKILL")"
 printf 'old skill\n' > "$REVIEW_TARGET/SKILL.md"
 printf 'old resource\n' > "$REVIEW_TARGET/reference/guide.md"
+printf 'old global runbook\n' > "$RUNBOOK_TARGET/SKILL.md"
 printf 'user-owned skill\n' > "$USER_SKILL"
 chezmoi --source "$SOURCE" --destination "$NEWHOME" apply
 [[ ! -e "$REVIEW_TARGET" ]] || die "apply did not remove the retired skill"
 grep -qxF 'user-owned skill' "$USER_SKILL" \
   || die "apply changed an unrelated user skill"
-[[ -f "$SKILL" ]] || die "apply removed the chezmoi-runbook skill"
+[[ ! -e "$RUNBOOK_TARGET" ]] || die "apply did not remove the global runbook"
+[[ -f "$SKILL" ]] || die "apply removed the project-local runbook"
+[[ ! -e "$NEWHOME/.agents" ]] || die "apply installed the project-local skills"
 [[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff)" ]] \
   || die "chezmoi diff is not empty after skill cleanup"
-ok "retired skill removed; runbook and unrelated user skills preserved"
+ok "former global skills removed; local runbook and unrelated user skills preserved"
 
 step "retired package-update extension: fresh install and upgrade cleanup"
 UPDATE_TARGET="$NEWHOME/.pi/agent/extensions/package-update-prompt.ts"

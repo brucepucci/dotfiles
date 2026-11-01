@@ -13,7 +13,7 @@ The pieces, kept deliberately separate:
 |---|---|---|
 | The binary | Homebrew: `pi-coding-agent` (in the Brewfile; the formula wraps the npm package in its own keg and pulls `node`) | installed, not configured, by this repo |
 | Settings + themes | `dot_pi/agent/` → `~/.pi/agent/settings.json`, `~/.pi/agent/themes/dotfiles-{light,dark}.json` | **yes — chezmoi templates** |
-| The chezmoi-runbook skill | `dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl` → `~/.pi/agent/skills/chezmoi-runbook/SKILL.md` (`/skill:chezmoi-runbook`) | **yes — generated from AGENTS.md at apply time** |
+| The chezmoi-runbook skill | `.agents/skills/chezmoi-runbook/SKILL.md` (`/skill:chezmoi-runbook`) | **repo-local only — never installed to HOME** |
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
 | The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
 | The permission-system package | `"packages"` in `dot_pi/agent/settings.json.tmpl` + `dot_pi/agent/extensions/pi-permission-system/config.json` → policy config | **yes — entry in the template; config a plain static file** |
@@ -152,31 +152,40 @@ This setup no longer checks for package updates or provides
 `/update-pi-packages`. Repo-managed extensions still update via `chezmoi apply`,
 and Pi itself via `brew upgrade pi-coding-agent`.
 
-## The chezmoi-runbook skill (managed)
+## The chezmoi-runbook skill (project-local)
 
-`dot_pi/agent/skills/chezmoi-runbook/SKILL.md.tmpl` generates
-`~/.pi/agent/skills/chezmoi-runbook/SKILL.md` — a global skill location,
-so `/skill:chezmoi-runbook` is available in every pi session on the
-machine. The verify/plugins steps are extracted **verbatim from AGENTS.md**
-at apply time: edit AGENTS.md, `chezmoi apply`, and the skill follows —
-never edit the skill (or its template's extracted regions) by hand. Apply fails
-loudly if the sections disappear from AGENTS.md; the smoke test checks
-the render and the frontmatter.
+`.agents/skills/chezmoi-runbook/SKILL.md` is a thin entry point to AGENTS.md
+and [developing.md](developing.md), not a copy of their commands. AGENTS.md
+remains the source of truth for verification and plugin changes, and applies
+whether or not the skill is invoked. Edit the runbook there; no generation
+or `chezmoi apply` is needed to update the local skill's instructions.
+
+Start pi in this repo and grant project trust to use `/skill:chezmoi-runbook`.
+Pi also discovers `.agents/skills/` from repo subdirectories up to the repo
+root. It is unavailable in unrelated projects, and declining project trust
+skips it. Run `/reload` after edits in an existing trusted repo session.
+
+The literal `.agents/` directory stays in the source repo; chezmoi skips it
+automatically and never installs it to HOME. The smoke test checks frontmatter,
+links to the live runbook, the installation boundary, and (when pi is installed)
+actual project discovery and trust gating.
 
 ## Retired components (upgrade cleanup)
 
-These components are no longer shipped or listed in the managed inventory:
+These global components are no longer installed; the runbook is now local:
 
 | Removed component | Installed path removed by `chezmoi apply` |
 |---|---|
+| Former global chezmoi-runbook skill (now project-local) | `~/.pi/agent/skills/chezmoi-runbook/` |
 | Vendored code review skill (`/skill:code-review-skill`, guides, templates, analyzer) | `~/.pi/agent/skills/code-review-skill/` |
 | Package-update prompt extension (`/update-pi-packages`, startup package checks) | `~/.pi/agent/extensions/package-update-prompt.ts` |
 
 `.chezmoiremove` removes these exact targets on existing installs; fresh
-installs receive neither. Other user skills and extensions are left alone.
-Restart Pi or run `/reload` after applying to refresh discovery and unload
-the removed extension. The chezmoi-runbook skill, provider-usage and
-title-screen extensions, and permission-system package remain in the setup.
+installs receive none of these global copies. Other user skills and extensions
+are left alone, as is the repo-local runbook. Restart Pi or run `/reload`
+after applying to refresh discovery and unload the removed extension.
+The provider-usage and title-screen extensions and permission-system package
+remain globally configured; the runbook is only available in this repo.
 
 ## The provider-usage extension (managed)
 

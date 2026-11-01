@@ -3,3 +3,6 @@
 
 # Retire the package-update prompt extension on existing installs.
 .pi/agent/extensions/package-update-prompt.ts
+
+# The runbook now lives in this repo's .agents/skills/, not in user scope.
+.pi/agent/skills/chezmoi-runbook
