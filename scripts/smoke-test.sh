@@ -255,6 +255,44 @@ cmp -s "$DOTFILES_SKILLS_TEST_LOG" "$WORK/skills-calls-before" \
   || die "repeat apply fetched skills"
 ok "selected skills installed through upstream CLI; unchanged apply stays offline"
 
+step "selected global skills: corrupt registration fails without installation"
+python3 - "$SOURCE" "$NEWHOME" "$DOTFILES_SKILLS_TEST_LOG" <<'PY'
+import json, subprocess, sys
+from pathlib import Path
+source, home, log = map(Path, sys.argv[1:])
+lock_path = home / '.agents/.skill-lock.json'
+original_lock = lock_path.read_bytes()
+lock = json.loads(original_lock)
+first, *_, name = lock['skills']
+entry = lock['skills'][name]
+# A later source's corrupt registration must block even an earlier repair.
+invalid_entries = [None, [], 'invalid', 42, True, {},
+                   {'source': entry['source']}, {'sourceType': 'github'},
+                   {**entry, 'source': 42}, {**entry, 'source': ''},
+                   {**entry, 'sourceType': []}, {**entry, 'sourceType': ''},
+                   {**entry, 'ref': False}, {**entry, 'ref': None}]
+try:
+    for invalid in invalid_entries:
+        lock = json.loads(original_lock)
+        del lock['skills'][first]
+        lock['skills'][name] = invalid
+        lock_path.write_text(json.dumps(lock))
+        before_calls = log.read_bytes()
+        before_files = {p.relative_to(home): p.read_bytes()
+                        for p in (home / '.agents').rglob('*') if p.is_file()}
+        result = subprocess.run(['chezmoi', '--source', str(source), '--destination', str(home), 'apply'],
+                                capture_output=True, text=True)
+        assert result.returncode != 0, f'apply accepted {invalid!r}: {result.stdout}'
+        assert f'invalid skills lock entry: {name}' in result.stderr, result.stderr
+        assert log.read_bytes() == before_calls, 'corrupt registration invoked the installer'
+        after_files = {p.relative_to(home): p.read_bytes()
+                       for p in (home / '.agents').rglob('*') if p.is_file()}
+        assert after_files == before_files, 'failed apply changed CLI-owned files'
+finally:
+    lock_path.write_bytes(original_lock)
+PY
+ok "corrupt registration rejected; installer, skill content and lock untouched"
+
 step "SSH address book: aliases and credential separation (offline)"
 [[ -f "$NEWHOME/.ssh/hosts.conf" ]] || die "missing ~/.ssh/hosts.conf"
 [[ "$(stat -f '%Lp' "$NEWHOME/.ssh")" == "700" ]] || die "~/.ssh must be mode 700"

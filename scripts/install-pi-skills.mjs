@@ -11,6 +11,16 @@ function readLock(home) {
 			|| typeof lock.skills !== "object" || Array.isArray(lock.skills)) {
 			throw new Error("unsupported skills lock format; review the installer integration");
 		}
+		// Check every registration before installing anything. Only validate the
+		// identity fields we consume; other providers and CLI metadata stay opaque.
+		for (const [name, entry] of Object.entries(lock.skills)) {
+			if (!entry || typeof entry !== "object" || Array.isArray(entry)
+				|| typeof entry.source !== "string" || !entry.source
+				|| typeof entry.sourceType !== "string" || !entry.sourceType
+				|| (entry.ref !== undefined && typeof entry.ref !== "string")) {
+				throw new Error(`invalid skills lock entry: ${name}`);
+			}
+		}
 		return lock.skills;
 	} catch (error) {
 		if (error.code === "ENOENT") return {};
