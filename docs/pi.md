@@ -179,9 +179,14 @@ explicit override, the associated PR target, an unambiguously identified origina
 branch, or `main` as fallback. Git cannot reliably record original branch names;
 the skill must announce its choice and evidence. Repeat reviews account for
 previous feedback, discussion, and subsequent changes without duplicating open
-findings. Spec discovery remains upstream's issue/path/file lookup and asks when
-none is found; the PR description is not automatically the spec. Publication
-never submits formal Approve or Request changes events or modifies source files.
+findings. For PR reviews, the PR description is the default spec, without a
+permission prompt; an explicitly requested alternative can override it. Local
+reviews retain issue/path/file spec discovery. An empty or unfilled-template PR
+description prompts for the missing spec. The skill rechecks the description
+before publication because requirements can change without a new commit.
+Creating a PR with a spec in its description is a separate, deferred workflow.
+Publication never submits formal Approve or Request changes events or modifies
+source files.
 
 The fork's `skills/engineering/code-review/TESTING.md` lists behavioral acceptance
 scenarios. Smoke tests verify installation wiring, not model compliance or live
