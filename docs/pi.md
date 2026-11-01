@@ -13,7 +13,7 @@ The pieces, kept deliberately separate:
 |---|---|---|
 | The binary | Homebrew: `pi-coding-agent` (in the Brewfile; the formula wraps the npm package in its own keg and pulls `node`) | installed, not configured, by this repo |
 | Settings + themes | `dot_pi/agent/` → `~/.pi/agent/settings.json`, `~/.pi/agent/themes/dotfiles-{light,dark}.json` | **yes — chezmoi templates** |
-| Global skills | `pi-skills.json` → Skills CLI installs from `brucepucci/skills` + Vercel into `~/.agents/skills/` | **selection managed; content and lock owned by the CLI** |
+| Global skills | `~/gh/skills/enabled-skills.json` → direct checkout paths in Pi settings | **selection/content owned by the skills repo; wiring managed here** |
 | The chezmoi-runbook skill | `.agents/skills/chezmoi-runbook/SKILL.md` (`/skill:chezmoi-runbook`) | **repo-local only — never installed to HOME** |
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
 | The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
@@ -155,12 +155,12 @@ and Pi itself via `brew upgrade pi-coding-agent`.
 
 ## Global skills
 
-All selected engineering/workflow skills install and update from
-[brucepucci/skills](https://github.com/brucepucci/skills), our maintained
-fork. [mattpocock/skills](https://github.com/mattpocock/skills) is only the
-fork's upstream: its changes reach installed skills after we deliberately merge,
-verify, and publish them to our fork. Vercel's `find-skills` stays separately
-sourced. Maintain customizations in the fork, never in `~/.agents/skills/`.
+Pi loads selected skills directly from our local
+[brucepucci/skills](https://github.com/brucepucci/skills) fork checkout at
+`~/gh/skills`. Both content and selection live there; this repo only configures
+Pi's paths. [mattpocock/skills](https://github.com/mattpocock/skills) is the fork's
+upstream, merged deliberately rather than fetched during apply. `find-skills`
+is no longer selected or installed.
 
 ### Customized code review
 
@@ -194,64 +194,71 @@ GitHub publication.
 
 ### Selection and updates
 
-`pi-skills.json` records the selection: 27 from `brucepucci/skills`, plus
-`find-skills` from `vercel-labs/skills`. On `chezmoi apply`, `run_after_90-pi-skills.sh.tmpl`
-checks the installed files and the CLI's `~/.agents/.skill-lock.json`. Only
-missing skills, missing registrations, or selections whose source differs
-invoke `npx --yes skills@latest add <source> --agent pi --global --skill <names> --yes`.
-Homebrew's `node` (Brewfile) provides Node and npx. Initial installation needs
-network access; an unchanged apply does not fetch or update anything.
+Before the first apply, clone the fork to `~/gh/skills` (see the root README's
+new-machine steps). Its root `enabled-skills.json` is a JSON array of skill
+**directory** paths relative to the checkout, initially the original 27 skills:
 
-On an existing install, the source change reinstalls skills still registered to
-`mattpocock/skills` from `brucepucci/skills` and replaces their CLI registrations.
-Already-forked `code-review` and Vercel's skill are not reinstalled. Subsequent
-checks/updates use the new registrations, with no direct fetch from Matt's repo.
-
-The CLI owns `~/.agents/skills/` and its lock, both excluded from chezmoi
-imports. Pi discovers these global skills automatically; other agents that
-read this shared directory can also discover them. No skill content, source
-hashes, or lock timestamps are committed here. Fresh installs get current
-content from the selected repositories, not an exact historical version. Do not install duplicate
-copies under `~/.pi/agent/skills/` or through Pi packages.
-
-To explore new skills interactively:
-
-```bash
-npx skills@latest add brucepucci/skills -a pi
-# Choose Global. Then deliberately update pi-skills.json to keep the selection.
+```json
+[
+  "skills/engineering/implement",
+  "skills/engineering/code-review",
+  "skills/productivity/grilling"
+]
 ```
 
-Adding a name or changing its repository in `pi-skills.json` takes effect on
-the next apply. Removing a name does not uninstall it: use
-`npx skills@latest remove <name> -g` explicitly. Existing content is left alone,
-including manual updates; source identity and the presence of SKILL.md are
-checked, not content hashes. A failed install fails apply and is retried next
-time. An unsupported or corrupt CLI lock fails loudly rather than guessing.
+The managed settings template calls `scripts/pi-skills.py` with the destination
+HOME's `gh/skills` directory. It resolves the manifest into absolute local paths
+in Pi's `skills` setting. Each entry must resolve inside the checkout and contain
+an in-checkout SKILL.md. Missing checkout/manifest/files, malformed JSON, duplicate
+directories, traversal and glob patterns fail apply clearly; `[]` selects none.
+Skill frontmatter remains Pi's responsibility: invalid YAML or missing
+descriptions produce Pi diagnostics and the skill is not loaded.
 
-Updates are separate and manual:
+| Change | Pick it up with |
+|---|---|
+| Edit a selected skill or its supporting files | `/reload` in Pi |
+| Add/remove a path in the manifest | `chezmoi apply`, then `/reload` |
+| Rename/delete a selected skill directory | Update its manifest entry, apply, then `/reload` |
+| Update content from the fork | Synchronize the checkout yourself, then `/reload`; apply too if the selection changed |
+
+Local edits, including uncommitted changes, are live. There are no copied
+payloads, selection snapshots in dotfiles, installer invocations, source hashes,
+or runtime locks. Apply is offline and never pulls, clones, installs, or deletes
+skill content. A missing directory still listed in the manifest is an error,
+not an implicit deselection. Removed entries stop loading through this managed
+setting; files stay in the checkout. Independently installed/user/project skills
+are unaffected, so avoid duplicate names in other discovery locations.
+
+Maintain and publish changes in the fork. Follow
+[Maintain and update the skills fork](developing.md#maintain-and-update-the-skills-fork)
+for upstream merges. `npx skills update` and `pi update --extensions` do not
+update this checkout or its selection.
+
+### One-time cleanup of old CLI installs
+
+The old installer, its dotfiles selection, and automatic `find-skills`
+installation have been removed. On an existing machine, configure and validate
+the local manifest first, then inspect `~/.agents/.skill-lock.json`. Remove only
+registrations with `sourceType: "github"` and `source: "brucepucci/skills"`, plus
+`find-skills` only if registered to `vercel-labs/skills`, using their explicit names:
 
 ```bash
-npx skills@latest check -g
-npx skills@latest update -g
+npx --yes skills@latest remove --global --skill <verified-names> --yes
 ```
 
-`@latest` selects the installer CLI version. `update -g` refreshes all
-CLI-tracked global skills, not just this repo's selection. Each skill updates
-from its registered source: our fork for engineering/workflow skills, Vercel
-for `find-skills`. Neither command merges `mattpocock/skills` into the fork.
-To incorporate upstream changes or publish customizations, follow
-[Maintain and update the skills fork](developing.md#maintain-and-update-the-skills-fork),
-then run the update commands above. Matt's updates are intentionally unavailable
-until merged and published to our fork. Updates may replace local edits, so keep
-installed skill content unmodified. `pi update --extensions` does not update
-these skills. Restart Pi or run `/reload` after changes.
+This is a **manual one-time operation**, not an apply hook. The CLI updates its
+own lock and removes shared canonical payloads and agent copies globally; other
+agents using those copies are affected. Preserve unrelated registrations and
+unregistered user skills. Restart Pi or run `/reload` after cleanup and check
+that skills resolve to `~/gh/skills`, without duplicates. Do not re-run the old
+installer from a stale dotfiles checkout or it can recreate the copies.
 
 Run `/skill:setup-matt-pocock-skills` once per project when adopting the
 engineering workflow. It proposes issue-tracker, triage-label and domain-doc
 configuration; it does not install/update skills or fix compatibility. Upstream
 instructions can mention a `Skill` tool and research subagents that stock Pi
-does not provide; `-a pi` selects the location, not an instruction translation.
-There are no patches to the installed CLI-owned payload. The selected
+does not provide; loading locally does not translate those instructions.
+The selected
 `code-review` skill explicitly discloses sequential review passes when subagents
 are unavailable.
 
@@ -260,9 +267,8 @@ GitHub Issues for the current repo, default triage labels, and single-context
 domain docs created lazily. Other projects run setup separately; this is not a
 global issue destination. Apply does not run setup or create GitHub labels.
 
-The always-run apply script appears in `chezmoi diff` even for a no-op check;
-`chezmoi diff --exclude=scripts` shows only file drift. Tier-1 tests use a fake
-Skills CLI and never download skills.
+Tier-1 tests provide a disposable local checkout, reject npx invocations, and
+check manifest changes, failure handling, and Pi's real skill discovery offline.
 
 ## The chezmoi-runbook skill (project-local)
 
@@ -288,7 +294,7 @@ These global components are no longer installed; the runbook is now local:
 
 | Removed component | Installed path removed by `chezmoi apply` |
 |---|---|
-| Experimental chezmoi grilling and grill-me copies (replaced by CLI installs from the skills fork) | `~/.pi/agent/skills/{grilling,grill-me}/` |
+| Experimental chezmoi grilling and grill-me copies (replaced by direct checkout paths) | `~/.pi/agent/skills/{grilling,grill-me}/` |
 | Former global chezmoi-runbook skill (now project-local) | `~/.pi/agent/skills/chezmoi-runbook/` |
 | Vendored code review skill (`/skill:code-review-skill`, guides, templates, analyzer) | `~/.pi/agent/skills/code-review-skill/` |
 | Package-update prompt extension (`/update-pi-packages`, startup package checks) | `~/.pi/agent/extensions/package-update-prompt.ts` |

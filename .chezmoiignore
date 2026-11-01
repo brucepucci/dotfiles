@@ -15,12 +15,11 @@ Brewfile
 LICENSE
 scripts/
 settings.toml
-pi-skills.json
 themes/
 themes-local/
 docs/
 
-# The skills CLI owns its global payload and lock; never import those copies.
+# Other agents' skills and runtime locks remain unmanaged; never import them.
 .agents/
 
 # Generated or private files at $HOME. chezmoi only tracks what is
