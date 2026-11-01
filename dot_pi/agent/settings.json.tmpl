@@ -1,6 +1,6 @@
 {{ $mode := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "theme" | trim -}}
 {
-  "lastChangelogVersion": "0.87.1",
+  "lastChangelogVersion": "1.4.0",
   "theme": "{{ if eq $mode "system" }}dotfiles-light/dotfiles-dark{{ else if eq $mode "light" }}dotfiles-light{{ else }}dotfiles-dark{{ end }}",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6.1-sol",
@@ -10,6 +10,7 @@
     "openai-codex/gpt-6-luna",
     "openai-codex/gpt-6.1-sol"
   ],
+  "skills": {{ output "python3" (joinPath .chezmoi.sourceDir "scripts" "pi-skills.py") (joinPath .chezmoi.destDir "gh" "skills") | indent 2 | trim }},
   "packages": [
     "npm:@gotgenes/pi-permission-system"
   ]

@@ -139,12 +139,12 @@ the result the way real sessions do. It covers:
   no duplicated command blocks, and no installation under HOME; when pi is
   installed, its resource loader proves discovery from the repo and its
   subdirectories, exclusion in unrelated projects, and project-trust gating
-- selected global skills: an offline npx shim proves fresh apply,
-  unchanged no-op, missing-file/registration repair, changed-source installs,
-  migration from mixed upstream/fork sources to the fork without reinstalling
-  already-correct skills, preservation of manual updates and removed/unrelated
-  skills, and loud failures;
-  Pi's real resource loader checks global discovery alongside the local runbook
+- local skill selection: a disposable checkout proves direct local paths,
+  manifest additions/removals, live content edits, empty selection, and clear
+  missing/invalid-input failures without rewriting valid settings; npx is rejected,
+  and no skills or CLI locks are installed;
+  Pi's real resource loader checks selected/unselected global discovery alongside
+  the local runbook
 - retirement of the experimental global grilling copies, former global
   runbook skill, code review skill, and
   package-update prompt extension: apply removes installed copies on upgrades
@@ -176,7 +176,8 @@ there is the standing proof that apply needs no Ghostty. (The resolver's
 palette input is the mirror and nothing else — tier 1 guards that
 behaviorally by resolving with themes/ absent — but the runner still has
 network, so "the theme resolver reads no network" is a property of the code,
-not something CI enforces. Skill installation is separate and shimmed offline.)
+not something CI enforces. Skill configuration reads only a disposable local
+checkout; any npx invocation fails the test.)
 
 **Tier 2 — a real macOS VM, for big changes** (new-machine runs, GUI apps,
 `brew bundle` itself):
@@ -277,44 +278,43 @@ windows pick it up; existing ones need a restart.
 
 ### Change the global skill selection
 
-`pi-skills.json` records skill names grouped by GitHub repository. All selected
-engineering/workflow skills come from `brucepucci/skills`, our maintained fork;
-Vercel's `find-skills` remains separately sourced. `mattpocock/skills` is only
-an upstream to merge deliberately into the fork, not a direct installation or
-update source. Maintain skill changes in the fork, not installed files here.
-The interactive `npx skills@latest add brucepucci/skills -a pi` command (choose
-Global) is for exploring; deliberately record the choices you want to keep.
-Apply's `run_after_90-pi-skills.sh.tmpl` embeds the small adapter from
-`scripts/install-pi-skills.mjs`. It checks the CLI's global lock and SKILL.md
-locally, installing only missing or source-changed selections through the
-Skills CLI. Node and npx come from the Brewfile. A first install needs the
-network; an unchanged selection does not. Do not vendor, patch, or import the
-CLI-owned `~/.agents/` tree, or commit its runtime lock/hashes. Removing a
-selection does not delete an installed skill.
+The skills checkout at `~/gh/skills` owns both content and selection. Edit its
+root `enabled-skills.json`, a JSON array of relative skill-directory paths. It
+starts with the original 27 skills, explicitly listed, and may be reduced to `[]`.
+Run `chezmoi apply`, then `/reload` in Pi. Add/rename/delete paths deliberately;
+a deleted directory still listed is an error, not automatic deselection.
 
-Changing the source from `mattpocock/skills` to `brucepucci/skills` reinstalls
-those selections on the next apply and replaces their CLI source registrations.
-Already-forked `code-review` and Vercel's `find-skills` are left untouched.
-Updates remain explicit (`npx skills@latest update -g`), and fresh installs
-get current versions from the selected repositories, not pinned snapshots.
-An update reads each skill's registered source; it does not sync the fork with
-upstream. See [pi.md](pi.md#global-skills) for commands and Pi compatibility
-limitations. Always-run scripts appear in
-`chezmoi diff` even for no-op checks; use `--exclude=scripts` to inspect file
-drift alone. The smoke test shims npx for all scratch applies and tests the
-adapter's failures without downloading anything. Preserve that boundary.
+`dot_pi/agent/settings.json.tmpl` calls `scripts/pi-skills.py` with the destination
+HOME's `gh/skills` directory. The resolver reads the local manifest, validates
+that each directory and SKILL.md stay inside the checkout, rejects duplicates and
+glob/traversal paths, and emits direct absolute paths into Pi's `skills` setting.
+Missing checkout/manifest/files and malformed input fail clearly before replacing
+valid settings. Selected skill frontmatter is validated by Pi, not this resolver.
+
+Editing selected skill content or supporting files, even without committing,
+requires only `/reload`; apply is needed only when the selection changes.
+Apply never clones, pulls, downloads, copies, or deletes skills. Git synchronization
+stays manual, and no skill content, copied selection, hash, or runtime lock lives
+in dotfiles. Keep unrelated agents' skills and locks unmanaged. Avoid duplicate
+skill names/copies in Pi's other discovery locations. `find-skills` is no longer
+selected or installed. See [pi.md](pi.md#global-skills) for the one-time legacy
+CLI cleanup and stock Pi compatibility limitations.
+
+The smoke test supplies tiny local checkout fixtures for each destination HOME,
+rejects npx, and checks selection changes and failures through apply plus Pi's
+real resource loader. It must never fetch from the skills repo or depend on the
+developer's checkout.
 
 ### Maintain and update the skills fork
 
-There are two separate operations: **publish the skill source**, then **update
-installed copies**. Neither `chezmoi apply` nor the Skills CLI merges upstream
-changes into `brucepucci/skills`.
+Pi reads `~/gh/skills` directly, so local edits are live on `/reload`. Publishing
+makes them available to your other machines; it is not required for this Mac to
+use them. Follow the fork's agent/contribution guidance and verify before pushing.
+Neither apply nor Pi synchronizes the checkout. `mattpocock/skills` is only the
+fork's upstream, not an installation source.
 
-For your own customizations, edit a clean checkout of `brucepucci/skills`, follow
-that repo's agent/contribution guidance, verify, and publish to its default
-branch. Changes to an existing skill need no dotfiles selection change. To
-incorporate upstream updates, use a reviewed integration branch, not a force-sync
-that discards fork-only commits:
+To incorporate upstream updates, use a clean checkout and reviewed integration
+branch, not a force-sync that discards fork-only commits:
 
 ```bash
 # In a clean checkout of brucepucci/skills, not this dotfiles repo:
@@ -336,23 +336,11 @@ automatic merges can still change behavior. Check skill names/paths, instruction
 and source links; update fork docs and run its checks and applicable acceptance
 scenarios. Commit resolutions as needed, then push the integration branch to
 **your fork** and merge it into the fork's default branch after review. Do not
-use `gh repo sync --force`, reset the fork to upstream, or edit CLI-owned copies.
-If upstream renames/removes a selected skill, reconcile `pi-skills.json` here
-and run this repo's smoke test before applying.
-
-After publishing (or just to install changes already published to your fork):
-
-```bash
-npx skills@latest check -g
-npx skills@latest update -g
-# In the running Pi session: /reload (or restart it).
-```
-
-These commands operate on **all CLI-tracked global skills**, including Vercel
-and unrelated user installs. Engineering/workflow skills update from the fork;
-upstream changes that have not been merged/published there are invisible to the
-installer. New or source-changed selections use `chezmoi apply`; unchanged apply
-never refreshes content. Keep runtime locks/hashes out of this repo.
+use `gh repo sync --force` or reset the fork to upstream. Preserve and reconcile
+`enabled-skills.json` when skills are renamed or removed. To use published changes
+on another Mac, synchronize its `~/gh/skills` checkout manually, then `/reload` in
+Pi; run `chezmoi apply` first if the selection changed. The Skills CLI and
+`pi update --extensions` do not manage this checkout.
 
 ### Project skill setup
 
@@ -361,7 +349,7 @@ GitHub Issues inferred from the current repository's remote, the five default
 triage labels, and a single-context root `GLOSSARY.md` plus `docs/adr/` layout.
 AGENTS.md links to these local conventions. They are not global defaults or
 installed into HOME; other projects run `/skill:setup-matt-pocock-skills`
-independently. Apply installs the global skill selection but never creates
+independently. Apply configures local global-skill paths but never creates
 issues or labels or runs project setup. The glossary and ADRs are created
 lazily; root glossary files are explicitly ignored by chezmoi, like docs/.
 

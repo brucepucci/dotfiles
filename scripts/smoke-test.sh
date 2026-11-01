@@ -121,9 +121,9 @@
 #      absent on fresh installs; apply removes old installed copies without
 #      touching unrelated user skills or extensions
 #
-#  24. selected global skills: upstream CLI called only for missing/changed
-#      selections, with an offline shim; repeat apply is a no-op and preserves
-#      manual updates, removed selections and unrelated skills
+#  24. local skill selection: apply resolves a checkout manifest into direct Pi
+#      paths; selection changes, live edits, empty lists and invalid/missing
+#      inputs are tested without copying skills or invoking a package installer
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see docs/developing.md's test
@@ -161,18 +161,29 @@ fresh_zsh() {
 WITH_NVIM=0
 [[ "${1:-}" == "--nvim" ]] && WITH_NVIM=1
 
-# Never execute a real npm download in tier 1. HOME for the fake installer is
-# supplied by the apply adapter from --destination, not the developer's HOME.
+# A new machine must supply its own local skills checkout. Use a tiny fixture,
+# never the developer's checkout. Any accidental package install fails offline.
 mkdir -p "$WORK/bin"
-printf '#!/bin/sh\nexec node "%s/scripts/lib/fake-skills-cli.mjs" "$@"\n' "$SOURCE" > "$WORK/bin/npx"
+printf '#!/bin/sh\necho "unexpected npx invocation" >&2\nexit 99\n' > "$WORK/bin/npx"
 chmod +x "$WORK/bin/npx"
 export PATH="$WORK/bin:$PATH"
-export DOTFILES_SKILLS_TEST_LOG="$WORK/skills-calls.jsonl"
-: > "$DOTFILES_SKILLS_TEST_LOG"
+python3 - "$NEWHOME" <<'PY'
+import json, sys
+from pathlib import Path
+repo = Path(sys.argv[1]) / 'gh/skills'
+paths = ['skills/engineering/implement', 'skills/engineering/code-review', 'skills/productivity/grill-me']
+for path in paths + ['skills/in-progress/not-selected']:
+    directory = repo / path
+    directory.mkdir(parents=True)
+    name = directory.name
+    explicit = 'disable-model-invocation: true\n' if name == 'grill-me' else ''
+    (directory / 'SKILL.md').write_text(f'---\nname: {name}\ndescription: Offline {name} fixture.\n{explicit}---\n\nLocal content.\n')
+(repo / 'enabled-skills.json').write_text(json.dumps(paths))
+PY
 
 step "chezmoi apply into a pristine HOME"
 chezmoi --source "$SOURCE" --destination "$NEWHOME" apply
-# Always-run scripts appear in diff even when their local check will be a no-op.
+# The locally supplied checkout is an input, not an installed build artifact.
 [[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff --exclude=scripts)" ]] \
   || die "chezmoi file diff is not empty after apply"
 for f in .zshrc .zprofile .config/zsh/ps1.zsh \
@@ -225,73 +236,29 @@ grep -qF "set -g window-status-current-format ' | #I:#W#{?window_flags,#{window_
 [[ ! -e "$NEWHOME/.zsh/secrets.zsh" ]] || die "~/.zsh/secrets.zsh was applied"
 ok "full tree rendered, diff empty, no secrets applied"
 
-step "selected global skills: offline installer and repeat apply"
-node "$SOURCE/scripts/test-pi-skills.mjs"
-python3 - "$SOURCE" "$NEWHOME" "$DOTFILES_SKILLS_TEST_LOG" <<'PY'
+step "local skills: manifest resolution and repeat apply"
+python3 "$SOURCE/scripts/test-pi-skills.py"
+python3 - "$SOURCE" "$NEWHOME" <<'PY'
 import json, sys
 from pathlib import Path
-source, home, log = map(Path, sys.argv[1:])
-selection = json.loads((source / 'pi-skills.json').read_text())
-lock_path = home / '.agents/.skill-lock.json'
-lock = json.loads(lock_path.read_text()) if lock_path.exists() else {'skills': {}}
-assert set(lock['skills']) == {name for names in selection.values() for name in names}
-for repo, names in selection.items():
-    for name in names:
-        assert lock['skills'][name]['source'] == repo
-        assert (home / '.agents/skills' / name / 'SKILL.md').is_file()
-for call in map(json.loads, log.read_text().splitlines()):
-    assert Path(call['home']).resolve() == home.resolve() and Path(call['cwd']).resolve() == home.resolve()
-assert not (home / 'pi-skills.json').exists(), 'repo selection leaked to HOME'
-assert not (home / '.agents/skills/chezmoi-runbook').exists(), 'local runbook installed globally'
+source, home = map(Path, sys.argv[1:])
+repo = home / 'gh/skills'
+selected = json.loads((repo / 'enabled-skills.json').read_text())
+settings = json.loads((home / '.pi/agent/settings.json').read_text())
+assert settings['skills'] == [str((repo / path).resolve()) for path in selected]
+assert not (home / '.agents').exists(), 'apply copied skills or wrote a CLI lock'
+assert not (home / '.pi/agent/skills').exists(), 'apply installed duplicate skill copies'
 for name in ('issue-tracker', 'triage-labels', 'domain'):
     path = f'docs/agents/{name}.md'
     assert (source / path).is_file(), f'missing project setup: {path}'
     assert path in (source / 'AGENTS.md').read_text(), f'unlinked project setup: {path}'
     assert not (home / path).exists(), f'project setup leaked to HOME: {path}'
 PY
-cp "$DOTFILES_SKILLS_TEST_LOG" "$WORK/skills-calls-before"
+cp "$NEWHOME/.pi/agent/settings.json" "$WORK/settings-before"
 chezmoi --source "$SOURCE" --destination "$NEWHOME" apply
-cmp -s "$DOTFILES_SKILLS_TEST_LOG" "$WORK/skills-calls-before" \
-  || die "repeat apply fetched skills"
-ok "selected skills installed through upstream CLI; unchanged apply stays offline"
-
-step "selected global skills: corrupt registration fails without installation"
-python3 - "$SOURCE" "$NEWHOME" "$DOTFILES_SKILLS_TEST_LOG" <<'PY'
-import json, subprocess, sys
-from pathlib import Path
-source, home, log = map(Path, sys.argv[1:])
-lock_path = home / '.agents/.skill-lock.json'
-original_lock = lock_path.read_bytes()
-lock = json.loads(original_lock)
-first, *_, name = lock['skills']
-entry = lock['skills'][name]
-# A later source's corrupt registration must block even an earlier repair.
-invalid_entries = [None, [], 'invalid', 42, True, {},
-                   {'source': entry['source']}, {'sourceType': 'github'},
-                   {**entry, 'source': 42}, {**entry, 'source': ''},
-                   {**entry, 'sourceType': []}, {**entry, 'sourceType': ''},
-                   {**entry, 'ref': False}, {**entry, 'ref': None}]
-try:
-    for invalid in invalid_entries:
-        lock = json.loads(original_lock)
-        del lock['skills'][first]
-        lock['skills'][name] = invalid
-        lock_path.write_text(json.dumps(lock))
-        before_calls = log.read_bytes()
-        before_files = {p.relative_to(home): p.read_bytes()
-                        for p in (home / '.agents').rglob('*') if p.is_file()}
-        result = subprocess.run(['chezmoi', '--source', str(source), '--destination', str(home), 'apply'],
-                                capture_output=True, text=True)
-        assert result.returncode != 0, f'apply accepted {invalid!r}: {result.stdout}'
-        assert f'invalid skills lock entry: {name}' in result.stderr, result.stderr
-        assert log.read_bytes() == before_calls, 'corrupt registration invoked the installer'
-        after_files = {p.relative_to(home): p.read_bytes()
-                       for p in (home / '.agents').rglob('*') if p.is_file()}
-        assert after_files == before_files, 'failed apply changed CLI-owned files'
-finally:
-    lock_path.write_bytes(original_lock)
-PY
-ok "corrupt registration rejected; installer, skill content and lock untouched"
+cmp -s "$NEWHOME/.pi/agent/settings.json" "$WORK/settings-before" \
+  || die "repeat apply changed settings without a manifest change"
+ok "local skill paths rendered; unchanged apply is offline and stable"
 
 step "SSH address book: aliases and credential separation (offline)"
 [[ -f "$NEWHOME/.ssh/hosts.conf" ]] || die "missing ~/.ssh/hosts.conf"
@@ -1453,7 +1420,8 @@ fresh_zsh '[[ -z ${PI_TMUX_WRAP:-} ]]' >/dev/null \
   || die "tmux_wrap=on: PI_TMUX_WRAP must stay unset in interactive shells"
 offsettings="$WORK/settings-off.toml"
 sed 's/^tmux_wrap = "on"/tmux_wrap = "off"/' "$SOURCE/settings.toml" > "$offsettings"
-offhome="$WORK/home-off"; mkdir -p "$offhome"
+offhome="$WORK/home-off"; mkdir -p "$offhome/gh"
+cp -R "$NEWHOME/gh/skills" "$offhome/gh/skills"
 DOTFILES_SETTINGS_FILE="$offsettings" \
   chezmoi --source "$SOURCE" --destination "$offhome" apply \
   || die "tmux_wrap=off: apply failed"
@@ -1478,7 +1446,8 @@ step "pinned theme mode: the wrapper never overrides the pin"
 # so the main HOME must carry no pin.)
 pinnedsettings="$WORK/settings-pinned.toml"
 sed 's/^theme = "system"/theme = "dark"/' "$SOURCE/settings.toml" > "$pinnedsettings"
-pinnedhome="$WORK/home-pinned"; mkdir -p "$pinnedhome"
+pinnedhome="$WORK/home-pinned"; mkdir -p "$pinnedhome/gh"
+cp -R "$NEWHOME/gh/skills" "$pinnedhome/gh/skills"
 DOTFILES_SETTINGS_FILE="$pinnedsettings" \
   chezmoi --source "$SOURCE" --destination "$pinnedhome" apply \
   || die "theme=dark: apply failed"
@@ -1587,7 +1556,7 @@ for name in grilling grill-me; do
   [[ ! -e "$NEWHOME/.pi/agent/skills/$name" ]] || die "old chezmoi $name copy survived"
 done
 diff -qr "$WORK/agents-before-retirement" "$NEWHOME/.agents" \
-  || die "retiring legacy skills changed the upstream CLI's files"
+  || die "retiring legacy skills changed unrelated .agents content"
 [[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff --exclude=scripts)" ]] \
   || die "chezmoi file diff is not empty after skill cleanup"
 ok "former global skills removed; local runbook and unrelated user skills preserved"
