@@ -121,9 +121,9 @@
 #      absent on fresh installs; apply removes old installed copies without
 #      touching unrelated user skills or extensions
 #
-#  24. local skill selection: apply resolves a checkout manifest into direct Pi
-#      paths; selection changes, live edits, empty lists and invalid/missing
-#      inputs are tested without copying skills or invoking a package installer
+#  24. published skill selection: local Git fixtures prove automatic remote-main
+#      content/config updates, removals, stable snapshots, and safe failures;
+#      public network and package installer calls are rejected
 #
 # What this deliberately does NOT cover: brew bundle installs, GUI behavior
 # of Ghostty/Terminal/iTerm2. For those, see docs/developing.md's test
@@ -161,16 +161,18 @@ fresh_zsh() {
 WITH_NVIM=0
 [[ "${1:-}" == "--nvim" ]] && WITH_NVIM=1
 
-# A new machine must supply its own local skills checkout. Use a tiny fixture,
-# never the developer's checkout. Any accidental package install fails offline.
+# Git fetches in tier 1 use only disposable file:// remotes, never GitHub or
+# the developer's checkout. Fail on accidental public fetches or package installs.
 mkdir -p "$WORK/bin"
+REAL_GIT="$(command -v git)"
+printf '#!/bin/sh\nfor arg; do\ncase "$arg" in http://*|https://*|git://*|ssh://*|git@*) echo "unexpected network Git invocation" >&2; exit 99;; esac\ndone\nexec "%s" "$@"\n' "$REAL_GIT" > "$WORK/bin/git"
 printf '#!/bin/sh\necho "unexpected npx invocation" >&2\nexit 99\n' > "$WORK/bin/npx"
-chmod +x "$WORK/bin/npx"
+chmod +x "$WORK/bin/git" "$WORK/bin/npx"
 export PATH="$WORK/bin:$PATH"
-python3 - "$NEWHOME" <<'PY'
+python3 - "$WORK/skills-remote" <<'PY'
 import json, sys
 from pathlib import Path
-repo = Path(sys.argv[1]) / 'gh/skills'
+repo = Path(sys.argv[1])
 paths = ['skills/engineering/implement', 'skills/engineering/code-review', 'skills/productivity/grill-me']
 for path in paths + ['skills/in-progress/not-selected']:
     directory = repo / path
@@ -180,10 +182,14 @@ for path in paths + ['skills/in-progress/not-selected']:
     (directory / 'SKILL.md').write_text(f'---\nname: {name}\ndescription: Offline {name} fixture.\n{explicit}---\n\nLocal content.\n')
 (repo / 'enabled-skills.json').write_text(json.dumps(paths))
 PY
+git -C "$WORK/skills-remote" init -qb main
+git -C "$WORK/skills-remote" add .
+git -C "$WORK/skills-remote" -c user.name=Test -c user.email=test@example.invalid commit -qm Fixture
+export DOTFILES_SKILLS_REPOSITORY="$(python3 -c 'from pathlib import Path; import sys; print(Path(sys.argv[1]).resolve().as_uri())' "$WORK/skills-remote")"
 
 step "chezmoi apply into a pristine HOME"
 chezmoi --source "$SOURCE" --destination "$NEWHOME" apply
-# The locally supplied checkout is an input, not an installed build artifact.
+# Rendering fetches main again; an unchanged commit must keep stable paths.
 [[ -z "$(chezmoi --source "$SOURCE" --destination "$NEWHOME" diff --exclude=scripts)" ]] \
   || die "chezmoi file diff is not empty after apply"
 for f in .zshrc .zprofile .config/zsh/ps1.zsh \
@@ -236,17 +242,19 @@ grep -qF "set -g window-status-current-format ' | #I:#W#{?window_flags,#{window_
 [[ ! -e "$NEWHOME/.zsh/secrets.zsh" ]] || die "~/.zsh/secrets.zsh was applied"
 ok "full tree rendered, diff empty, no secrets applied"
 
-step "local skills: manifest resolution and repeat apply"
+step "published skills: remote main and repeat apply"
 python3 "$SOURCE/scripts/test-pi-skills.py"
-python3 - "$SOURCE" "$NEWHOME" <<'PY'
-import json, sys
+python3 - "$SOURCE" "$NEWHOME" "$WORK/skills-remote" <<'PY'
+import json, subprocess, sys
 from pathlib import Path
-source, home = map(Path, sys.argv[1:])
-repo = home / 'gh/skills'
-selected = json.loads((repo / 'enabled-skills.json').read_text())
+source, home, remote = map(Path, sys.argv[1:])
+selected = json.loads((remote / 'enabled-skills.json').read_text())
+commit = subprocess.check_output(['git', '-C', str(remote), 'rev-parse', 'main'], text=True).strip()
+repo = home / '.cache/dotfiles/pi-skills' / commit
 settings = json.loads((home / '.pi/agent/settings.json').read_text())
 assert settings['skills'] == [str((repo / path).resolve()) for path in selected]
-assert not (home / '.agents').exists(), 'apply copied skills or wrote a CLI lock'
+assert not (home / 'gh/skills').exists(), 'apply created or required a developer checkout'
+assert not (home / '.agents').exists(), 'apply wrote Skills CLI content or lock'
 assert not (home / '.pi/agent/skills').exists(), 'apply installed duplicate skill copies'
 for name in ('issue-tracker', 'triage-labels', 'domain'):
     path = f'docs/agents/{name}.md'
@@ -258,7 +266,7 @@ cp "$NEWHOME/.pi/agent/settings.json" "$WORK/settings-before"
 chezmoi --source "$SOURCE" --destination "$NEWHOME" apply
 cmp -s "$NEWHOME/.pi/agent/settings.json" "$WORK/settings-before" \
   || die "repeat apply changed settings without a manifest change"
-ok "local skill paths rendered; unchanged apply is offline and stable"
+ok "remote-main snapshot paths rendered; unchanged published commit stays stable"
 
 step "SSH address book: aliases and credential separation (offline)"
 [[ -f "$NEWHOME/.ssh/hosts.conf" ]] || die "missing ~/.ssh/hosts.conf"
@@ -1420,8 +1428,7 @@ fresh_zsh '[[ -z ${PI_TMUX_WRAP:-} ]]' >/dev/null \
   || die "tmux_wrap=on: PI_TMUX_WRAP must stay unset in interactive shells"
 offsettings="$WORK/settings-off.toml"
 sed 's/^tmux_wrap = "on"/tmux_wrap = "off"/' "$SOURCE/settings.toml" > "$offsettings"
-offhome="$WORK/home-off"; mkdir -p "$offhome/gh"
-cp -R "$NEWHOME/gh/skills" "$offhome/gh/skills"
+offhome="$WORK/home-off"; mkdir -p "$offhome"
 DOTFILES_SETTINGS_FILE="$offsettings" \
   chezmoi --source "$SOURCE" --destination "$offhome" apply \
   || die "tmux_wrap=off: apply failed"
@@ -1446,8 +1453,7 @@ step "pinned theme mode: the wrapper never overrides the pin"
 # so the main HOME must carry no pin.)
 pinnedsettings="$WORK/settings-pinned.toml"
 sed 's/^theme = "system"/theme = "dark"/' "$SOURCE/settings.toml" > "$pinnedsettings"
-pinnedhome="$WORK/home-pinned"; mkdir -p "$pinnedhome/gh"
-cp -R "$NEWHOME/gh/skills" "$pinnedhome/gh/skills"
+pinnedhome="$WORK/home-pinned"; mkdir -p "$pinnedhome"
 DOTFILES_SETTINGS_FILE="$pinnedsettings" \
   chezmoi --source "$SOURCE" --destination "$pinnedhome" apply \
   || die "theme=dark: apply failed"

@@ -1,7 +1,7 @@
 // Exercise project-local runbook discovery through Pi's real resource loader.
 // HOME is the smoke test's scratch HOME, never the user's skills/settings.
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { PI_PACKAGE_DIR } from "./lib/pi-package-dir.mjs";
@@ -55,17 +55,5 @@ for (const [label, cwd, trusted, expected] of [
 		assert.equal(skills.find((skill) => skill.name === "grill-me").disableModelInvocation, true);
 	}
 	assert.equal(diagnostics.length, 0, `${label}: ${JSON.stringify(diagnostics)}`);
-	if (label === "unrelated project") {
-		const file = resolve(selected[0].path, "SKILL.md");
-		const original = readFileSync(file, "utf8");
-		try {
-			writeFileSync(file, original.replace(/^description:.*$/m, "description: Edited locally without apply."));
-			await loader.reload({ resolveProjectTrust: async () => trusted });
-			assert.equal(loader.getSkills().skills.find((skill) => skill.name === selected[0].name).description,
-				"Edited locally without apply.");
-		} finally {
-			writeFileSync(file, original);
-		}
-	}
 	console.log(`  ok  runbook discovery: ${label}`);
 }
