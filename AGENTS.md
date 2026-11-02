@@ -145,9 +145,10 @@ dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # (settings.json "packages"; its payload under
                             # ~/.pi/agent/npm comes from `pi install`,
                             # unmanaged)
-scripts/pi-skills.py       # fetches brucepucci/skills remote main, including its
-                            # enabled-skills.json; renders commit-specific paths
-                            # under ~/.cache/dotfiles/pi-skills/<commit> into Pi
+run_before_90-skill-links.sh.tmpl # every apply runs scripts/pi-skills.py:
+                            # ~/gh/skills/enabled-skills.json selects symlinks
+                            # in ~/.agents/skills/ for auto-discovery;
+                            # no Pi path list, cache, copied payloads, or lock
 .agents/skills/chezmoi-runbook/SKILL.md # project-local verification skill;
                             # thin entry point to AGENTS.md + docs/developing.md;
                             # discovered in this repo, never installed to HOME
@@ -231,22 +232,24 @@ muscle memory. Do not "tidy" them. Two intentional quirks:
 - Terminal mode has `<C-k>`/`<C-h>`/`<C-l>` but no `<C-j>`, because the REPL is
   the bottom split.
 
-**Global skills: published main, explicit selection.** Every settings render
-fetches `brucepucci/skills`' remote `main`, including root `enabled-skills.json`,
-through `scripts/pi-skills.py`. Valid content is stored at
-`~/.cache/dotfiles/pi-skills/<commit>`; Pi settings select directories from that
-snapshot. Push/merge content or manifest changes to the fork's main, apply, then
-`/reload`. The developer checkout `~/gh/skills` and its branch/dirty work are never
-read or modified. Rendering diff/cat also fetches main and requires network, but
-commit-specific paths leave active skills unchanged until settings are applied.
-Fetch failures and invalid manifests/paths fail clearly without stale fallback;
-`[]` selects none. Keep snapshots unedited; modified ones fail rather than being
-overwritten. Old snapshots remain for active sessions/rollback. No Skills CLI or
-other agents' locks/content are managed; avoid duplicate skills and see docs/pi.md
-for one-time legacy cleanup. `find-skills` stays removed. Tier-1 uses local Git
-fixtures via DOTFILES_SKILLS_REPOSITORY and rejects public Git/npx calls; never
-fetch real skills in tests. Follow docs/developing.md ("Maintain and update the
-skills fork") for upstream merges and docs/pi.md for stock Pi limitations.
+**Global skills: one selection, auto-discovery symlinks.** Clone our fork,
+`brucepucci/skills`, into `~/gh/skills` before applying. Its root
+`enabled-skills.json` lists relative skill directories. Every apply runs
+`scripts/pi-skills.py` before writing files: validate the whole selection, then
+reconcile checkout-owned symlinks in `~/.agents/skills/`. Pi auto-discovers that
+shared directory; its settings contain no `skills` paths. Deselection removes
+only links targeting this checkout (including dangling links), never content.
+Unrelated skills and locks are preserved; a conflicting unrelated name fails
+without changing links. Invalid manifests, missing files, duplicate directories
+or discovery names, and escaping/glob paths also fail before changes. `[]` removes
+all checkout-owned links. Selection changes need apply + `/reload`; selected
+content edits, including uncommitted edits, need only `/reload`. Other agents
+using this shared directory see the same selection. Git synchronization stays
+manual; `mattpocock/skills` is only a deliberately merged upstream for our fork.
+Apply never downloads, copies, updates, or deletes skill content. Tier-1 uses a
+disposable checkout and rejects npx; never fetch skills. See docs/pi.md for legacy
+cleanup and stock Pi limitations, and docs/developing.md ("Maintain and update
+the skills fork") for publishing.
 
 ## Agent skills
 
