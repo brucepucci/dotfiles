@@ -7,7 +7,7 @@
 # The runbook now lives in this repo's .agents/skills/, not in user scope.
 .pi/agent/skills/chezmoi-runbook
 
-# Replace the experimental chezmoi grilling copies with upstream CLI installs.
+# Replace the experimental chezmoi grilling copies with selected checkout links.
 # The replacements live in ~/.agents/skills/, not these legacy paths.
 .pi/agent/skills/grilling
 .pi/agent/skills/grill-me

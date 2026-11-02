@@ -121,9 +121,11 @@ chezmoi init brucepucci
 #    zsh-syntax-highlighting), and the pi coding agent
 brew bundle --file="$(chezmoi source-path)/Brewfile"
 
-# 4. Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty, Pi.
-#    Fetches brucepucci/skills remote main and its enabled-skills.json;
-#    no developer checkout is needed (network access is required).
+# 4. Supply the local skill checkout before linking selected skills.
+mkdir -p ~/gh
+git clone https://github.com/brucepucci/skills.git ~/gh/skills
+#    Its enabled-skills.json selects skill directories; [] selects none.
+#    Config -> ~/.config/nvim, ~/.zshrc, ~/.zprofile, ~/.config/ghostty, Pi
 chezmoi apply
 
 # 5. Plugins, at the exact revisions pinned in lazy-lock.json
@@ -150,8 +152,8 @@ an edit in this repo plus `chezmoi apply`.
 > out of both repos.
 
 > **Do step 3 before step 4.** The Brewfile step must land before apply
-> for the pieces Neovim and the shell need. Pi's skills are fetched automatically
-> from the fork's remote `main`, including its selection manifest.
+> for the pieces Neovim and the shell need. Pi's skills additionally require
+> the local checkout and `enabled-skills.json` from step 4; apply never fetches them.
 > Language servers come from Homebrew too, not Mason — launching Neovim
 > earlier is not fatal — it
 > warns and names what is missing — but `Lazy! restore` also needs
@@ -183,16 +185,16 @@ non-Homebrew install.
 | `~/.local/bin/delta-theme` | Appearance-aware delta wrapper | [git.md](docs/git.md) |
 | `~/.pi/agent/settings.json`, `~/.pi/agent/themes/`, `~/.pi/agent/extensions/` | pi's settings, generated theme pair, managed extensions (provider-usage footer, title-screen splash), and permission-system policy | [pi.md](docs/pi.md) |
 
-`chezmoi apply` fetches the latest remote `main` of
-[brucepucci/skills](https://github.com/brucepucci/skills), including its root
-`enabled-skills.json`, and configures Pi to load its selected directories from a
-commit-specific snapshot under `~/.cache/dotfiles/pi-skills/`. Publish content or
-selection changes to that branch, apply, then `/reload`. Your `~/gh/skills`
-development checkout is never read or modified. Fetch and validation failures
-fail clearly, without stale fallback; `[]` selects none. Rendering `chezmoi diff`
-also fetches main, but does not change active skill paths. `find-skills` stays
-removed. See [global skills](docs/pi.md#global-skills) for cache ownership and
-one-time cleanup of old CLI copies.
+`chezmoi apply` also reads `~/gh/skills/enabled-skills.json` and creates selected
+symlinks in **`~/.agents/skills/`**, which Pi auto-discovers (not `~/.skills/`).
+The local [brucepucci/skills](https://github.com/brucepucci/skills) fork owns content
+and selection; there is no cache or explicit Pi skill-path list. Apply removes
+deselected links targeting this checkout while preserving unrelated skills and
+locks. A conflicting unrelated name fails clearly rather than being overwritten.
+It never downloads, copies, or deletes skill content. Edits need only `/reload`;
+selection changes need apply, then `/reload`. `[]` removes all checkout-owned
+links. Other agents using this shared directory see the same selection.
+See [global skills](docs/pi.md#global-skills) for validation and migration.
 
 **Upgrading an existing install:** the experimental chezmoi grilling copies,
 vendored code review skill and package-update prompt extension are retired;
@@ -215,10 +217,9 @@ generated), `~/.zsh/secrets.zsh` (API keys — a secret), everything in
 `~/.config/gh/hosts.yml` (auth token), and on the pi side
 `~/.pi/agent/auth.json` (provider credentials from `/login`),
 `~/.pi/agent/sessions/` (transcripts), and `~/.pi/agent/models-store.json`
-(a catalog cache pi refetches itself). The fork's published `main` owns skill
-content and selection. Its generated snapshots in `~/.cache/dotfiles/pi-skills/`
-are not imported into dotfiles. Other agents' `~/.agents/skills/` and runtime
-locks remain unmanaged.
+(a catalog cache pi refetches itself). The separate `~/gh/skills` checkout owns
+skill content and selection; chezmoi manages only its symlinks in
+`~/.agents/skills/`. Unrelated skills and runtime locks remain unmanaged.
 
 ## Changing the settings
 
@@ -239,9 +240,8 @@ README); `theme` picks follow-the-OS vs pinned; `tmux_wrap` is the
 one behavior knob. Edit, `chezmoi diff && chezmoi apply`, and every
 surface follows — the full explanation, including what renders where,
 is in [docs/theming.md](docs/theming.md). The palettes live in this repo, so
-theme rendering needs neither network nor Ghostty. Apply requires Node; npx
-and network access are also needed when selected global skills are missing or
-source-changed.
+theme rendering needs neither network nor Ghostty. Skill linking uses Python 3
+and the existing local checkout; apply never invokes npx or fetches skills.
 
 ## Editing this config
 
@@ -374,12 +374,12 @@ and is unavailable in unrelated projects; it points to AGENTS.md and
   drifting field in `chezmoi diff` — harmless. Model defaults saved via
   `/model` + Ctrl+S must be folded into the template by hand:
   [docs/developing.md](docs/developing.md#pi-self-bumps).
-- **Global skills** — publish content or `enabled-skills.json` changes to
-  `brucepucci/skills`' `main`, then `chezmoi apply` and `/reload` in Pi. Apply fetches
-  that remote branch automatically without touching your development checkout.
-  For deliberate upstream merges, follow
+- **Global skills** — edit selected skills in `~/gh/skills`, then `/reload` in
+  Pi. Edit that checkout's `enabled-skills.json` to change selection, then
+  `chezmoi apply` and `/reload`. Keep the fork synchronized with Git yourself;
+  apply never pulls or copies content. For deliberate upstream merges, follow
   [the fork maintenance workflow](docs/developing.md#maintain-and-update-the-skills-fork).
-  See [the skill guide](docs/pi.md#global-skills) for validation, snapshots, and cleanup.
+  See [the skill guide](docs/pi.md#global-skills) for validation and legacy cleanup.
 - **Themes** — the mirror in `themes/` is a snapshot: upstream
   iTerm2-Color-Schemes keeps adding schemes, and they work the moment you
   run `scripts/themes-sync.sh` and type their name in `settings.toml`.

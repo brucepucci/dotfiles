@@ -1,0 +1,4 @@
+#!/bin/sh
+# Run on every apply: selection lives outside the chezmoi source tree.
+set -eu
+python3 {{ joinPath .chezmoi.sourceDir "scripts" "pi-skills.py" | shellQuote }} {{ .chezmoi.destDir | shellQuote }}

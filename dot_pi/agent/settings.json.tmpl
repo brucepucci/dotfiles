@@ -10,7 +10,6 @@
     "openai-codex/gpt-6-luna",
     "openai-codex/gpt-6.1-sol"
   ],
-  "skills": {{ output "python3" (joinPath .chezmoi.sourceDir "scripts" "pi-skills.py") .chezmoi.destDir | indent 2 | trim }},
   "packages": [
     "npm:@gotgenes/pi-permission-system"
   ]
