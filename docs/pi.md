@@ -18,6 +18,7 @@ The pieces, kept deliberately separate:
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
 | The title-screen extension | `dot_pi/agent/extensions/title-screen.ts` → `~/.pi/agent/extensions/title-screen.ts` | **yes — plain static file** |
 | The permission-system package | `"packages"` in `dot_pi/agent/settings.json.tmpl` + `dot_pi/agent/extensions/pi-permission-system/config.json` → policy config | **yes — entry in the template; config a plain static file** |
+| The subagents package | `"packages"` in `dot_pi/agent/settings.json.tmpl` | **yes — entry only; npm payload unmanaged** |
 | Provider credentials | ChatGPT/Codex (default) via `/login`; Z.ai as an alternative via `ZAI_API_KEY` in `~/.zsh/secrets.zsh` or `/login` | **no — credentials are secrets, never in the repo** |
 
 ## The tmux wrapper (`pi()` in `~/.zshrc`)
@@ -102,7 +103,7 @@ viewing terminal even over SSH — the reasoning is in
     "openai-codex/gpt-6-sol"
   ],
   "theme": "dotfiles-light/dotfiles-dark",
-  "packages": ["npm:@gotgenes/pi-permission-system"]
+  "packages": ["npm:@gotgenes/pi-permission-system", "npm:pi-subagents"]
 }
 ```
 
@@ -119,8 +120,7 @@ viewing terminal even over SSH — the reasoning is in
 
 ## Packages (npm extensions)
 
-`packages` in `settings.json` carries npm-installed extensions. Today that
-is one:
+`packages` in `settings.json` carries npm-installed extensions:
 
 - **`@gotgenes/pi-permission-system`** — permission gates over tool, bash,
   path, MCP, and skill access (`allow` / `ask` / `deny`; `path` rules cut
@@ -131,7 +131,13 @@ is one:
   management subcommand (see the tmux-wrapper section above); only the
   keg-touching ones are refused.
 
-Three distinct pieces, only two of them managed:
+- **`pi-subagents`** — delegate work to focused child Pi sessions, including
+  foreground and background runs. Uses the package's default configuration
+  and bundled agents. Unpinned, like the permission system; update with
+  `pi update --extensions`. After restarting Pi, `/subagents-doctor` checks
+  the setup and `/subagents-guide` opens the installed package's guide.
+
+For the permission system, three distinct pieces, only two of them managed:
 
 | Piece | Where | Managed? |
 |---|---|---|
@@ -141,9 +147,15 @@ Three distinct pieces, only two of them managed:
 
 On a **fresh machine**, `chezmoi apply` writes the entry but not the
 payload — pi auto-installs missing *project* packages at startup, never
-user-scope ones. Run `pi install npm:@gotgenes/pi-permission-system`
-once after the first apply (idempotent — it reconciles the existing
-install). `pi list` shows what's registered; the review log lands in
+user-scope ones. Install both packages once after the first apply
+(idempotent — each command reconciles the existing install):
+
+```bash
+pi install npm:@gotgenes/pi-permission-system
+pi install npm:pi-subagents
+```
+
+`pi list` shows what's registered; the permission-system review log lands in
 `~/.pi/agent/extensions/pi-permission-system/logs/` (unmanaged,
 ignored).
 
