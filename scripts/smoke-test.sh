@@ -248,7 +248,7 @@ repo = home / 'gh/skills'
 selected = json.loads((repo / 'enabled-skills.json').read_text())
 settings = json.loads((home / '.pi/agent/settings.json').read_text())
 assert settings['packages'] == [
-    'npm:@gotgenes/pi-permission-system', 'npm:pi-subagents',
+    'npm:@gotgenes/pi-permission-system', 'npm:@tintinweb/pi-subagents',
 ], 'managed npm package declarations drifted'
 assert 'skills' not in settings, 'explicit Pi paths duplicate auto-discovery'
 links = home / '.agents/skills'

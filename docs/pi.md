@@ -103,7 +103,7 @@ viewing terminal even over SSH — the reasoning is in
     "openai-codex/gpt-6-sol"
   ],
   "theme": "dotfiles-light/dotfiles-dark",
-  "packages": ["npm:@gotgenes/pi-permission-system", "npm:pi-subagents"]
+  "packages": ["npm:@gotgenes/pi-permission-system", "npm:@tintinweb/pi-subagents"]
 }
 ```
 
@@ -131,11 +131,12 @@ viewing terminal even over SSH — the reasoning is in
   management subcommand (see the tmux-wrapper section above); only the
   keg-touching ones are refused.
 
-- **`pi-subagents`** — delegate work to focused child Pi sessions, including
-  foreground and background runs. Uses the package's default configuration
-  and bundled agents. Unpinned, like the permission system; update with
-  `pi update --extensions`. After restarting Pi, `/subagents-doctor` checks
-  the setup and `/subagents-guide` opens the installed package's guide.
+- **`@tintinweb/pi-subagents`** — Claude Code-style child Pi sessions via
+  the `Agent` tool, with foreground/background runs and built-in
+  general-purpose, Explore, and Plan agents. Uses the package's defaults;
+  no custom agent configuration is managed here. Unpinned, like the
+  permission system; update with `pi update --extensions`. After restarting
+  Pi, `/agents` opens agent management and settings.
 
 For the permission system, three distinct pieces, only two of them managed:
 
@@ -152,7 +153,7 @@ user-scope ones. Install both packages once after the first apply
 
 ```bash
 pi install npm:@gotgenes/pi-permission-system
-pi install npm:pi-subagents
+pi install npm:@tintinweb/pi-subagents
 ```
 
 `pi list` shows what's registered; the permission-system review log lands in
