@@ -1,11 +1,12 @@
 # The color system — one look everywhere
 
-The appearance of everything this repo manages — terminal, shell prompt,
-editor, statusline, diffs, and the pi coding agent's TUI — is derived from
+The shared appearance of Ghostty, Herdr desktop, the shell prompt,
+editor, statusline, diffs, and the pi coding agent's TUI is derived from
 **two theme names**. There are no per-app theme files to keep in
 sync, no hex codes hardcoded anywhere in managed files, and no palette
 fetches at apply time: the themes are bytes in this repo. What the mirror
-holds is what every surface renders.
+holds is what these surfaces render. Herdr's native UI is derived from
+the same generated terminal palettes, not an independent theme setting.
 
 This is the part of the repo with the most machinery behind it, so this
 page is the reference. If you only want to change how things look, read
@@ -17,10 +18,10 @@ Four settings, no hex, no per-app themes:
 
 ```toml
 theme = "system"              # "system" | "light" | "dark"
-light_theme = "Flexoki Light" # theme names — browse the gallery in
+light_theme = "Paper Crane"  # theme names — browse the gallery in
                               # iTerm2-Color-Schemes' README; the names
                               # are the file names of the mirror in themes/
-dark_theme = "Kanagawa Wave"
+dark_theme = "Paper Crane: Midnight Ink"
 tmux_wrap = "on"              # "on" | "off" — pi in detachable tmux sessions?
 ```
 
@@ -30,13 +31,14 @@ tmux_wrap = "on"              # "on" | "off" — pi in detachable tmux sessions?
   (browse its README gallery — screenshots for every scheme) and refreshed
   by `scripts/themes-sync.sh`.
 - **`theme`** picks the mode: `system` follows the OS light/dark appearance
-  live (Ghostty auto-switches its pair, nvim re-syncs on focus, delta
+  live (Ghostty and Herdr auto-switch their pairs, nvim re-syncs on focus, delta
   detects per invocation); `light`/`dark` pin one look everywhere.
 - **`tmux_wrap`** is a behavior knob, not a color one — documented in
   [tmux.md](tmux.md) and [pi.md](pi.md).
 
 To change anything: edit `settings.toml`, then `chezmoi diff && chezmoi
-apply`. Every surface follows.
+apply`. Every surface follows; Herdr layout-local theme/color overrides
+can take precedence — use the default main layout (see [herdr.md](herdr.md#appearance)).
 
 ## How it resolves (the committed mirror)
 
@@ -55,7 +57,7 @@ everything from the theme's 16-color palette:
 - the pi TUI's variables and nvim's generated palette module.
 
 Because the mirror ships inside the repo, resolution needs no network
-and no Ghostty install — the colors are local bytes, versioned and
+and no Ghostty or Herdr install — the colors are local bytes, versioned and
 bisectable (`git log -p themes/` shows exactly when any palette changed).
 `themes/SOURCE.md` records the upstream commit the mirror was taken from;
 `scripts/themes-sync.sh` refreshes it by hand when you want newer upstream
@@ -80,20 +82,19 @@ touching the repo's settings.
 | **nvim + lualine** | A colorscheme **generated** from the theme's roles at apply time (`core/theming.lua` is nvim's only rendered file; everything else is static Lua reading it) |
 | **delta** | `syntax-theme = none` — bat syntax colors off, so diffs render in the theme's own ANSI palette; the `delta-theme` wrapper picks light/dark per invocation |
 | **pi's TUI** | Theme files whose vars ride terminal-indexed colors, so pi follows the *viewing* terminal — even over SSH |
-| **herdr** | herdr's built-in `terminal` theme: the UI queries the rendering terminal's own ANSI palette and default fg/bg at runtime (OSC 10/11 + OSC 4). Static config, no hex, no resolver — and appearance-independent: a theme swap needs no re-apply because herdr follows the terminal it renders in |
+| **Herdr desktop** | Generated `~/.config/herdr-app/themes/dotfiles-{light,dark}.json` map the same background, foreground, cursor, selection background, and ANSI 0–15 as Ghostty; Herdr derives its native UI from these palettes. Settings select the pair and OS-following/pinned mode; layout overrides can take precedence. |
 
 ## The SSH rule: indexed colors, not hexes
 
-Surfaces that travel over SSH — the prompt, pi's TUI, herdr's UI — avoid
+Surfaces that travel over SSH — the prompt and pi's TUI — avoid
 hexes entirely. A hex describes a color on the *rendering* machine; an
 indexed
 slot (0–15) is resolved by the *viewing* terminal through whatever palette
-it is running. SSH from a light-mode laptop into this Mac and the prompt,
-pi, and herdr render light, automatically, because the terminal in your
-hands decides — the Mac never ships a palette across the wire. (herdr
-takes the purest form of this rule: instead of indexed slots, its
-`terminal` theme asks the terminal for its live palette, so its config is
-color-free and never regenerated.)
+it is running. SSH from a light-mode laptop into this Mac and the prompt
+and pi render light, automatically, because the terminal in your hands
+decides — the Mac never ships a palette across the wire. Herdr's native
+desktop UI is not an SSH surface: its palettes come from the resolver.
+Pi inside Herdr rides the viewing Herdr terminal's indexed slots.
 
 The deliberate exceptions in pi's themes:
 
@@ -110,14 +111,16 @@ The deliberate exceptions in pi's themes:
 ## The mode: system vs pinned
 
 - `theme = "system"` (default): everything follows the OS live. Ghostty
-  switches itself; nvim re-syncs on `FocusGained` (needs tmux's
+  switches itself; Herdr selects its generated pair with `appearance` omitted
+  from app settings; nvim re-syncs on `FocusGained` (needs tmux's
   `focus-events` when inside tmux); delta probes `defaults read -g
   AppleInterfaceStyle` per invocation; the pi wrapper asks the terminal
   before creating the session (pi's own detection can't see through the
   tmux layer — see [pi.md](pi.md)).
 - `theme = "light"` / `"dark"`: the pin renders a single theme into
   Ghostty's config, a single theme into pi's `settings.json`, nvim's
-  module carries the pinned mode, and the pi wrapper skips its probe
+  module carries the pinned mode, Herdr settings set `appearance` to the
+  pinned side (keeping the generated pair), and the pi wrapper skips its probe
   entirely (injecting `--use-theme` would override the pin).
 
 ## The rules (what keeps this from rotting)
@@ -132,6 +135,9 @@ The deliberate exceptions in pi's themes:
 4. **Roles render verbatim**: nvim's generated module must carry the
    resolver's role values byte-for-byte.
 5. **SSH-facing surfaces ride the indexed slots** — also smoke-tested.
+6. **Herdr matches Ghostty's terminal palette exactly** — background,
+   foreground, cursor, selection background, and every ANSI slot, including
+   custom/sparse themes and regeneration after a theme swap.
 
 These are enforced by `scripts/smoke-test.sh` (the color-system step), so
 drift is a test failure, not a slow aesthetic decay. CI runs the same
@@ -159,5 +165,9 @@ Everything rendered is a build artifact; edit `settings.toml`, never these:
 - `private_dot_config/ghostty/themes/dotfiles-{light,dark}.tmpl` → the
   two generated user theme files Ghostty runs (rendered unconditionally,
   whatever the mode)
+- `private_dot_config/herdr-app/settings.json.tmpl` → app telemetry policy,
+  generated theme pair, and mode (`appearance` omitted for system)
+- `private_dot_config/herdr-app/themes/dotfiles-{light,dark}.json.tmpl` →
+  native Herdr themes from the same resolved terminal palettes as Ghostty
 - `dot_zshrc.tmpl` → two conditional renders (tmux_wrap default, pinned
   theme)

@@ -8,9 +8,8 @@ or anything else that reads the cross-agent AGENTS.md convention).
 A chezmoi-managed dotfiles repo for an agent-focused terminal workflow:
 Neovim is the bulk of it, plus the zsh shell config shared by every terminal
 and SSH session, Ghostty (theme + ssh terminfo auto-install), git tooling
-(delta, lazygit), tmux
-(detachable sessions), and the pi coding agent (GPT-6 via ChatGPT/Codex by
-default, with Z.ai/GLM also available).
+(delta, lazygit), tmux (detachable sessions), Herdr desktop/core, and the pi
+coding agent (GPT-6 via ChatGPT/Codex by default, with Z.ai/GLM also available).
 
 `docs/` at the repo root (never installed -- see `.chezmoiignore`) holds one
 page per tool plus `docs/developing.md`, the long-form maintainer guide:
@@ -50,9 +49,9 @@ dot_zshrc.tmpl              # interactive shell: options, history, aliases,
                             # every new conversation gets
                             # its own named tmux session (never attaches) and
                             # probes the viewing terminal for the theme side;
-                            # the herdr() wrapper -- refuses self-updates
-                            # (`brew upgrade herdr` owns the keg); pi() goes
-                            # bare inside herdr panes (HERDR_ENV=1)
+                            # pi() goes bare inside Herdr desktop/core
+                            # terminals (nonempty HC_TERMINAL_ID), even
+                            # under PI_TMUX_WRAP=force; no legacy TUI guard
                             # TWO conditional renders: tmux_wrap=off defaults
                             # PI_TMUX_WRAP to never; a pinned theme renders
                             # PI_THEME_PINNED (the wrapper must not inject
@@ -93,8 +92,8 @@ themes/                    # the committed theme mirror (never installed):
                             # refreshes it (by hand, never at apply time)
 scripts/theme.py           # the resolver templates call at apply time (via
                             # chezmoi's `output`): parse+derive each theme
-                            # from the vendored mirror -- no network, no
-                            # Ghostty install needed for `chezmoi apply`
+                            # from the vendored mirror -- no network or
+                            # Ghostty/Herdr install needed for `chezmoi apply`
 private_dot_config/nvim/
 ├── init.lua              # sets mapleader, syncs appearance, then requires
 │                         # core.* and bruce.lazy
@@ -119,11 +118,12 @@ private_dot_config/ghostty/config.tmpl # terminal appearance + ssh terminfo — 
                             # without the entry the remote zle garbles)
 private_dot_config/ghostty/themes/      # those two theme files, rendered from
                             # the same resolved palettes every surface uses
-private_dot_config/herdr/   # config.toml -- the herdr agent multiplexer's
-                            # config: herdr's terminal theme (UI colors ride
-                            # the rendering terminal's own palette -- the SSH
-                            # rule; no hex, identical across modes) + update
-                            # checks off (brew owns upgrades)
+private_dot_config/herdr-app/settings.json.tmpl # telemetry off + generated
+                            # theme pair/mode from settings.toml; themes/
+                            # dotfiles-{light,dark}.json.tmpl map the same
+                            # terminal palettes as Ghostty (Herdr derives UI);
+                            # keys/core config/runtime remain unmanaged;
+                            # cask herdr-app + explicit core onboarding
 dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # .json.tmpl — the pi TUI's themes, generated from
                             # the active themes' roles (stable file names);
@@ -172,6 +172,19 @@ are the only shell config; every terminal and SSH session reads them. The
 Ghostty config sets nothing shell-related — do not reintroduce a ZDOTDIR or
 shell env lines there. History is one shared file, `~/.zsh_history`.
 
+**Herdr: desktop + core only.** Homebrew installs `herdr-app`; explicit
+first-launch onboarding installs core (no formula). Vendor UI owns ongoing
+app/core updates. Manage telemetry off and the resolver-generated app
+appearance/theme pair; allowlist only settings and those two theme files.
+Keys, core config, and runtime/layout geometry stay unmanaged. Default main
+layout follows repo themes; layout theme/color overrides can take precedence. Pi 1.5 reports OSC 7501 natively; nonempty
+`HC_TERMINAL_ID` skips tmux even under force so handshake/status reach core.
+Legacy TUI guards/wrapper/integration are retired. Apply removes only the
+legacy config/reporter, preserving runtime; stopping/uninstalling is manual
+after checking live sessions. For setup, migration, remote access, or
+persistence changes, read docs/herdr.md; apply never stops services or installs
+core.
+
 **Secrets never go in this repo.** They live in `~/.zsh/secrets.zsh`
 (`private_dot_zsh/secrets.example.zsh` is the template; the real file is in
 `.chezmoiignore`). That includes the Z.ai key: `ZAI_API_KEY`. The default
@@ -195,10 +208,11 @@ mirror in `themes/`, rooted in mbadolato/iTerm2-Color-Schemes; the
 upstream README gallery is the browser; `scripts/themes-sync.sh`
 refreshes the mirror by hand). Templates resolve each
 name at apply time via `scripts/theme.py` (chezmoi `output`),
-parsed + derived from the mirror — no network, no Ghostty install
-needed for apply: what the mirror holds is what every surface renders
-(delta falls back to the
-terminal's own palette; nvim/lualine use a scheme generated from the roles).
+parsed + derived from the mirror — no network or Ghostty/Herdr install
+needed for apply: what the mirror holds is what the themed surfaces render
+(delta falls back to the terminal's own palette; nvim/lualine use a scheme
+generated from the roles). Herdr's generated themes use Ghostty's exact
+resolved terminal palettes; the app derives its native UI from them.
 Never hardcode a hex or theme name in a managed file — render it from the
 resolver or read it via `bruce.core.theming`. Surfaces that travel over
 SSH (the prompt, pi's TUI) avoid hexes entirely: they render in the
@@ -209,13 +223,14 @@ slots the author left out also falls back to role hexes — see `pi_vars`).
 In nvim, only
 `core/theming.lua` is generated; the rest is static Lua. The smoke test's
 color-system step is the drift guard (names resolve, no orphan hexes, roles
-verbatim, pi rides the slots). `chezmoi
+verbatim, pi rides the slots, Herdr matches Ghostty's terminal palettes). `chezmoi
 re-add` skips
 template-sourced files (e.g. pi's `settings.json.tmpl`): fold pi's
 self-bumps in by hand. See docs/developing.md ("pi self-bumps") for the
 runbook.
 
-**Servers come from Homebrew, not Mason.** Mason is deliberately not installed:
+**Language servers come from Homebrew, not Mason.** Mason is deliberately
+not installed:
 one package manager, versions visible in `Brewfile`, no duplicate copies, no
 PATH shadowing. To add a server: add it to `Brewfile`, then to the
 `vim.lsp.enable({...})` list *and* the `exes` table (which drives the
@@ -283,8 +298,12 @@ Start pi in this repo, grant project trust, and use `/skill:chezmoi-runbook`
 to request verification. AGENTS.md remains the source of truth; the smoke
 test checks the skill's frontmatter, links, and local-only installation boundary.
 
+For a separate checkout, use explicit `chezmoi --source=<checkout>` for
+diff/apply and run scripts there; `chezmoi cd` selects the configured source,
+not the current checkout.
+
 ```bash
-chezmoi cd                  # -> ~/.local/share/chezmoi, if not already there
+chezmoi cd                  # -> ~/.local/share/chezmoi, if using the default source
 scripts/smoke-test.sh      # from-scratch apply + shell behavior, ~1s -- run
                            # this after EVERY change (see docs/developing.md
                            # for the full test pyramid and the VM tiers)

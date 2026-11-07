@@ -1,0 +1,12 @@
+{{- /* Generated from the same resolved terminal palette as Ghostty.
+     Herdr derives its native UI colors from this palette; Pi rides its
+     ANSI slots and defaults. Edit settings.toml, not the target file. */ -}}
+{{ $a := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "appearance" | trim | fromJson -}}
+{{ $t := $a.dark.terminal -}}
+{
+  "background": {{ $t.background | toJson }},
+  "foreground": {{ $t.foreground | toJson }},
+  "cursor": {{ index $t "cursor-color" | toJson }},
+  "selection": {{ index $t "selection-background" | toJson }},
+  "ansi": [{{ range $i := until 16 }}{{ if $i }}, {{ end }}{{ index $t (printf "palette_%d" $i) | toJson }}{{ end }}]
+}

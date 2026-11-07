@@ -39,6 +39,24 @@ docs/
 !.ssh
 !.ssh/hosts.conf
 
+# Herdr desktop preferences + generated palettes only. Do not import shipped
+# mods/layouts/themes, keys, runtime state, machine identities or core payloads.
+.config/herdr-app/**
+!.config/herdr-app
+!.config/herdr-app/settings.json
+!.config/herdr-app/themes
+!.config/herdr-app/themes/dotfiles-light.json
+!.config/herdr-app/themes/dotfiles-dark.json
+.config/herdr-core
+.local/state/herdr-core
+.local/share/herdr-core
+.local/bin/hc
+.local/bin/herdr-core
+.local/bin/herdr-app
+# Ignore the old directory itself, not its children: a child ignore would
+# also suppress the exact legacy config removal in .chezmoiremove.
+.config/herdr
+
 # Same idea for the pi coding agent (~/.pi/agent/): auth.json (written by
 # /login) holds a copy of the Z.ai API key and is a SECRET, models-store.json
 # is a catalog cache pi refetches from the provider, sessions/ is transcripts,

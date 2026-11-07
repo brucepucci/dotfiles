@@ -1,0 +1,12 @@
+{{- /* Appearance comes from settings.toml, exactly as for Ghostty and Pi.
+     Leave system appearance absent (Herdr's live OS-following default).
+     Keys, layouts, and core configuration are deliberately unmanaged. */ -}}
+{{ $a := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "appearance" | trim | fromJson -}}
+{
+  "telemetry": false,
+{{ if ne $a.mode "system" }}  "appearance": {{ $a.mode | toJson }},
+{{ end }}  "theme": {
+    "light": "dotfiles-light",
+    "dark": "dotfiles-dark"
+  }
+}
