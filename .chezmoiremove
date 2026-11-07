@@ -1,3 +1,8 @@
+# Retire the legacy Herdr TUI config and its Pi integration only.
+# Leave old session/runtime state intact; package removal is a manual migration.
+.config/herdr/config.toml
+.pi/agent/extensions/herdr-agent-state.ts
+
 # Retire the formerly vendored Pi code review skill on existing installs.
 .pi/agent/skills/code-review-skill
 

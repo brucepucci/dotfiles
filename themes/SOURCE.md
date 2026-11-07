@@ -10,9 +10,9 @@ hand-maintained.
 
 <!-- synced:begin -->
 - mirrored from: https://github.com/mbadolato/iTerm2-Color-Schemes (ghostty/ directory)
-- upstream commit: `752a9c079396cc9939b86e893578ed81e80c140f`
-- mirrored on: 2026-09-01
-- files: 607
+- upstream commit: `b84cd1e68c9033d967fccd9febbac3072d127b7b`
+- mirrored on: 2026-11-07
+- files: 907
 <!-- synced:end -->
 - license: MIT, (c) 2011-present Mark Badolato -- see the upstream repo
 

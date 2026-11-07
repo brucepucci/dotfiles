@@ -43,14 +43,12 @@
 #      (pi cannot ask through the tmux layer; non-tty runs fall back dark),
 #      keeps tmux wrapping for a user-supplied --use-theme (only the
 #      injection is suppressed), and falls through to plain pi inside
-#      tmux / inside herdr (HERDR_ENV=1: herdr must see pi as the pane
-#      process) / without the binary / from $HOME / for one-shot -p runs —
-#      exercised with fake tmux+pi shims
-#  12b. the herdr wrapper: any `herdr update` is refused with the brew
-#      path before the binary is consulted (passes with no herdr on
-#      PATH), everything else reaches the binary verbatim (shim), and
-#      the rendered config validates via `herdr config check` when the
-#      machine has the formula
+#      tmux / inside Herdr (HC_TERMINAL_ID: core owns persistence) /
+#      without the binary / from $HOME / for one-shot -p runs — exercised
+#      with fake tmux+pi shims, including desktop/core under force-wrap
+#  12b. desktop Herdr: app cask + resolver-generated palettes; system/light/
+#      dark appearance, sparse/custom theme regeneration, legacy retirement,
+#      runtime preservation and import boundaries (no app/core needed)
 #  13. the tmux_wrap setting: "on" (the committed value) renders no env
 #      default and leaves PI_TMUX_WRAP unset; "off" renders
 #      : ${PI_TMUX_WRAP:=never} into ~/.zshrc (second apply against a
@@ -192,7 +190,9 @@ for f in .zshrc .zprofile .config/zsh/ps1.zsh \
          .config/zsh-ghostty/.zshenv .config/ghostty/config \
          .config/ghostty/themes/dotfiles-light \
          .config/ghostty/themes/dotfiles-dark \
-         .config/herdr/config.toml \
+         .config/herdr-app/settings.json \
+         .config/herdr-app/themes/dotfiles-light.json \
+         .config/herdr-app/themes/dotfiles-dark.json \
          .config/nvim/init.lua .zsh/secrets.example.zsh \
          .tmux.conf; do
   [[ -f "$NEWHOME/$f" ]] || die "missing $f"
@@ -770,6 +770,9 @@ for f in "$NEWHOME/.pi/agent/themes/dotfiles-light.json" \
          "$NEWHOME/.config/ghostty/config" \
          "$NEWHOME/.config/ghostty/themes/dotfiles-light" \
          "$NEWHOME/.config/ghostty/themes/dotfiles-dark" \
+         "$NEWHOME/.config/herdr-app/settings.json" \
+         "$NEWHOME/.config/herdr-app/themes/dotfiles-light.json" \
+         "$NEWHOME/.config/herdr-app/themes/dotfiles-dark.json" \
          "$NEWHOME/.gitconfig" \
          "$NEWHOME/.tmux.conf" \
          "$NEWHOME/.local/bin/delta-theme"; do
@@ -788,8 +791,8 @@ for side in light dark; do
       || die "theming.lua $side.$role does not match the $t roles"
   done
 done
-# herdr: same guarantee, against the managed config -- enforced in the
-# herdr step below (terminal-relative colors: no hex at all).
+# Herdr carries this same terminal palette in native JSON, slot for slot;
+# the desktop setup harness below checks every field against the resolver.
 # pi themes: the SSH guarantee, checked against the resolver's own
 # output instead of restated constants. bg/fg/accents/grey ride the
 # viewing terminal's slots, shades no slot can carry ride the xterm
@@ -1223,10 +1226,10 @@ cat > "$wbin/pi" <<SH
 echo "pi \$*" >> "\$FAKE_PI"
 SH
 chmod +x "$wbin/tmux" "$wbin/pi"
-wrap_zsh() {  # $1 = cwd, $2 = pi args (single-quoted inside the payload)
+wrap_zsh() {  # $1 = cwd, $2 = pi args, $3 = optional retired TUI marker
   env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
       PATH="$wbin:/usr/bin:/bin" FAKE_SESS="$SESS" FAKE_LOG="$TLOG" \
-      FAKE_PI="$PLOG" PI_TMUX_WRAP=force \
+      FAKE_PI="$PLOG" PI_TMUX_WRAP=force HC_TERMINAL_ID= HERDR_ENV="${3:-}" \
       /bin/zsh -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$1' && pi $2" 2>&1
 }
 proj="$WORK/demoproj"; mkdir -p "$proj"
@@ -1260,6 +1263,13 @@ grep -qF 'new-session -s demoproj-2 command pi --use-theme my-theme' "$TLOG" \
   || die "user --use-theme must wrap exactly as given: $(tail -1 "$TLOG")"
 grep -qF 'dotfiles-' "$TLOG" \
   && die "user --use-theme must suppress the detected theme injection"
+# The retired TUI marker no longer bypasses wrapping.
+: > "$TLOG"; : > "$SESS"; : > "$PLOG"
+wrap_zsh "$proj" "" 1 >/dev/null \
+  || die "retired HERDR_ENV marker wrapper run failed"
+grep -qF 'new-session -s demoproj command pi --use-theme dotfiles-dark' "$TLOG" \
+  || die "retired HERDR_ENV marker must not bypass wrapping"
+[[ ! -s "$PLOG" ]] || die "retired TUI marker unexpectedly ran bare pi"
 # 4. guards: all fall through to plain pi, never touching tmux
 guard_plain() {  # $1 = extra env, $2 = pi args
   : > "$TLOG"; : > "$PLOG"
@@ -1272,8 +1282,10 @@ guard_plain() {  # $1 = extra env, $2 = pi args
   [[ ! -s "$TLOG" ]] || die "guard($1 $2): wrapper must not touch tmux"
 }
 guard_plain "TMUX=yes" ""
-guard_plain "HERDR_ENV=1" ""   # inside herdr: structural, beats force --
-                                # herdr must see pi as the pane process
+guard_plain "HC_TERMINAL_ID=t1" ""  # desktop/core: same persistence + visibility
+guard_plain "HC_TERMINAL_ID=t1" "-n 'Desktop Session' --use-theme my-theme"
+[[ "$(cat "$PLOG")" == 'pi -n Desktop Session --use-theme my-theme' ]] \
+  || die "desktop/core guard must preserve pi arguments without injecting a theme"
 guard_plain "" "-p 'quick one'"
 guard_plain "" "--mode json 'hello'"
 guard_plain "" "--help"
@@ -1350,70 +1362,16 @@ out="$(env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
 ok "creates named sessions, never attaches; guards fall through to plain pi;
     pi update triaged: keg-touching refused, package-only passes through"
 
-step "herdr: update refused with the brew path, passthrough intact, config valid"
-# herdr has no package-only update form, so ANY `herdr update` is a
-# self-update against a brew-owned keg: the wrapper refuses before the
-# binary is consulted -- which is why this passes with no herdr installed
-# at all (PATH holds no herdr here). Passthrough is proven with a shim,
-# same trick as the pi wrapper above; CI has no real binary either.
-out="$(env -i HOME="$NEWHOME" TERM=xterm-256color PATH="/usr/bin:/bin" \
-      /bin/zsh -l -i -c 'herdr update' 2>&1)" \
-  && die "herdr update must be refused"
-[[ "$out" == *'brew upgrade herdr'* ]] \
-  || die "herdr update refusal must name the brew path: $out"
-shim="$WORK/herdr-shim"; mkdir -p "$shim"
-printf '#!/bin/sh\necho "HERDR-SHIM:$*"\n' > "$shim/herdr"
-chmod +x "$shim/herdr"
-# PATH is re-pinned INSIDE the -c command: the login shell's .zprofile
-# rebuilds PATH ahead of the shim (same trick as the pi wrapper test).
-out="$(env -i HOME="$NEWHOME" TERM=xterm-256color \
-      PATH="$shim:/usr/bin:/bin" \
-      /bin/zsh -l -i -c "PATH='$shim:/usr/bin:/bin'; herdr status client" 2>/dev/null)"
-# Substring match: the login shell's greeting (and whatever .zshrc prints
-# while the REAL path is still live) precedes the -c body in $out.
-[[ "$out" == *'HERDR-SHIM:status client'* ]] \
-  || die "herdr passthrough broken -- shim saw: $out"
-# The managed config is the server's own grammar: validate it with the
-# formula's checker when the machine has one. (herdr config check also
-# passes on a MISSING config, so the file's existence is asserted above,
-# in the applied-files loop.)
-if command -v herdr >/dev/null 2>&1; then
-  HERDR_CONFIG_PATH="$NEWHOME/.config/herdr/config.toml" herdr config check >/dev/null \
-    || die "herdr config check rejected the rendered config"
-fi
-# Terminal-relative colors, per docs/developing.md's SSH rule: herdr's
-# `terminal` theme paints from the rendering terminal's own palette, so
-# over SSH the TUI follows the viewer like the prompt and pi. A hex here
-# would pin the Mac's palette onto whatever terminal renders it.
-grep -qE '#[0-9a-fA-F]{6}' "$NEWHOME/.config/herdr/config.toml" \
-  && die "herdr config must carry no hex colors (terminal theme, viewer's palette)"
-grep -qF 'name = "terminal"' "$NEWHOME/.config/herdr/config.toml" \
-  || die 'herdr theme must be the terminal-following built-in'
-# The documented update policy: brew owns the version, so background
-# checks stay off (config check above accepts either boolean -- this is
-# the assertion that actually pins the policy).
-grep -qF 'onboarding = false' "$NEWHOME/.config/herdr/config.toml" \
-  || die "herdr onboarding must stay off (the config exists from first apply)"
-grep -qF 'version_check = false' "$NEWHOME/.config/herdr/config.toml" \
-  || die "herdr background version checks must stay off (brew owns upgrades)"
-grep -qF 'manifest_check = false' "$NEWHOME/.config/herdr/config.toml" \
-  || die "herdr manifest checks must stay off (brew owns upgrades)"
-# The ctrl+alt chords drive the SIDEBAR: j/k move the agents highlight,
-# h/l step across spaces. They deliberately do not drive pane focus --
-# workspaces hold one pane each, so pane-focus chords would be silent
-# no-ops, and herdr config check accepts either action, so pin the intent.
-grep -qF 'previous_agent = "ctrl+alt+k"' "$NEWHOME/.config/herdr/config.toml" \
-  || die "herdr ctrl+alt+k must drive previous_agent (sidebar up)"
-grep -qF 'next_agent = "ctrl+alt+j"' "$NEWHOME/.config/herdr/config.toml" \
-  || die "herdr ctrl+alt+j must drive next_agent (sidebar down)"
-grep -qF 'previous_workspace = "ctrl+alt+h"' "$NEWHOME/.config/herdr/config.toml" \
-  || die "herdr ctrl+alt+h must drive previous_workspace"
-grep -qF 'next_workspace = "ctrl+alt+l"' "$NEWHOME/.config/herdr/config.toml" \
-  || die "herdr ctrl+alt+l must drive next_workspace"
-grep -qE 'focus_pane_[a-z]+ = .*ctrl\+alt' "$NEWHOME/.config/herdr/config.toml" \
-  && die "herdr ctrl+alt must not drive pane focus (no-op with one pane per workspace)"
-ok "herdr update refused with the brew path; passthrough intact; config check ok;
-    terminal-relative colors, update checks off, ctrl+alt drives the sidebar"
+step "Herdr desktop: generated palettes, appearance, migration boundaries"
+[[ ! -e "$NEWHOME/.config/herdr/config.toml" ]] || die "legacy TUI config installed"
+[[ ! -e "$NEWHOME/.pi/agent/extensions/herdr-agent-state.ts" ]] \
+  || die "legacy TUI integration installed"
+fresh_zsh '(( ! ${+functions[herdr]} ))' >/dev/null \
+  || die "legacy herdr shell wrapper still defined"
+python3 "$SOURCE/scripts/test-herdr-setup.py" "$NEWHOME" \
+  || die "desktop Herdr setup harness failed"
+ok "desktop cask + shared palettes/system/pins; no legacy wrapper/config/integration;
+    upgrade preserves user/runtime data and imports exclude app/core state"
 
 step "tmux_wrap setting: on leaves the env alone, off defaults it to never"
 # settings.toml (repo root) carries tmux_wrap = on|off. The committed value
@@ -1465,11 +1423,14 @@ grep -qF 'PI_THEME_PINNED="dark"' "$pinnedhome/.zshrc" \
   || die 'theme=dark must render PI_THEME_PINNED="dark" into ~/.zshrc'
 [[ "$(sed -n 's/.*"theme": "\([^"]*\)".*/\1/p' "$pinnedhome/.pi/agent/settings.json")" == "dotfiles-dark" ]] \
   || die "theme=dark: pi settings.json must carry the single dark theme"
-# herdr does not vary with the appearance pin at all: the terminal theme
-# follows the viewing terminal, so the pinned render is byte-identical to
-# the system-mode one.
-cmp -s "$NEWHOME/.config/herdr/config.toml" "$pinnedhome/.config/herdr/config.toml" \
-  || die "theme=dark: herdr config must not vary with the appearance setting"
+# Herdr pins appearance but always renders the same pair of palette files.
+grep -qF '"appearance": "dark"' "$pinnedhome/.config/herdr-app/settings.json" \
+  || die "theme=dark: Herdr appearance is not pinned"
+for side in light dark; do
+  cmp -s "$NEWHOME/.config/herdr-app/themes/dotfiles-$side.json" \
+    "$pinnedhome/.config/herdr-app/themes/dotfiles-$side.json" \
+    || die "theme=dark: Herdr $side palette must not change with the mode"
+done
 grep -qF ': ${PI_TMUX_WRAP:=never}' "$pinnedhome/.zshrc" \
   && die "tmux_wrap=on must stay silent even when the theme is pinned"
 : > "$TLOG"; : > "$SESS"; : > "$PLOG"
@@ -1485,7 +1446,7 @@ grep -qF -- '--use-theme' "$TLOG" \
 ! grep -qF 'PI_THEME_PINNED=' "$NEWHOME/.zshrc" \
   || die "theme=system (committed) must not render a pin into ~/.zshrc"
 ok "pin renders, wraps without --use-theme; system mode stays unpinned;
-    herdr's config is byte-identical across appearance modes"
+    Herdr appearance is pinned with both palettes unchanged"
 
 step "chezmoi-runbook skill: project-local, linked to the live runbook"
 SKILL="$SOURCE/.agents/skills/chezmoi-runbook/SKILL.md"

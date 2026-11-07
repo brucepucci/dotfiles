@@ -29,9 +29,10 @@ closing the terminal and can be rejoined from any device. The session dies
 when pi exits, so `tmux ls` is exactly the live conversations. Full
 walkthrough in [tmux.md](tmux.md); the wrapper's own rules:
 
-> **The herdr exception:** inside a [herdr](herdr.md) pane the wrapper
-> stands down and pi runs bare — herdr is the detachable-session layer
-> there, and its agent sidebar only sees pi running directly in a pane.
+> **The Herdr exception:** inside a [Herdr](herdr.md) desktop/core
+> terminal the wrapper stands down and pi runs bare. Core owns terminal
+> persistence; Pi's native OSC 7501 status reports need a direct path to
+> core, without tmux. No legacy integration extension is needed.
 > Everything below describes the tmux path.
 
 - **Never attaches.** Rejoining is explicitly `tmux attach -t <name>` —
@@ -41,9 +42,9 @@ walkthrough in [tmux.md](tmux.md); the wrapper's own rules:
   `auth-refactor`, which pi also keeps as its conversation display name.
   An explicit topic that's already live is refused with the rejoin command.
 - **Falls through to bare pi** (no session spawned) when: already inside
-  tmux, **inside [herdr](herdr.md)** (`HERDR_ENV=1` — herdr is the
-  persistence layer in its own panes, and its agent detection must see
-  pi, not a tmux client), tmux isn't installed, not on a tty (unless
+  tmux, **inside [Herdr](herdr.md)** (nonempty `HC_TERMINAL_ID`, even with
+  `PI_TMUX_WRAP=force`; an empty marker does not bypass wrapping),
+  tmux isn't installed, not on a tty (unless
   `PI_TMUX_WRAP=force`),
   the cwd is `$HOME` (a home directory is not a project name), or the
   invocation is one-shot — any of `-h/--help -v/--version -p/--print
@@ -67,7 +68,9 @@ walkthrough in [tmux.md](tmux.md); the wrapper's own rules:
 
 Knobs: `tmux_wrap = "off"` in `settings.toml` disables wrapping for the
 whole machine (rendered as a `PI_TMUX_WRAP=never` default in `~/.zshrc`);
-the env var still wins per shell (`never`, or `force` for one run).
+the env var still wins per shell (`never`, or `force` for one run), except
+that a core terminal always runs Pi bare. The legacy `HERDR_ENV` marker
+no longer bypasses wrapping.
 
 ## The theme probe (why the wrapper asks the terminal)
 
@@ -87,8 +90,10 @@ launches pi with `--use-theme dotfiles-<side>`.
   (the session still wraps; only the injection is suppressed).
 
 The generated theme files ride terminal-indexed colors so pi follows the
-viewing terminal even over SSH — the reasoning is in
-[theming.md](theming.md).
+viewing terminal even over SSH. In Herdr desktop, those slots come from
+its generated terminal palette, shared with Ghostty; Herdr also derives
+its native UI from that palette. The xterm-cube, tool-tint, and sparse-theme
+exceptions remain unchanged — see [theming.md](theming.md).
 
 ## settings.json (managed)
 
@@ -344,11 +349,15 @@ These global components are no longer installed; the runbook is now local:
 | Former global chezmoi-runbook skill (now project-local) | `~/.pi/agent/skills/chezmoi-runbook/` |
 | Vendored code review skill (`/skill:code-review-skill`, guides, templates, analyzer) | `~/.pi/agent/skills/code-review-skill/` |
 | Package-update prompt extension (`/update-pi-packages`, startup package checks) | `~/.pi/agent/extensions/package-update-prompt.ts` |
+| Legacy Herdr TUI state reporter (Pi 1.5 reports status natively to core) | `~/.pi/agent/extensions/herdr-agent-state.ts` |
 
 `.chezmoiremove` removes these exact targets on existing installs; fresh
 installs receive none of these global copies. Other user skills and extensions
 are left alone, as is the repo-local runbook. Restart Pi or run `/reload`
-after applying to refresh discovery and unload the removed extension.
+after applying to refresh discovery and unload removed extensions.
+The legacy Herdr config is also retired; its runtime/state stays untouched.
+See [Herdr migration](herdr.md#migrate-from-the-legacy-tui) before stopping
+or uninstalling the old TUI.
 The provider-usage and title-screen extensions and permission-system package
 remain globally configured; the runbook is only available in this repo.
 

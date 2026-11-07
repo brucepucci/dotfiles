@@ -25,9 +25,11 @@ cross-agent convention). The two should not drift apart; update both.
    silent, dead LSP once already. `pcall` is fine where failure is
    genuinely expected (`vim.treesitter.start` on a filetype with no
    parser).
-4. **One package manager for binaries: Homebrew.** Language servers come
-   from the Brewfile, never Mason. Everything installable is visible in
-   one reviewable file.
+4. **Homebrew where available.** Language servers come from the Brewfile,
+   never Mason. Herdr desktop uses the `herdr-app` cask; core has no formula
+   and requires the app's explicit first-launch **Install it for me** step.
+   Ongoing app/core updates use the vendor UI (the cask auto-updates).
+   Apply never runs a backend installer. See [herdr.md](herdr.md).
 5. **Prefer built-ins.** Neovim 0.12 already provides commenting,
    LSP keymaps, and the LSP framework. Don't add plugins for those. The
    "used to be plugins" table in the in-editor tools doc
@@ -63,7 +65,11 @@ scripts/smoke-test.sh      # ~1s; after EVERY change
 ```
 
 `chezmoi doctor` diagnoses chezmoi itself when something's odd;
-`chezmoi managed` lists what's tracked.
+`chezmoi managed` lists what's tracked. `chezmoi cd` uses the configured
+source (normally `~/.local/share/chezmoi`), not necessarily your current
+checkout. For a separate checkout such as `/Users/bp/gh/dotfiles`, use
+`chezmoi --source=/Users/bp/gh/dotfiles diff` and the matching `apply`;
+run its local scripts from that checkout. No global source change is needed.
 
 ## chezmoi source naming (the part that bites)
 
@@ -119,14 +125,20 @@ the result the way real sessions do. It covers:
   shape only, no tmux binary needed)
 - the pi→tmux wrapper with fake tmux+pi shims (creates named sessions,
   never attaches, probe fallbacks, all the fall-through guards — including
-  bare pi inside herdr panes, `HERDR_ENV=1`, even under `PI_TMUX_WRAP=force`)
-- the herdr() wrapper (any `herdr update` refused with the brew path
-  before the binary is consulted, passthrough via shim) and herdr's managed
-  config: `herdr config check` accepts it when the formula is present, it
-  carries no hex at all (terminal-following theme — the SSH rule), the
-  update policy is pinned (`version_check`/`manifest_check` off), the
-  ctrl+alt chords drive the sidebar (agents/spaces — deliberately not
-  pane focus), and it renders byte-identical across appearance modes
+  bare pi inside Herdr desktop/core terminals (nonempty `HC_TERMINAL_ID`),
+  even under `PI_TMUX_WRAP=force`; an empty marker still wraps, bypass
+  preserves pi arguments, and legacy `HERDR_ENV` no longer bypasses)
+- Herdr desktop migration: the Brewfile selects cask `herdr-app`, not the
+  legacy formula; no `herdr()` wrapper remains; fresh and upgrade applies
+  render telemetry off and app appearance/theme selection, remove the exact
+  legacy config/Pi reporter, and preserve app keys, runtime/layout state,
+  unrelated themes, and core configuration. Imports allowlist only settings
+  and the two generated themes, never the whole themes directory.
+- Herdr theme rendering: system mode plus both pins; exact background,
+  foreground, cursor, selection background, and ANSI 0–15 parity with
+  Ghostty; custom/sparse themes and theme-swap regeneration.
+  Offline tests do not prove interactive core onboarding or live OSC 7501
+  reporting; verify those manually in the app
 - `tmux_wrap` on/off rendering (second apply against a flipped settings
   file via `DOTFILES_SETTINGS_FILE`)
 - the shell integrations' shape (fzf/autosuggestions/syntax-highlighting
@@ -243,6 +255,28 @@ to the pinned revisions.
 Add it to `Brewfile` under the right section with a comment. The Brewfile
 is documentation as much as machinery — someone (you, later) should be
 able to read why each line exists.
+
+### Herdr desktop/core changes
+
+Use [herdr.md](herdr.md) for installation and legacy TUI migration. Manage
+`~/.config/herdr-app/settings.json` (telemetry off + appearance/theme pair)
+and exactly `themes/dotfiles-{light,dark}.json`. Both native themes use the
+same resolved terminal palettes as Ghostty, with Herdr deriving the UI.
+`settings.toml` remains the single appearance input. Keep app keys, other
+themes, core config, and runtime/layout state unmanaged; never allowlist the
+whole themes directory. GUI preference writes are replaced by apply; fold
+preferences worth keeping into the template deliberately. Layout-local
+theme/color overrides can take precedence: use the default main layout to
+follow repo themes, preserving geometry and runtime state. Core's default
+login shell is sufficient. Pi 1.5 reports OSC 7501 natively; tmux
+blocks its handshake and reports, so nonempty `HC_TERMINAL_ID` bypasses
+wrapping even under `PI_TMUX_WRAP=force`. No legacy state extension is needed.
+
+Migration stops the old daemon only after the user has checked and finished
+live sessions, then explicitly uninstalls the old formula. Apply only removes
+`~/.config/herdr/config.toml` and the legacy Pi reporter; it never stops
+services, uninstalls software, or deletes runtime directories. App closing
+leaves core terminals alive; reboot recovery restores kept shells, not agents.
 
 ### Change how things look
 Edit `settings.toml` at the repo root (theme names are the file names of
@@ -404,7 +438,11 @@ see [theming.md](theming.md). Contributor-facing summary:
   (rooted in iTerm2-Color-Schemes, refreshed by
   `scripts/themes-sync.sh`) — no network, no Ghostty install needed.
   New themes work by syncing the mirror and typing their name.
-- New surfaces follow the SSH rule: render in terminal-indexed colors
+- Herdr desktop themes map the same resolved background, foreground,
+  cursor, selection background, and ANSI 0–15 as Ghostty; Herdr derives its
+  UI from them. System mode omits `appearance` for live OS following;
+  pinned modes set it explicitly. No independent palette/theme input.
+- New SSH-facing surfaces follow the SSH rule: render in terminal-indexed colors
   (0–15) so the *viewing* terminal resolves them; the xterm cube (16–255)
   only for shades every terminal renders identically; live hexes only
   where the cube has no honest match (and the smoke test must learn about

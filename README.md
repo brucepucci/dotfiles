@@ -2,7 +2,7 @@
 
 A chezmoi-managed terminal setup for an **agent-first** workflow: Neovim is
 the bulk of it, plus the one zsh shell every terminal and SSH session
-shares, Ghostty, git tooling (delta, lazygit), tmux, herdr, and the
+shares, Ghostty, git tooling (delta, lazygit), tmux, Herdr desktop/core, and the
 [pi](https://github.com/earendil-works/pi) coding agent, using GPT-6 Sol
 with high reasoning through ChatGPT/Codex by default, with Z.ai's GLM
 models available as an alternative. Built around a simple reality: most code
@@ -31,10 +31,10 @@ New to the repo? Each tool has its own page in [docs/](docs/):
 | Neovim | [docs/nvim.md](docs/nvim.md) | structure, all 17 plugins, every keybinding grouped (git/review, finding, windows, LSP, REPL…) |
 | zsh | [docs/zsh.md](docs/zsh.md) | the one-shell design, history, prompt, shell keybindings & aliases, clipboard helpers, the pi wrapper, secrets |
 | Ghostty | [docs/ghostty.md](docs/ghostty.md) | the terminal — appearance, ssh terminfo auto-install, the font, themes generated from this repo's mirror |
-| Colors | [docs/theming.md](docs/theming.md) | the whole palette system: two theme names drive every surface, from a theme mirror committed in the repo |
+| Colors | [docs/theming.md](docs/theming.md) | shared Ghostty/Herdr, terminal, and editor palettes from one committed mirror |
 | tmux + SSH | [docs/tmux.md](docs/tmux.md) | detachable sessions, the phone/SSH workflow, the managed config explained |
 | SSH address book | [docs/ssh.md](docs/ssh.md) | shared Mac host aliases, local credentials, canonical host identities |
-| herdr | [docs/herdr.md](docs/herdr.md) | the agent multiplexer: spaces and panes with a live agents sidebar, pi running bare inside it |
+| Herdr | [docs/herdr.md](docs/herdr.md) | herdr-app desktop + herdr-core backend, native Pi status, legacy TUI migration |
 | Git tooling | [docs/git.md](docs/git.md) | gitconfig, delta, lazygit, gh — the shell side |
 | pi | [docs/pi.md](docs/pi.md) | the coding agent: settings, themes, the tmux wrapper, keys |
 | Maintaining this repo | [docs/developing.md](docs/developing.md) | the developer guide: editing, testing, common tasks, rules |
@@ -76,14 +76,16 @@ The decisions, so future-you doesn't have to re-derive them:
   refuses to load below Neovim 0.12, the theme resolver fails loudly on
   a name the mirror does not hold).
 - **One look everywhere, by construction.** Two theme names in
-  `settings.toml` drive every surface — the terminal, prompt, editor,
+  `settings.toml` drive Ghostty, Herdr desktop, the prompt, editor,
   statusline, diffs, and pi's TUI — resolved at apply time from a theme
   mirror committed inside this repo (rooted in iTerm2-Color-Schemes), so
   theme rendering needs no network and no Ghostty install. Surfaces that travel
   over SSH render in the terminal's indexed color slots so the *viewing*
   terminal decides. Managed files carry no hardcoded hex — the lone
   carve-out is pi's two live-derived tool tints, where the fixed xterm
-  cube has no honest match. See [docs/theming.md](docs/theming.md).
+  cube has no honest match. Herdr derives its native UI from the same
+  terminal palettes as Ghostty; layout-local theme/color overrides can take
+  precedence. See [docs/theming.md](docs/theming.md).
 - **Secrets never enter the repo.** `~/.zsh/secrets.zsh` (unmanaged,
   listed in `.chezmoiignore`) holds the keys; pi's `auth.json` and session
   transcripts are unmanaged too.
@@ -92,9 +94,9 @@ The decisions, so future-you doesn't have to re-derive them:
   via `git log -p` on the lockfile.
 - **tmux only for detachability.** Local windows are Ghostty's job; tmux
   exists so sessions survive disconnects and rejoin from anywhere — and
-  `pi` wraps itself automatically. [herdr](docs/herdr.md) is the same idea
-  one level up for agent work: panes owned by a server, with a live
-  agents sidebar; inside its panes pi runs bare.
+  `pi` wraps itself automatically outside [Herdr](docs/herdr.md). Herdr's
+  desktop app uses core-owned terminals with a live Agents panel; Pi runs
+  bare there so its native status reports reach core.
 
 ## New machine
 
@@ -118,7 +120,7 @@ chezmoi init brucepucci
 # 3. Everything the config needs: Neovim, language servers, ripgrep, fd,
 #    lazygit, delta, tmux, ipython, tree-sitter, the Nerd Font, Ghostty
 #    itself, the shell QoL trio (fzf, zsh-autosuggestions,
-#    zsh-syntax-highlighting), and the pi coding agent
+#    zsh-syntax-highlighting), Herdr desktop, and the pi coding agent
 brew bundle --file="$(chezmoi source-path)/Brewfile"
 
 # 4. Supply the local skill checkout before linking selected skills.
@@ -141,7 +143,11 @@ $EDITOR ~/.zsh/secrets.zsh   # optional ZAI_API_KEY (https://z.ai), GITHUB_TOKEN
 ```
 
 Then open Ghostty and run `nvim` — or `pi` and use `/login` → ChatGPT/Codex
-to authenticate the default provider. Z.ai remains available by setting
+to authenticate the default provider. For Herdr, open the app and click
+**Install it for me** in first-launch onboarding to install core, then
+verify `hc --version`. The cask does not install core; ongoing app/core
+updates use the vendor app's update UI. See [docs/herdr.md](docs/herdr.md).
+Z.ai remains available by setting
 `ZAI_API_KEY` or choosing Z.ai in `/login`. From here on, every change is
 an edit in this repo plus `chezmoi apply`.
 
@@ -179,7 +185,7 @@ non-Homebrew install.
 | `~/.config/ghostty/config` + `~/.config/ghostty/themes/` | The terminal's appearance + ssh terminfo auto-install — nothing shell-related; two theme files generated from the mirror | [ghostty.md](docs/ghostty.md) |
 | `~/.tmux.conf` | Detachable sessions: pi's extended-keys, OSC 52 clipboard, truecolor | [tmux.md](docs/tmux.md) |
 | `~/.ssh/hosts.conf` | Shared outbound aliases and canonical host-key names; no credentials or server authorization | [ssh.md](docs/ssh.md) |
-| `~/.config/herdr/config.toml` | herdr's terminal-following theme + update policy | [herdr.md](docs/herdr.md) |
+| `~/.config/herdr-app/settings.json` + `themes/dotfiles-{light,dark}.json` | Herdr telemetry off, generated native themes + appearance mode; keys/core/runtime unmanaged | [herdr.md](docs/herdr.md) |
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts | [git.md](docs/git.md) |
 | `~/.config/lazygit/config.yml` | delta as lazygit's diff renderer | [git.md](docs/git.md) |
 | `~/.local/bin/delta-theme` | Appearance-aware delta wrapper | [git.md](docs/git.md) |
@@ -195,6 +201,12 @@ It never downloads, copies, or deletes skill content. Edits need only `/reload`;
 selection changes need apply, then `/reload`. `[]` removes all checkout-owned
 links. Other agents using this shared directory see the same selection.
 See [global skills](docs/pi.md#global-skills) for validation and migration.
+
+**Migrating the old Herdr TUI:** only herdr-app + herdr-core remain supported.
+Apply removes the legacy TUI config and Pi state reporter, preserving runtime
+and core/app state; it does not stop daemons or uninstall packages. Finish old
+sessions before manual stop/uninstall. See the
+[deliberate migration steps](docs/herdr.md#migrate-from-the-legacy-tui).
 
 **Upgrading an existing install:** the experimental chezmoi grilling copies,
 vendored code review skill and package-update prompt extension are retired;
@@ -228,8 +240,8 @@ no hex, no per-app themes:
 
 ```toml
 theme = "system"                   # "system" | "light" | "dark"
-light_theme = "Flexoki Light"
-dark_theme = "Kanagawa Wave"
+light_theme = "Paper Crane"
+dark_theme = "Paper Crane: Midnight Ink"
 tmux_wrap = "on"                   # "on" | "off": pi in detachable tmux sessions?
 ```
 
@@ -237,10 +249,11 @@ tmux_wrap = "on"                   # "on" | "off": pi in detachable tmux session
 committed in `themes/` (browse the gallery in
 [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes)'
 README); `theme` picks follow-the-OS vs pinned; `tmux_wrap` is the
-one behavior knob. Edit, `chezmoi diff && chezmoi apply`, and every
-surface follows — the full explanation, including what renders where,
-is in [docs/theming.md](docs/theming.md). The palettes live in this repo, so
-theme rendering needs neither network nor Ghostty. Skill linking uses Python 3
+one behavior knob. Edit, `chezmoi diff && chezmoi apply`, and the themed
+surfaces follow, including Herdr's default main layout; layout theme/color
+overrides can take precedence. See [docs/theming.md](docs/theming.md) for
+what renders where. Palettes live in this repo, so theme rendering needs
+neither network nor installed Ghostty/Herdr. Skill linking uses Python 3
 and the existing local checkout; apply never invokes npx or fetches skills.
 
 ## Editing this config
@@ -283,16 +296,16 @@ The session dies when pi exits, so `tmux ls` lists exactly the live
 conversations. Anything that isn't pi — nvim, a dev server — wraps by
 hand: `tmux new -s work` … `tmux attach -t work`.
 
-**Or from [herdr](docs/herdr.md)** (the agent multiplexer): launch `herdr`
-in a project, open a pane, and type `pi` — it runs bare there (no tmux
-session), herdr's sidebar shows each conversation's live state, and
-`herdr` reattaches from anywhere. Same persistence, agent-aware. Pick one
-home per conversation: tmux (from tabs) or herdr (from its panes) — not
-both layered.
+**Or use [Herdr desktop/core](docs/herdr.md):** open an app terminal and
+type `pi` — it runs bare, and native status reports feed the Agents panel.
+Closing the app leaves core terminals running; reboot recovery restores
+kept shells, not agents. The desktop app is not an SSH TUI: from another
+device use tmux outside the app, or `hc attach <terminal-id>` from a shell
+on the Mac. Pick one persistence layer per conversation, not both layered.
 
 Why this works from anywhere: the SSH session reads the same `~/.zshrc`
-as the desk terminal (same history, same prompt), and the prompt, pi's
-TUI, and herdr's UI all render in the *viewing* terminal's palette — SSH
+as the desk terminal (same history, same prompt), and the prompt and pi's
+TUI render in the *viewing* terminal's palette — SSH
 from a light-mode phone and everything renders light, automatically,
 because the terminal in your hand decides. The pi wrapper even probes the
 connecting terminal for its light/dark side before creating the session,
@@ -320,7 +333,7 @@ config, setting by setting, plus the keys and the SSH setup).
 | Change themes | edit `settings.toml` → `chezmoi apply` |
 | Update plugins | `:Lazy update` → `chezmoi re-add ~/.config/nvim/lazy-lock.json` |
 | List / rejoin pi conversations (from a terminal tab) | `tmux ls` / `tmux a -t <name>` |
-| Open herdr / detach / reattach | `herdr` / `Ctrl-b` `q` / `herdr` — see [docs/herdr.md](docs/herdr.md) |
+| Herdr desktop / core terminal attach | Open Herdr / `hc attach <terminal-id>` — see [docs/herdr.md](docs/herdr.md) |
 | Resume last pi conversation | `pi -c` |
 | In-nvim cheatsheet / keymap search | `<leader>?` / `<leader>fk` |
 | Health check | `:checkhealth`, `:Lazy check` |
@@ -386,6 +399,9 @@ and is unavailable in unrelated projects; it points to AGENTS.md and
   Re-run `chezmoi apply` so every surface re-renders. Hand-tuning a
   palette? Never edit `themes/` (sync replaces it wholesale) — drop a
   same-named file in `themes-local/` and the resolver reads it first.
+- **Herdr** — Homebrew installs `herdr-app`; first-launch onboarding installs
+  core. Use the vendor app/core update UI thereafter. Its auto-updating cask
+  is normally skipped by bulk `brew upgrade`. See [docs/herdr.md](docs/herdr.md).
 - **Homebrew** — `brew bundle --file="$(chezmoi source-path)/Brewfile"`
   reinstalls anything an OS migration dropped; `brew bundle check` (same
   file) reports drift; `brew upgrade` for the rest.

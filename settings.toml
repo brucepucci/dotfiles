@@ -20,28 +20,31 @@
 #                from the phone (`pi -c` still resumes a conversation from
 #                any machine). The env override still wins per machine:
 #                PI_TMUX_WRAP=never for one shell, =force to wrap for one
-#                run despite the setting.
+#                run despite the setting. A nonempty HC_TERMINAL_ID still
+#                runs pi bare: core owns persistence, and tmux blocks status.
 #
-# Every surface this repo manages renders from the two theme names:
+# These themed surfaces render from the two theme names:
 #   Ghostty        the theme itself (light:/dark: pair when theme=system)
 #   zsh prompt     indexed colors 0-15, inherited from the terminal palette
 #   delta/git      diffs in the theme's own ANSI palette (no bat themes)
 #   pi TUI         themes in the palette's own indexed slots -- they follow
 #                  the viewing terminal, even over SSH
 #   nvim + lualine a colorscheme generated from the palette's 16 colors
-#   herdr TUI      herdr's terminal theme: UI colors ride the rendering
-#                  terminal's own ANSI palette and defaults (SSH-honest,
-#                  no hex; the config does not vary with the mode)
+#   Herdr desktop  generated native theme pair: same terminal palettes as
+#                  Ghostty, with UI derived by Herdr; live OS mode or pin
+#                  follows theme above. Default main layout follows these;
+#                  layout-local theme/color overrides can take precedence.
+# App keys, core config, and runtime/layout state remain unmanaged.
 #
 # The names are resolved at apply time against the theme mirror committed
 # in themes/ (a verbatim copy of iTerm2-Color-Schemes' ghostty/ directory,
 # refreshed by scripts/themes-sync.sh), so any mirrored name works and
-# `chezmoi apply` needs no network and no Ghostty install. After editing:
+# `chezmoi apply` needs no network or Ghostty/Herdr install. After editing:
 # `chezmoi diff && chezmoi apply`.
 
 theme = "system"
-light_theme = "Flexoki Light"
-dark_theme = "Kanagawa Wave"
+light_theme = "Paper Crane"
+dark_theme = "Paper Crane: Midnight Ink"
 
 # pi conversations in tmux? on = detachable sessions (the feature), off =
 # bare pi. Rendered into ~/.zshrc at apply time; see the header above.

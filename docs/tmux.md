@@ -33,10 +33,12 @@ pi                   # -> "pi: tmux session \"chezmoi\" (detach Ctrl-b d; rejoin
 tmux a -t chezmoi    # rejoin from ANY terminal: desk, laptop, phone over SSH
 ```
 
-> **Inside [herdr](herdr.md) this does not apply:** there the wrapper
-> stands down and pi runs bare in the herdr pane — herdr is the
-> detachable-session layer in its own panes, and its agents sidebar only
-> sees pi that way. Everything on this page is the Ghostty-tab path.
+> **Inside [Herdr](herdr.md) this does not apply:** the desktop/core
+> terminal marker (`HC_TERMINAL_ID`, nonempty) bypasses wrapping even under
+> `PI_TMUX_WRAP=force`. Core owns those terminals; tmux blocks Pi's native
+> agent-status handshake and reports. Everything below is the outside-app
+> terminal path. For remote core terminals, use `hc attach <terminal-id>`
+> from a shell on the Mac; the desktop app is not an SSH TUI.
 
 - **Naming**: the project directory's basename; a collision mints a
   numbered sibling (`chezmoi-2`, `chezmoi-3`, …); `pi -n "auth refactor"`

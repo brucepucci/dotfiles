@@ -233,7 +233,9 @@ reproduce this one and a bad update bisectable.
 
 ### chezmoi *(CLI)*
 Manages this config as dotfiles. The source of truth is
-`~/.local/share/chezmoi`; `~/.config/nvim` is a build artifact. Edit the source,
+the source checkout (normally `~/.local/share/chezmoi`); `~/.config/nvim` is
+a build artifact. A separate checkout needs explicit `chezmoi --source=<path>`
+for diff/apply. Edit the source,
 then `chezmoi apply`. Per-tool docs live in the repo's `docs/` folder; the
 maintainer's guide is `docs/developing.md`.
 
@@ -250,7 +252,7 @@ layer), OSC 52 clipboard (yanks reach the connecting device), truecolor
 passthrough. Local window management stays Ghostty's job. The full
 walkthrough — daily habit, phone setup, troubleshooting — is in
 [tmux.md](tmux.md); the repo README's "Picking up from another device"
-section is the condensed version. (pi launched inside herdr skips tmux —
+section is the condensed version. (pi launched inside Herdr desktop/core skips tmux —
 see the herdr entry below.)
 
 ### tree-sitter CLI, node *(CLI)*
@@ -272,24 +274,35 @@ defaults come from chezmoi as
 `~/.zsh/secrets.zsh`, in the same place as every other secret; `/login`
 inside pi is an alternative that stores it in `~/.pi/agent/auth.json`.
 
-### herdr *(CLI)*
-The agent manager — a terminal workspace manager for coding agents:
-spaces, tabs, and panes owned by a background server, with an **agents**
-sidebar that shows each pi conversation's live state (working / waiting
-for input). pi runs bare everywhere on this Mac because herdr owns agent
-sessions. Launch it from a project directory with `herdr`; type `pi` in a
-pane; detach with `Ctrl-b` then `q` (everything keeps running on the
-server); reattach with `herdr` — including over SSH. Sidebar navigation
-is prefix-free: `Ctrl–Option (Alt)` + `j`/`k` moves the agents highlight
-down/up, `Ctrl–Option (Alt)` + `h`/`l` steps across spaces, and landing
-on an agent jumps straight to its workspace. Detach is not stopping:
-panes survive the terminal closing and the TUI exiting. What they do not
-survive is a reboot — after one, herdr restores the layout, and with the
-pi integration installed (`herdr integration install pi`, idempotent,
-re-run after herdr upgrades) your pi conversations resume too. `Ctrl-b`
-then `?` lists every key. Config is `~/.config/herdr/config.toml`
-(chezmoi-managed); updates ride `brew upgrade herdr`, never
-`herdr update`.
+### Herdr *(desktop app + core)*
+One stack: `herdr-app`, installed by Homebrew cask, backed by `herdr-core`
+and the `hc` CLI. First launch requires clicking **Install it for me** to
+install core, then verify `hc --version`; there is no core Homebrew formula.
+Ongoing app/core updates use the vendor app UI, not a brew-only policy.
+
+Open an app terminal and type `pi`. A nonempty `HC_TERMINAL_ID` skips tmux
+even under `PI_TMUX_WRAP=force`; Pi 1.5's native OSC 7501 reports reach the
+Agents panel without an extension. Outside core terminals, normal pi→tmux
+wrapping remains. tmux blocks core's status handshake and reports.
+
+Closing the app leaves core terminals running. Reboot recovery restores
+kept shells, not agents; resume Pi explicitly with `pi -c` or `pi -r`.
+For remote work use tmux outside the app, or `hc attach <terminal-id>` from
+a shell on the Mac — the desktop app is not an SSH TUI.
+
+`~/.config/herdr-app/settings.json` manages telemetry off and appearance;
+`themes/dotfiles-{light,dark}.json` are generated from the same terminal
+palettes as Ghostty, with Herdr deriving its UI. Change the repo's
+`settings.toml`, then apply: system mode follows the OS live, pins set app
+appearance explicitly. Pi follows the viewing Herdr terminal's indexed slots.
+Use the default main layout; layout-local theme/color overrides can take
+precedence. Apply leaves layout geometry/runtime alone. App keys, other
+themes, and core config/state remain unmanaged; GUI preference changes need
+folding into the source template to survive apply.
+The old TUI, shell wrapper, config, and Pi integration are retired; apply
+removes only the legacy config/reporter, never runtime directories or live
+processes. For deliberate stop/uninstall steps, see the source repo's
+`docs/herdr.md`.
 
 ---
 

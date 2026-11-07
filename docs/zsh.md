@@ -1,7 +1,7 @@
 # zsh — the one shell
 
 **One shell everywhere** is a load-bearing design decision. Every terminal
-on this machine — Ghostty, Terminal.app, iTerm2 — and every SSH session
+on this machine — Ghostty, Herdr desktop/core, Terminal.app, iTerm2 — and every SSH session
 logging in from anywhere reads the same three files. The prompt looks the
 same, history is shared live, and there is exactly one obvious place to
 change shell behavior. oh-my-zsh and powerlevel10k are gone; what they
@@ -14,7 +14,7 @@ wasn't wanted.
 | Source file | Installs to | Job |
 |---|---|---|
 | `dot_zprofile` | `~/.zprofile` | login-shell PATH: Homebrew + `~/.local/bin` |
-| `dot_zshrc.tmpl` | `~/.zshrc` | the interactive half: options, history, completion, keybindings, integrations, aliases, clipboard helpers, the `pi()` and `herdr()` wrappers, secrets, prompt |
+| `dot_zshrc.tmpl` | `~/.zshrc` | the interactive half: options, history, completion, keybindings, integrations, aliases, clipboard helpers, the `pi()` wrapper, secrets, prompt |
 | `private_dot_config/zsh/ps1.zsh` | `~/.config/zsh/ps1.zsh` | the prompt |
 | `private_dot_config/zsh-ghostty/dot_zshenv` | `~/.config/zsh-ghostty/.zshenv` | legacy redirect guard (see below) |
 
@@ -162,22 +162,20 @@ tmux session that dies when pi exits. Rejoining is deliberately explicit
 (`tmux attach -t <name>`), so `pi` never attaches to a stray session. The
 full story — naming, guards, and the theme probe that decides light/dark
 from the *viewing* terminal before the session exists — is in
-[pi.md](pi.md) and [tmux.md](tmux.md). (Inside [herdr](herdr.md) panes the
-wrapper stands down: pi runs bare there — see [herdr.md](herdr.md).)
+[pi.md](pi.md) and [tmux.md](tmux.md). Inside [Herdr](herdr.md) desktop/core
+terminals a nonempty `HC_TERMINAL_ID` makes Pi run bare, even with
+`PI_TMUX_WRAP=force`; an empty marker does not. The legacy `HERDR_ENV`
+marker no longer bypasses wrapping. Core's default login shell works
+without a custom shell command or managed core config.
 
 Two settings from `settings.toml` render conditionally into this file:
 `tmux_wrap = "off"` becomes a `PI_TMUX_WRAP=never` default, and a pinned
 theme renders `PI_THEME_PINNED` so the wrapper never injects `--use-theme`
 over the pin.
 
-## The `herdr()` wrapper
-
-One trick, same hazard as pi: [herdr](herdr.md) is installed by Homebrew,
-and its own `herdr update` would write into a brew-owned keg. Any
-`herdr update` is refused with the real upgrade path
-(`brew upgrade herdr`); everything else passes through to the binary
-untouched. The managed herdr config turns the background update checks
-off as well, so the seam stays quiet.
+The legacy `herdr()` wrapper is retired. Homebrew installs the desktop
+app cask; the vendor app/core update UI owns ongoing updates. See
+[Herdr installation and migration](herdr.md).
 
 ## Secrets
 
