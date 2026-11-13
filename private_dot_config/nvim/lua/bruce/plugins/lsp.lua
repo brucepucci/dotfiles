@@ -57,7 +57,15 @@ return {
             },
         })
 
-        vim.lsp.enable({ "ruff", "pyright", "lua_ls", "marksman" })
+        -- markdown-oxide needs file-watch registration to track newly created
+        -- notes and resolve links/completions as the workspace changes.
+        vim.lsp.config("markdown_oxide", {
+            capabilities = {
+                workspace = { didChangeWatchedFiles = { dynamicRegistration = true } },
+            },
+        })
+
+        vim.lsp.enable({ "ruff", "pyright", "lua_ls", "markdown_oxide" })
 
         -- Servers are external binaries. A missing one attaches nothing and
         -- says nothing -- removing the pcall(require) guards did not cover this
@@ -67,7 +75,7 @@ return {
             ruff = "ruff",
             pyright = "pyright-langserver",
             lua_ls = "lua-language-server",
-            marksman = "marksman",
+            markdown_oxide = "markdown-oxide",
         }
         local absent = {}
         for server, exe in pairs(exes) do

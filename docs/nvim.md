@@ -168,11 +168,21 @@ below has the details.
 
 **Servers** (from Homebrew, never Mason): `ruff` (Python lint + format),
 `pyright` (Python types), `lua_ls` (Lua — for editing this very config),
-`marksman` (markdown). Ruff's hover is switched off so only pyright answers
+`markdown_oxide` (Markdown links, references, and completion; binary:
+`markdown-oxide`). Ruff's hover is switched off so only pyright answers
 `K`. A missing server produces a warning naming it — silence means they're
 all running. **Formatting has no keybinding on purpose**: auto-format would
 rewrite what an agent just produced and pollute the diff you're reviewing.
 Use `gqip` for a paragraph or `:lua vim.lsp.buf.format()` when wanted.
+
+Markdown uses the Rust-based [markdown-oxide](https://oxide.md), replacing
+Marksman and its end-of-life .NET 9 dependency. Existing installations can
+migrate with `brew install markdown-oxide`, `chezmoi apply`, then
+`brew uninstall marksman`. Homebrew may automatically remove `dotnet@9`
+with it. If the runtime remains installed, check `brew uses --installed dotnet@9`
+before removing it with `brew uninstall dotnet@9` (only when nothing needs it).
+Restart Neovim;
+`:checkhealth vim.lsp` should show `markdown_oxide` attached in a Markdown file.
 
 ### Completion (blink.cmp)
 
