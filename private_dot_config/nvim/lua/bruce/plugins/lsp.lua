@@ -60,6 +60,9 @@ return {
         -- markdown-oxide needs file-watch registration to track newly created
         -- notes and resolve links/completions as the workspace changes.
         vim.lsp.config("markdown_oxide", {
+            -- Keep existing non-Git Marksman workspaces rooted during migration.
+            -- This recognizes the marker, not Marksman's configuration options.
+            root_markers = { ".git", ".obsidian", ".moxide.toml", ".marksman.toml" },
             capabilities = {
                 workspace = { didChangeWatchedFiles = { dynamicRegistration = true } },
             },

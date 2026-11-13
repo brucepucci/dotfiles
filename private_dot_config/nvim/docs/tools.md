@@ -135,6 +135,9 @@ types.
 ### lua-language-server, markdown-oxide *(CLI)*
 Lua (for editing this config) and Markdown. Markdown Oxide provides link
 completion, definitions, and references without Marksman's .NET runtime.
+Managed `~/.config/moxide/settings.toml` preserves `.md` in link completions
+and uses hyphenated heading fragments. Existing `.marksman.toml` files still
+mark workspace roots, but their server-specific settings are not imported.
 
 ### lazydev.nvim
 Teaches lua-language-server about Neovim: its bundled API types load when you

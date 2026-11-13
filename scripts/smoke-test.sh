@@ -128,8 +128,8 @@
 # pyramid (a disposable macOS VM via tart).
 #
 # Usage:  scripts/smoke-test.sh [--nvim]
-#   --nvim   also bootstrap Neovim plugins from scratch in the temp HOME
-#            (~2 min, needs network). Without it the run takes seconds.
+#   --nvim   also restore Neovim plugins and test real Markdown LSP behavior
+#            (~2 min, needs network + markdown-oxide). Without it the run takes seconds.
 #
 # Runs on macOS (the repo's one target). Assertions adapt to what the
 # host has: e.g. EDITOR must fall back to vim when nvim is not resolvable
@@ -193,7 +193,7 @@ for f in .zshrc .zprofile .config/zsh/ps1.zsh \
          .config/herdr-app/settings.json \
          .config/herdr-app/themes/dotfiles-light.json \
          .config/herdr-app/themes/dotfiles-dark.json \
-         .config/nvim/init.lua .zsh/secrets.example.zsh \
+         .config/nvim/init.lua .config/moxide/settings.toml .zsh/secrets.example.zsh \
          .tmux.conf; do
   [[ -f "$NEWHOME/$f" ]] || die "missing $f"
 done
@@ -1188,11 +1188,35 @@ ok "2 commands -> 2 blank lines; clear and empty prompts add none"
 
 if [[ "$WITH_NVIM" == 1 ]]; then
   step "neovim bootstrap from scratch (--nvim)"
-  HOME="$NEWHOME" nvim --headless "+Lazy! restore" +qa >/dev/null 2>&1 \
-    || die "Lazy restore failed"
+  # The skill tests' Git shim rejects network fetches. Plugin restore is the
+  # explicit network-enabled tier; bypass that shim only for these processes.
+  nvim_scratch() {
+    env HOME="$NEWHOME" PATH="$(dirname "$REAL_GIT"):$PATH" \
+      XDG_CONFIG_HOME="$NEWHOME/.config" XDG_DATA_HOME="$NEWHOME/.local/share" \
+      XDG_STATE_HOME="$NEWHOME/.local/state" XDG_CACHE_HOME="$NEWHOME/.cache" \
+      nvim "$@"
+  }
+  nvim_scratch --headless "+Lazy! restore" +qa >"$WORK/lazy-restore.log" 2>&1 \
+    || die "Lazy restore failed: $(<"$WORK/lazy-restore.log")"
   [[ -d "$NEWHOME/.local/share/nvim/lazy" ]] \
     || die "plugins were not installed into the temp HOME"
   ok "plugins restored from lazy-lock.json into pristine HOME"
+
+  step "Markdown LSP: accepted completions and legacy roots (--nvim)"
+  command -v markdown-oxide >/dev/null || die "--nvim requires brew install markdown-oxide"
+  for case in file heading legacy; do
+    DOTFILES_MARKDOWN_CASE="$case" nvim_scratch --headless -n -i NONE \
+      "+lua vim.schedule(function() dofile([[$SOURCE/scripts/test-markdown-lsp.lua]]) end)" \
+      >"$WORK/markdown-lsp.log" 2>&1 \
+      || die "Markdown LSP regression ($case): $(<"$WORK/markdown-lsp.log")"
+    grep -q '^PASS:' "$WORK/markdown-lsp.log" \
+      || die "Markdown LSP test ($case) did not reach its success marker"
+  done
+  ok "accepted file/heading completions navigate; legacy non-Git workspace keeps its root"
+  if ! cmp -s "$SOURCE/private_dot_config/nvim/lazy-lock.json" "$NEWHOME/.config/nvim/lazy-lock.json"; then
+    diff -u "$SOURCE/private_dot_config/nvim/lazy-lock.json" "$NEWHOME/.config/nvim/lazy-lock.json" || true
+    die "Neovim test rewrote scratch lockfile"
+  fi
 fi
 
 step "pi wrapper: new sessions only, named after the project or topic"

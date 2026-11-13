@@ -182,8 +182,15 @@ the result the way real sessions do. It covers:
   the assertion chunk's last statement) and on unexpected stderr —
   skipped where nvim is absent, like the EDITOR fallback
 
-`--nvim` additionally restores plugins in the throwaway HOME (~2 min) for
-plugin-level checks. CI runs tier 1 on `macos-latest` with no Ghostty
+`--nvim` additionally restores plugins in the throwaway HOME (~2 min) and
+requires the Homebrew `markdown-oxide` binary. Its real-LSP regression tests
+(`scripts/test-markdown-lsp.lua`) accept file/heading completion edits and
+snippets, check the resulting Markdown destinations and navigation, and open
+a non-Git `.marksman.toml` workspace from an unrelated working directory.
+Plugin restore is explicitly network-enabled and bypasses the skill tests'
+Git shim only in its Neovim subprocesses; the normal tier stays offline for
+skills. No developer plugins or server settings are copied into the test HOME.
+CI runs tier 1 without `--nvim` on `macos-latest` with no Ghostty
 installed — the theme mirror is committed in the repo, so a green run
 there is the standing proof that apply needs no Ghostty. (The resolver's
 palette input is the mirror and nothing else — tier 1 guards that

@@ -181,8 +181,16 @@ migrate with `brew install markdown-oxide`, `chezmoi apply`, then
 `brew uninstall marksman`. Homebrew may automatically remove `dotnet@9`
 with it. If the runtime remains installed, check `brew uses --installed dotnet@9`
 before removing it with `brew uninstall dotnet@9` (only when nothing needs it).
-Restart Neovim;
-`:checkhealth vim.lsp` should show `markdown_oxide` attached in a Markdown file.
+Restart Neovim; `:checkhealth vim.lsp` should show `markdown_oxide` attached
+in a Markdown file.
+
+`~/.config/moxide/settings.toml` keeps `.md` extensions in completed Markdown
+links and uses hyphenated heading fragments instead of spaces. These are
+Oxide-wide defaults (other editors using Oxide share them); a workspace's
+`.moxide.toml` can override them. `.marksman.toml` remains a recognized root
+marker for existing non-Git workspaces, but its Marksman-specific settings
+are not interpreted by Oxide. New workspaces can use `.moxide.toml`; Git and
+Obsidian roots remain supported.
 
 ### Completion (blink.cmp)
 
