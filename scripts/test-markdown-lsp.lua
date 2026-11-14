@@ -5,7 +5,7 @@ local function run()
     local case = vim.env.DOTFILES_MARKDOWN_CASE or "file"
     assert(vim.tbl_contains({
         "file", "heading", "titlecase", "legacy", "precedence", "crossdir", "relative",
-        "linktext", "reference", "reference-open",
+        "linktext", "reference", "reference-open", "table-linktext", "table-reference",
     }, case), "Unknown Markdown test case: " .. case)
     root = vim.fn.tempname()
     vim.fn.mkdir(root .. "/workspace/docs", "p")
@@ -23,11 +23,15 @@ local function run()
     local target = workspace .. (crossdir and "/target.md" or "/docs/target.md")
     local heading = case == "titlecase" and "Target Heading" or "target heading"
     local reference = case == "reference" or case == "reference-open"
+    local table_case = case == "table-linktext" or case == "table-reference"
     local input = (case == "legacy" or case == "linktext") and "[other](target.md#target-heading)"
         or case == "relative" and "[other](../target.md#target-heading)"
         or reference and (case == "reference-open" and "[other][tar" or "[other][tar]")
         or case == "crossdir" and "[other]()" or "[other](tar)"
-    vim.fn.writefile(reference and {
+    vim.fn.writefile(table_case and {
+        "| Link |", "| --- |", "| [other](target.md#target-heading) |", "| [other][tar] |",
+        "", "[target]: target.md#target-heading",
+    } or reference and {
         input, "", "[target]: target.md#target-heading", "",
         "`[target-inline]: missing.md`", "", "```markdown", "[target-fenced]: missing.md", "```",
     } or { input }, source)
@@ -57,10 +61,10 @@ local function run()
         error("No expected result for " .. method .. ": " .. vim.inspect(last))
     end
 
-    local function definition(character)
+    local function definition(character, row)
         return request("textDocument/definition", {
             textDocument = { uri = vim.uri_from_bufnr(0) },
-            position = { line = 0, character = character or 10 },
+            position = { line = row or 0, character = character or 10 },
         }, function(result)
             local location = result and (result.uri and result or result[1])
             if location and location.targetUri then
@@ -68,7 +72,7 @@ local function run()
             end
             -- didChange/index updates may arrive after the edit was accepted.
             local points_to_heading = case == "heading" or case == "titlecase" or case == "legacy"
-                or case == "relative" or case == "linktext"
+                or case == "relative" or case == "linktext" or case == "table-linktext"
             if location and location.uri == vim.uri_from_fname(target)
                 and (not points_to_heading or location.range.start.line == 2) then
                 return location
@@ -76,6 +80,12 @@ local function run()
         end)
     end
 
+    if case == "table-linktext" then
+        definition(14, 2) -- native destination control
+        definition(5, 2) -- displayed text in the same table cell
+        print("PASS: table inline-link definition from display text and destination")
+        return
+    end
     if case == "linktext" then
         -- Both requests must retain the existing navigation action, without
         -- requiring the user to move from displayed text into its destination.
@@ -126,12 +136,13 @@ local function run()
         return
     end
 
-    local function complete(kind, character, label)
-        local line = vim.api.nvim_get_current_line()
+    local function complete(kind, character, label, row)
+        row = row or 0
+        local line = vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1]
         local candidates
         local item = request("textDocument/completion", {
             textDocument = { uri = vim.uri_from_bufnr(0) },
-            position = { line = 0, character = character or #line - 1 }, -- before the closing delimiter
+            position = { line = row, character = character or #line - 1 }, -- before the closing delimiter
         }, function(result)
             candidates = result and (result.items or result) or {}
             for _, candidate in ipairs(candidates) do
@@ -152,9 +163,40 @@ local function run()
         else
             vim.lsp.util.apply_text_edits({ edit }, bufnr, client.offset_encoding)
         end
-        return vim.api.nvim_get_current_line(), candidates
+        return vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1], candidates
     end
 
+    if case == "table-reference" then
+        local accepted = complete(vim.lsp.protocol.CompletionItemKind.Reference, 13, "target", 3)
+        assert(accepted == "| [other][target] |", "Table reference label was not completed: " .. accepted)
+        assert(vim.api.nvim_buf_get_lines(0, 0, 1, false)[1] == "| Link |", "Completion changed the table header")
+        assert(vim.api.nvim_buf_get_lines(0, 5, 6, false)[1] == "[target]: target.md#target-heading",
+            "Completion changed the reference definition")
+        for _, fixture in ipairs({
+            {
+                lines = { "| Link |", "| --- |", "| `[other][tar]` |", "", "[target]: target.md" },
+                row = 2, character = 14,
+            },
+            {
+                lines = { "```markdown", "| Link |", "| --- |", "| [other][tar] |", "```", "", "[target]: target.md" },
+                row = 3, character = 13,
+            },
+        }) do
+            vim.api.nvim_buf_set_lines(0, 0, -1, false, fixture.lines)
+            local response = client:request_sync("textDocument/completion", {
+                textDocument = { uri = vim.uri_from_bufnr(0) },
+                position = { line = fixture.row, character = fixture.character },
+            }, 2000, 0)
+            assert(response and not response.err, vim.inspect(response))
+            local result = response.result
+            for _, candidate in ipairs(result and (result.items or result) or {}) do
+                assert(candidate.kind ~= vim.lsp.protocol.CompletionItemKind.Reference,
+                    "Table reference completion leaked into code: " .. vim.inspect(candidate))
+            end
+        end
+        print("PASS: table reference-label edits preserve table/definition; code and fenced tables excluded")
+        return
+    end
     if reference then
         local accepted, candidates = complete(vim.lsp.protocol.CompletionItemKind.Reference,
             case == "reference-open" and #vim.api.nvim_get_current_line() or nil)

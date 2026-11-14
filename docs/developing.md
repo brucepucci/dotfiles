@@ -192,8 +192,10 @@ across the link span, with nested display text, Unicode offsets, and
 angle-bracket/relative destinations. Full reference-label completion accepts
 real edits for typed/empty labels with and without a closing bracket, observes
 unsaved definitions, excludes code contexts and fenced/code-shaped definition
-decoys, and rejects invalid multiline edit ranges. These requests go through
-the real client (including the rumdl-only compatibility integration), not a
+decoys, and rejects invalid multiline edit ranges. Table fixtures verify both
+display-text definition and accepted reference-label edits, retaining exclusions
+for code spans in cells and tables inside fenced Markdown. These requests go
+through the real client (including the rumdl-only compatibility integration), not a
 helper's private parsing API. Lowercase and title-cased heading completions are compared with the actual slug function in the pinned preview
 bundle, not the language server's own navigation as an anchor oracle. This
 checks ordinary unique headings, not punctuation/duplicate-heading parity or

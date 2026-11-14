@@ -24,8 +24,11 @@ local function context(params, encoding, completion)
     local probe = completion and math.max(0, col - 1) or col
     local range = { row, probe, row, probe }
     local block = tree:root():named_descendant_for_range(unpack(range))
-    while block and block:type() ~= "inline" do block = block:parent() end
-    -- Never descend into fenced Markdown injections or code blocks.
+    while block and block:type() ~= "inline" and block:type() ~= "pipe_table_cell" do
+        block = block:parent()
+    end
+    -- Admit paragraph/table inline content only from the original block tree;
+    -- never descend into fenced Markdown injections or code blocks.
     if not block then return end
     local inline = parser:children().markdown_inline
     if not inline then return end

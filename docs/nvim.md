@@ -194,10 +194,11 @@ Obsidian, and `.moxide.toml` roots are also recognized; other servers' settings
 are not imported.
 
 A small rumdl-only client integration (`bruce.core.markdown_links`) retains
-navigation from displayed inline-link text by forwarding its destination to
-rumdl. It also completes single-line full reference-link labels from definitions
+navigation from displayed inline-link text in paragraphs and table cells by
+forwarding its destination to rumdl. Both contexts also support completion of
+single-line full reference-link labels from definitions
 in the current buffer, including unsaved definitions, empty labels, and
-unfinished `[text][label` input. Multiline usages pass through to the server
+unfinished `[text][label` input at end of line. Multiline usages pass through to the server
 rather than receiving an invalid cross-line completion edit. It uses Neovim's bundled Markdown trees, not buffer-word guesses or a
 second server. Native nonempty completions win; fallback edits are discarded
 if the buffer changes before the response. Code spans, fenced Markdown, and
