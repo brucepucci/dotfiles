@@ -1,5 +1,0 @@
-# Ordinary Markdown links must include the real file extension (e.g. GitHub).
-include_md_extension_md_link = true
-
-# Use hyphenated heading fragments rather than headings containing spaces.
-heading_slug = true

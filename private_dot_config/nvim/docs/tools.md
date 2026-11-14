@@ -132,12 +132,13 @@ Type checking and hover. Catches "you assigned a str to an int" and gives real
 type information on hover. Runs alongside ruff: ruff owns lint, Pyright owns
 types.
 
-### lua-language-server, markdown-oxide *(CLI)*
-Lua (for editing this config) and Markdown. Markdown Oxide provides link
-completion, definitions, and references without Marksman's .NET runtime.
-Managed `~/.config/moxide/settings.toml` preserves `.md` in link completions
-and uses hyphenated heading fragments. Existing `.marksman.toml` files still
-mark workspace roots, but their server-specific settings are not imported.
+### lua-language-server, rumdl *(CLI)*
+Lua (for editing this config) and Markdown. `rumdl server` provides ordinary
+document-relative link completion, definitions, and references without .NET.
+Its linting and auto-fix are disabled; no formatting/save hook is added.
+Existing `.marksman.toml` files retain priority over nested Git roots, but
+Marksman-specific settings are not imported. Heading anchors match the preview
+for ordinary unique headings; punctuation/duplicate-heading rules can differ.
 
 ### lazydev.nvim
 Teaches lua-language-server about Neovim: its bundled API types load when you

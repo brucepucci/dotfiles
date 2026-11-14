@@ -57,18 +57,18 @@ return {
             },
         })
 
-        -- markdown-oxide needs file-watch registration to track newly created
-        -- notes and resolve links/completions as the workspace changes.
-        vim.lsp.config("markdown_oxide", {
-            -- Keep existing non-Git Marksman workspaces rooted during migration.
-            -- This recognizes the marker, not Marksman's configuration options.
-            root_markers = { ".git", ".obsidian", ".moxide.toml", ".marksman.toml" },
-            capabilities = {
-                workspace = { didChangeWatchedFiles = { dynamicRegistration = true } },
+        -- rumdl resolves ordinary document-relative Markdown links. Keep the
+        -- legacy marker's priority so nested Git roots do not split a workspace.
+        -- Markers select roots; other servers' configuration is not imported.
+        vim.lsp.config("rumdl", {
+            root_markers = { ".marksman.toml", ".rumdl.toml", ".git", ".obsidian", ".moxide.toml" },
+            init_options = {
+                enableLinting = false,
+                enableAutoFix = false,
             },
         })
 
-        vim.lsp.enable({ "ruff", "pyright", "lua_ls", "markdown_oxide" })
+        vim.lsp.enable({ "ruff", "pyright", "lua_ls", "rumdl" })
 
         -- Servers are external binaries. A missing one attaches nothing and
         -- says nothing -- removing the pcall(require) guards did not cover this
@@ -78,7 +78,7 @@ return {
             ruff = "ruff",
             pyright = "pyright-langserver",
             lua_ls = "lua-language-server",
-            markdown_oxide = "markdown-oxide",
+            rumdl = "rumdl",
         }
         local absent = {}
         for server, exe in pairs(exes) do

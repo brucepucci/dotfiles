@@ -183,10 +183,17 @@ the result the way real sessions do. It covers:
   skipped where nvim is absent, like the EDITOR fallback
 
 `--nvim` additionally restores plugins in the throwaway HOME (~2 min) and
-requires the Homebrew `markdown-oxide` binary. Its real-LSP regression tests
-(`scripts/test-markdown-lsp.lua`) accept file/heading completion edits and
-snippets, check the resulting Markdown destinations and navigation, and open
-a non-Git `.marksman.toml` workspace from an unrelated working directory.
+requires the Homebrew `rumdl` binary (0.3.4+ for link completion/navigation).
+Its real-LSP regression tests (`scripts/test-markdown-lsp.lua`) accept file and
+heading completion edits/snippets, resolve accepted paths on disk relative to
+the source document, and navigate existing `../` heading links in both
+directions (definition and references). Lowercase and title-cased heading
+completions are compared with the actual slug function in the pinned preview
+bundle, not the language server's own navigation as an anchor oracle. This
+checks ordinary unique headings, not punctuation/duplicate-heading parity or
+an interactive browser session. Legacy-root fixtures open a non-Git
+`.marksman.toml` workspace from an unrelated directory and verify that a
+nested Git repository does not hide inbound references from its outer workspace.
 Plugin restore is explicitly network-enabled and bypasses the skill tests'
 Git shim only in its Neovim subprocesses; the normal tier stays offline for
 skills. No developer plugins or server settings are copied into the test HOME.

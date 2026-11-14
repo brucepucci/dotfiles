@@ -182,7 +182,7 @@ Added on top:
 | `<leader>/` | Hover — same as `K` |
 
 **Servers:** ruff (lint + format) and Pyright (types) for Python, lua_ls for
-Lua, markdown_oxide for Markdown. Ruff's hover is switched off so only Pyright
+Lua, rumdl for Markdown. Ruff's hover is switched off so only Pyright
 answers `K`. If a server isn't installed you get a warning naming it — silence
 means they're all running.
 

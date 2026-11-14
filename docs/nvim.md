@@ -168,29 +168,39 @@ below has the details.
 
 **Servers** (from Homebrew, never Mason): `ruff` (Python lint + format),
 `pyright` (Python types), `lua_ls` (Lua — for editing this very config),
-`markdown_oxide` (Markdown links, references, and completion; binary:
-`markdown-oxide`). Ruff's hover is switched off so only pyright answers
-`K`. A missing server produces a warning naming it — silence means they're
+`rumdl` (Markdown links, references, and completion; command: `rumdl server`).
+Ruff's hover is switched off so only pyright answers `K`. A missing server
+produces a warning naming it — silence means they're
 all running. **Formatting has no keybinding on purpose**: auto-format would
 rewrite what an agent just produced and pollute the diff you're reviewing.
 Use `gqip` for a paragraph or `:lua vim.lsp.buf.format()` when wanted.
 
-Markdown uses the Rust-based [markdown-oxide](https://oxide.md), replacing
-Marksman and its end-of-life .NET 9 dependency. Existing installations can
-migrate with `brew install markdown-oxide`, `chezmoi apply`, then
-`brew uninstall marksman`. Homebrew may automatically remove `dotnet@9`
-with it. If the runtime remains installed, check `brew uses --installed dotnet@9`
-before removing it with `brew uninstall dotnet@9` (only when nothing needs it).
-Restart Neovim; `:checkhealth vim.lsp` should show `markdown_oxide` attached
-in a Markdown file.
+Markdown uses the Rust-based [rumdl](https://github.com/rvben/rumdl), replacing
+Marksman and its end-of-life .NET 9 dependency. Install with `brew install rumdl`,
+then `chezmoi apply` and restart Neovim. `:checkhealth vim.lsp` should show
+`rumdl` attached in a Markdown file. Remove Marksman with
+`brew uninstall marksman`; Homebrew may automatically remove `dotnet@9` with it.
+If the runtime
+remains installed, check `brew uses --installed dotnet@9` before removing it
+with `brew uninstall dotnet@9` (only when nothing needs it).
 
-`~/.config/moxide/settings.toml` keeps `.md` extensions in completed Markdown
-links and uses hyphenated heading fragments instead of spaces. These are
-Oxide-wide defaults (other editors using Oxide share them); a workspace's
-`.moxide.toml` can override them. `.marksman.toml` remains a recognized root
-marker for existing non-Git workspaces, but its Marksman-specific settings
-are not interpreted by Oxide. New workspaces can use `.moxide.toml`; Git and
-Obsidian roots remain supported.
+rumdl completes document-relative Markdown paths, including `../` links, and
+lowercase heading fragments. Linting and auto-fix are disabled: this migration
+adds navigation/completion, not a new stream of style diagnostics or save-time
+rewrites. Formatting remains explicitly invoked, with no new hook or keymap.
+`.marksman.toml` keeps priority over Git roots, including nested repositories,
+so legacy workspace references retain their scope. `.rumdl.toml`, Git,
+Obsidian, and `.moxide.toml` roots are also recognized; other servers' settings
+are not imported. rumdl's GitHub-style slugs match the unchanged preview for
+ordinary unique headings, but punctuation and duplicate-heading numbering can
+differ. Check those links against the actual preview; no renderer changes or
+custom completion adapter are installed.
+
+For installations of this branch's earlier Oxide version, install rumdl and
+apply as above. `brew uninstall markdown-oxide` is optional if no other editor
+uses it. The old `~/.config/moxide/settings.toml` is no longer managed or read
+by this setup and is deliberately left in place for other Oxide clients.
+Remove it manually only if it is no longer needed.
 
 ### Completion (blink.cmp)
 

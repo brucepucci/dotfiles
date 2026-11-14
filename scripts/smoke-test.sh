@@ -129,7 +129,7 @@
 #
 # Usage:  scripts/smoke-test.sh [--nvim]
 #   --nvim   also restore Neovim plugins and test real Markdown LSP behavior
-#            (~2 min, needs network + markdown-oxide). Without it the run takes seconds.
+#            (~2 min, needs network + rumdl). Without it the run takes seconds.
 #
 # Runs on macOS (the repo's one target). Assertions adapt to what the
 # host has: e.g. EDITOR must fall back to vim when nvim is not resolvable
@@ -193,7 +193,7 @@ for f in .zshrc .zprofile .config/zsh/ps1.zsh \
          .config/herdr-app/settings.json \
          .config/herdr-app/themes/dotfiles-light.json \
          .config/herdr-app/themes/dotfiles-dark.json \
-         .config/nvim/init.lua .config/moxide/settings.toml .zsh/secrets.example.zsh \
+         .config/nvim/init.lua .zsh/secrets.example.zsh \
          .tmux.conf; do
   [[ -f "$NEWHOME/$f" ]] || die "missing $f"
 done
@@ -1203,8 +1203,8 @@ if [[ "$WITH_NVIM" == 1 ]]; then
   ok "plugins restored from lazy-lock.json into pristine HOME"
 
   step "Markdown LSP: accepted completions and legacy roots (--nvim)"
-  command -v markdown-oxide >/dev/null || die "--nvim requires brew install markdown-oxide"
-  for case in file heading legacy; do
+  command -v rumdl >/dev/null || die "--nvim requires brew install rumdl"
+  for case in file heading titlecase legacy precedence crossdir relative; do
     DOTFILES_MARKDOWN_CASE="$case" nvim_scratch --headless -n -i NONE \
       "+lua vim.schedule(function() dofile([[$SOURCE/scripts/test-markdown-lsp.lua]]) end)" \
       >"$WORK/markdown-lsp.log" 2>&1 \
@@ -1212,7 +1212,7 @@ if [[ "$WITH_NVIM" == 1 ]]; then
     grep -q '^PASS:' "$WORK/markdown-lsp.log" \
       || die "Markdown LSP test ($case) did not reach its success marker"
   done
-  ok "accepted file/heading completions navigate; legacy non-Git workspace keeps its root"
+  ok "relative paths resolve on disk; heading anchors match preview; legacy roots retain references"
   if ! cmp -s "$SOURCE/private_dot_config/nvim/lazy-lock.json" "$NEWHOME/.config/nvim/lazy-lock.json"; then
     diff -u "$SOURCE/private_dot_config/nvim/lazy-lock.json" "$NEWHOME/.config/nvim/lazy-lock.json" || true
     die "Neovim test rewrote scratch lockfile"

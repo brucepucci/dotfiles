@@ -1,96 +1,173 @@
 -- Run against an applied config and restored plugins in a disposable HOME.
--- scripts/smoke-test.sh --nvim owns setup; assertion failures must exit nonzero.
-local case = vim.env.DOTFILES_MARKDOWN_CASE or "file"
-assert(case == "file" or case == "heading" or case == "legacy", "Unknown Markdown test case: " .. case)
-local root = vim.fn.tempname()
-vim.fn.mkdir(root .. "/workspace/docs", "p")
-vim.fn.mkdir(root .. "/unrelated", "p")
-root = assert(vim.uv.fs_realpath(root)) -- macOS /var aliases /private/var.
-local workspace = root .. "/workspace"
-if case == "legacy" then
-    vim.fn.writefile({}, workspace .. "/.marksman.toml")
-else
-    vim.fn.mkdir(workspace .. "/.git")
-end
-local source = workspace .. "/docs/source.md"
-local target = workspace .. "/docs/target.md"
-local input = case == "legacy" and "[other](target.md#target-heading)" or "[other](tar"
-vim.fn.writefile({ input }, source)
-vim.fn.writefile({ "Introduction.", "", "## target heading", "", "Target text." }, target)
-
-local function definition(client)
-    local params = {
-        textDocument = { uri = vim.uri_from_bufnr(0) },
-        position = { line = 0, character = 10 },
-    }
-    for _ = 1, 30 do
-        local response = client:request_sync("textDocument/definition", params, 2000, 0)
-        assert(response and not response.err, vim.inspect(response))
-        local result = response.result
-        local location = result and (result.uri and result or result[1])
-        if location then return location end
-        vim.wait(100)
+-- scripts/smoke-test.sh --nvim owns setup; failures must exit nonzero.
+local root
+local function run()
+    local case = vim.env.DOTFILES_MARKDOWN_CASE or "file"
+    assert(vim.tbl_contains({ "file", "heading", "titlecase", "legacy", "precedence", "crossdir", "relative" }, case),
+        "Unknown Markdown test case: " .. case)
+    root = vim.fn.tempname()
+    vim.fn.mkdir(root .. "/workspace/docs", "p")
+    vim.fn.mkdir(root .. "/unrelated", "p")
+    root = assert(vim.uv.fs_realpath(root)) -- macOS /var aliases /private/var.
+    local workspace = root .. "/workspace"
+    if case == "legacy" or case == "precedence" then
+        vim.fn.writefile({}, workspace .. "/.marksman.toml")
+        if case == "precedence" then vim.fn.mkdir(workspace .. "/docs/.git") end
+    else
+        vim.fn.mkdir(workspace .. "/.git")
     end
-    error("No definition for the Markdown link")
-end
+    local source = workspace .. "/docs/source.md"
+    local crossdir = case == "crossdir" or case == "relative"
+    local target = workspace .. (crossdir and "/target.md" or "/docs/target.md")
+    local heading = case == "titlecase" and "Target Heading" or "target heading"
+    local input = case == "legacy" and "[other](target.md#target-heading)"
+        or case == "relative" and "[other](../target.md#target-heading)"
+        or case == "crossdir" and "[other]()" or "[other](tar)"
+    vim.fn.writefile({ input }, source)
+    vim.fn.writefile({ "Introduction.", "", "## " .. heading, "", "Target text." }, target)
+    if case == "precedence" then
+        vim.fn.writefile({ "[inbound](docs/target.md#target-heading)" }, workspace .. "/inbound.md")
+    end
 
-local ok, err = xpcall(function()
     vim.cmd.cd(root .. "/unrelated")
-    vim.cmd.edit(source)
+    vim.cmd.edit(case == "precedence" and target or source)
     assert(vim.wait(15000, function()
-        return #vim.lsp.get_clients({ bufnr = 0, name = "markdown_oxide" }) == 1
-    end), "Markdown Oxide did not attach")
-    local client = vim.lsp.get_clients({ bufnr = 0, name = "markdown_oxide" })[1]
+        return #vim.lsp.get_clients({ bufnr = 0 }) == 1
+    end), "Markdown language server did not attach")
+    local client = vim.lsp.get_clients({ bufnr = 0 })[1]
     assert(client.root_dir == workspace, "Lost Markdown workspace root: " .. tostring(client.root_dir))
-    if case == "legacy" then
-        local location = definition(client)
-        assert(location.uri == vim.uri_from_fname(target), vim.inspect(location))
-        assert(location.range.start.line == 2, "Definition did not reach the target heading")
-        print("PASS: legacy Marksman workspace navigation from an unrelated directory")
+
+    local function request(method, params, select)
+        local last
+        for _ = 1, 30 do
+            local response = client:request_sync(method, params, 2000, 0)
+            assert(response and not response.err, vim.inspect(response))
+            last = response.result
+            local selected = select(last)
+            if selected then return selected end
+            vim.wait(100)
+        end
+        error("No expected result for " .. method .. ": " .. vim.inspect(last))
+    end
+
+    local function definition()
+        return request("textDocument/definition", {
+            textDocument = { uri = vim.uri_from_bufnr(0) },
+            position = { line = 0, character = 10 },
+        }, function(result)
+            local location = result and (result.uri and result or result[1])
+            if location and location.targetUri then
+                location = { uri = location.targetUri, range = location.targetSelectionRange }
+            end
+            -- didChange/index updates may arrive after the edit was accepted.
+            local points_to_heading = case == "heading" or case == "titlecase" or case == "legacy" or case == "relative"
+            if location and location.uri == vim.uri_from_fname(target)
+                and (not points_to_heading or location.range.start.line == 2) then
+                return location
+            end
+        end)
+    end
+
+    if case == "precedence" then
+        request("textDocument/references", {
+            textDocument = { uri = vim.uri_from_bufnr(0) },
+            position = { line = 2, character = 5 },
+            context = { includeDeclaration = false },
+        }, function(result)
+            for _, ref in ipairs(result or {}) do
+                if ref.uri == vim.uri_from_fname(workspace .. "/inbound.md") then return ref end
+            end
+        end)
+        print("PASS: legacy root takes precedence over nested Git; inbound reference found")
         return
     end
-    local params = {
-        textDocument = { uri = vim.uri_from_bufnr(0) },
-        position = { line = 0, character = 11 },
-    }
-    local completion
-    for _ = 1, 30 do
-        local response = client:request_sync("textDocument/completion", params, 2000, 0)
-        assert(response and not response.err, vim.inspect(response))
-        local items = response.result and (response.result.items or response.result) or {}
-        for _, item in ipairs(items) do
-            local wanted = case == "file" and vim.lsp.protocol.CompletionItemKind.File
-                or vim.lsp.protocol.CompletionItemKind.Reference
-            if item.kind == wanted and item.label:match("^target") then
-                completion = item
-                break
-            end
+    if case == "legacy" or case == "relative" then
+        local location = definition()
+        assert(location.uri == vim.uri_from_fname(target), vim.inspect(location))
+        assert(location.range.start.line == 2, "Definition did not reach the target heading")
+        if case == "relative" then
+            vim.cmd.edit(target)
+            request("textDocument/references", {
+                textDocument = { uri = vim.uri_from_bufnr(0) },
+                position = { line = 2, character = 5 },
+                context = { includeDeclaration = false },
+            }, function(result)
+                for _, ref in ipairs(result or {}) do
+                    if ref.uri == vim.uri_from_fname(source) then return ref end
+                end
+            end)
         end
-        if completion then break end
-        vim.wait(100)
+        print("PASS: " .. case .. " link navigation/references from an unrelated directory")
+        return
     end
-    assert(completion, "No completion for target.md")
-    -- Accept the server's edit/snippet, rather than just checking its label.
-    local edit = assert(completion.textEdit)
-    vim.lsp.util.apply_text_edits(
-        { { range = edit.range, newText = "" } }, vim.api.nvim_get_current_buf(), client.offset_encoding
-    )
-    vim.api.nvim_win_set_cursor(0, { edit.range.start.line + 1, edit.range.start.character })
-    vim.snippet.expand(edit.newText)
-    vim.snippet.stop()
-    local accepted = vim.api.nvim_get_current_line()
-    local expected = case == "file" and "[other](target.md)" or "[other](target.md#target-heading)"
-    assert(accepted == expected, "Non-portable accepted completion: " .. accepted)
-    local location = definition(client)
-    assert(location.uri == vim.uri_from_fname(target), "Accepted completion does not navigate")
-    if case == "heading" then
-        assert(location.range.start.line == 2, "Accepted heading completion did not reach its heading")
+
+    local function complete(kind)
+        local line = vim.api.nvim_get_current_line()
+        local item = request("textDocument/completion", {
+            textDocument = { uri = vim.uri_from_bufnr(0) },
+            position = { line = 0, character = #line - 1 }, -- immediately before ')'
+        }, function(result)
+            for _, candidate in ipairs(result and (result.items or result) or {}) do
+                local is_target = vim.fs.basename(candidate.label):gsub("%.md$", "") == "target"
+                if candidate.kind == kind and (kind ~= vim.lsp.protocol.CompletionItemKind.File or is_target) then
+                    return candidate
+                end
+            end
+        end)
+        local edit = assert(item.textEdit)
+        local bufnr = vim.api.nvim_get_current_buf()
+        if item.insertTextFormat == vim.lsp.protocol.InsertTextFormat.Snippet then
+            vim.lsp.util.apply_text_edits({ { range = edit.range, newText = "" } }, bufnr, client.offset_encoding)
+            vim.api.nvim_win_set_cursor(0, { edit.range.start.line + 1, edit.range.start.character })
+            vim.snippet.expand(edit.newText)
+            vim.snippet.stop()
+        else
+            vim.lsp.util.apply_text_edits({ edit }, bufnr, client.offset_encoding)
+        end
+        return vim.api.nvim_get_current_line()
+    end
+
+    -- Accept real protocol edits, rather than checking only suggestion labels.
+    local accepted = complete(vim.lsp.protocol.CompletionItemKind.File)
+    local destination = assert(accepted:match("^%[other%]%(([^)]+)%)$"), accepted)
+    assert(vim.uv.fs_realpath(vim.fs.dirname(source) .. "/" .. destination) == target,
+        "Accepted completion does not name the actual file relative to its source: " .. accepted)
+    local expected_path = case == "crossdir" and "../target.md" or "target.md"
+    assert(destination == expected_path, "Non-portable accepted completion: " .. accepted)
+    if case == "heading" or case == "titlecase" then
+        vim.api.nvim_buf_set_lines(0, 0, -1, false, { "[other](" .. destination .. "#)" })
+        accepted = complete(vim.lsp.protocol.CompletionItemKind.Reference)
+        -- Evaluate the actual slug function used by the pinned preview bundle,
+        -- rather than using this language server as its own anchor oracle.
+        local bundles = vim.fn.glob(vim.fn.stdpath("data")
+            .. "/lazy/markdown-preview.nvim/app/out/_next/static/*/pages/index.js", false, true)
+        assert(#bundles == 1, "Expected one pinned preview bundle")
+        local js = [[
+            const fs = require('node:fs');
+            const vm = require('node:vm');
+            const bundle = fs.readFileSync(process.argv[1], 'utf8');
+            const slug = bundle.match(/\.defaults=\{level:1,slugify:(function\([^)]*\)\{return [^}]+\})/);
+            if (!slug) throw new Error('Pinned preview slug function not found');
+            process.stdout.write(vm.runInNewContext('(' + slug[1] + ')(heading)',
+                { heading: process.argv[2] }, { timeout: 1000 }));
+        ]]
+        local rendered = vim.system({ "node", "-e", js, bundles[1], heading }, { text = true }):wait()
+        assert(rendered.code == 0, rendered.stderr)
+        assert(rendered.stdout == "target-heading", "Unexpected preview anchor: " .. rendered.stdout)
+        assert(accepted == "[other](target.md#" .. rendered.stdout .. ")",
+            "Completion does not match the preview's rendered heading anchor: " .. accepted)
+    end
+    local location = definition()
+    assert(location.uri == vim.uri_from_fname(target), "Accepted completion does not navigate: " .. vim.inspect(location))
+    if case == "heading" or case == "titlecase" then
+        assert(location.range.start.line == 2, "Accepted completion did not reach its heading")
     end
     print("PASS: portable accepted Markdown " .. case .. " completion")
-end, debug.traceback)
+end
 
+local ok, err = xpcall(run, debug.traceback)
 for _, client in ipairs(vim.lsp.get_clients()) do client:stop(true) end
-vim.fn.delete(root, "rf")
+if root then vim.fn.delete(root, "rf") end
 if not ok then
     vim.api.nvim_err_writeln(err)
     vim.cmd("cquit 1")
