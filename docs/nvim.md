@@ -205,6 +205,14 @@ if the buffer changes before the response. Code spans, fenced Markdown, and
 code-shaped definition decoys are excluded. Request IDs/cancellation, existing
 keymaps, and other clients are unchanged.
 
+Reference requests from a defined label or its link discover document-local
+full, shortcut, collapsed, and table usages, respecting `includeDeclaration`.
+Matching uses label IDs, not shared destination URLs, with whitespace
+normalization and Unicode casefolding. ASCII-only IDs stay in Lua; Unicode
+IDs are folded in one batch with the existing Python 3 standard library
+(no additional package). Ordinary file/heading references remain server-owned.
+Code/fenced usages and stale changed-buffer results are not synthesized.
+
 rumdl's GitHub-style slugs match the unchanged preview for
 ordinary unique headings, but punctuation and duplicate-heading numbering can
 differ. Check those links against the actual preview; no renderer changes

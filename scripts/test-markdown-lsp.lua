@@ -5,7 +5,7 @@ local function run()
     local case = vim.env.DOTFILES_MARKDOWN_CASE or "file"
     assert(vim.tbl_contains({
         "file", "heading", "titlecase", "legacy", "precedence", "crossdir", "relative",
-        "linktext", "reference", "reference-open", "table-linktext", "table-reference",
+        "linktext", "reference", "reference-open", "table-linktext", "table-reference", "label-references",
     }, case), "Unknown Markdown test case: " .. case)
     root = vim.fn.tempname()
     vim.fn.mkdir(root .. "/workspace/docs", "p")
@@ -28,7 +28,9 @@ local function run()
         or case == "relative" and "[other](../target.md#target-heading)"
         or reference and (case == "reference-open" and "[other][tar" or "[other][tar]")
         or case == "crossdir" and "[other]()" or "[other](tar)"
-    vim.fn.writefile(table_case and {
+    vim.fn.writefile(case == "label-references" and {
+        "[other][target]", "", "[target]: target.md#target-heading",
+    } or table_case and {
         "| Link |", "| --- |", "| [other](target.md#target-heading) |", "| [other][tar] |",
         "", "[target]: target.md#target-heading",
     } or reference and {
@@ -80,6 +82,126 @@ local function run()
         end)
     end
 
+    if case == "label-references" then
+        local function covers(location, row, character)
+            return location.uri == vim.uri_from_fname(source)
+                and location.range.start.line == row and location.range["end"].line == row
+                and location.range.start.character <= character and location.range["end"].character > character
+        end
+        for _, cursor in ipairs({ { line = 2, character = 3 }, { line = 0, character = 10 } }) do
+            for _, include_declaration in ipairs({ false, true }) do
+                local refs = request("textDocument/references", {
+                    textDocument = { uri = vim.uri_from_bufnr(0) },
+                    position = cursor,
+                    context = { includeDeclaration = include_declaration },
+                }, function(result)
+                    for _, ref in ipairs(result or {}) do
+                        if covers(ref, 0, 10) then return result end
+                    end
+                end)
+                assert(#refs == (include_declaration and 2 or 1), vim.inspect(refs))
+                local declarations = 0
+                for _, ref in ipairs(refs) do
+                    if covers(ref, 2, 3) then
+                        declarations = declarations + 1
+                    else
+                        assert(covers(ref, 0, 10), "Not a semantic label usage: " .. vim.inspect(ref))
+                    end
+                end
+                assert(declarations == (include_declaration and 1 or 0), vim.inspect(refs))
+            end
+        end
+        vim.api.nvim_buf_set_lines(0, 0, -1, false, {
+            "[other][target]", "[target]", "[target][]", "",
+            "| Link |", "| --- |", "| [other][target] |", "",
+            "`[other][target]`", "", "```markdown", "[other][target]", "```", "",
+            "[else][alias]", "", "[target]: target.md#target-heading", "[alias]: target.md#target-heading",
+            "", "[unused]: target.md",
+        })
+        local refs = request("textDocument/references", {
+            textDocument = { uri = vim.uri_from_bufnr(0) },
+            position = { line = 16, character = 3 },
+            context = { includeDeclaration = false },
+        }, function(result)
+            for _, ref in ipairs(result or {}) do
+                if covers(ref, 0, 10) then return result end
+            end
+        end)
+        local expected = { [0] = 10, [1] = 3, [2] = 3, [6] = 12 }
+        assert(#refs == 4, "Missing full/shortcut/collapsed/table label usages: " .. vim.inspect(refs))
+        for _, ref in ipairs(refs) do
+            local row = ref.range.start.line
+            assert(expected[row] and covers(ref, row, expected[row]),
+                "Reference includes code, another label, or a destination: " .. vim.inspect(ref))
+            expected[row] = nil
+        end
+        assert(vim.tbl_isempty(expected), vim.inspect(expected))
+        for _, fixture in ipairs({
+            { row = 17, expected_row = 14, character = 9, count = 1 }, -- alias has the same URL, a different ID
+            { row = 19, count = 0 }, -- defined label with no usages
+        }) do
+            local response = client:request_sync("textDocument/references", {
+                textDocument = { uri = vim.uri_from_bufnr(0) },
+                position = { line = fixture.row, character = 3 },
+                context = { includeDeclaration = false },
+            }, 2000, 0)
+            assert(response and not response.err, vim.inspect(response))
+            assert(#response.result == fixture.count, vim.inspect(response.result))
+            if fixture.expected_row then assert(covers(response.result[1], fixture.expected_row, fixture.character)) end
+        end
+        vim.api.nvim_buf_set_lines(0, 0, -1, false, {
+            "[other][target]", "", "```markdown_inline", "[other][target]", "```", "",
+            "[target]: target.md",
+        })
+        local code_collision = request("textDocument/references", {
+            textDocument = { uri = vim.uri_from_bufnr(0) },
+            position = { line = 6, character = 3 },
+            context = { includeDeclaration = false },
+        }, function(result) return result end)
+        assert(#code_collision == 1 and covers(code_collision[1], 0, 10),
+            "Same-language fenced injection leaked a label usage: " .. vim.inspect(code_collision))
+        vim.api.nvim_buf_set_lines(0, 0, -1, false, {
+            "[other][strasse]", "[STRASSE]", "[Straße][]",
+            "[other][Σ]", "[ς]", "[σ][]",
+            "[other][  TARGET \t LABEL ]", "[other][target label]", "",
+            "[Straße]: target.md", "[σ]: target.md", "[Target Label]: target.md",
+        })
+        for _, fixture in ipairs({
+            { row = 9, character = 2, usages = { [0] = true, [1] = true, [2] = true }, count = 3 },
+            { row = 10, character = 1, usages = { [3] = true, [4] = true, [5] = true }, count = 3 },
+            { row = 11, character = 3, usages = { [6] = true, [7] = true }, count = 2 },
+        }) do
+            local normalized = request("textDocument/references", {
+                textDocument = { uri = vim.uri_from_bufnr(0) },
+                position = { line = fixture.row, character = fixture.character },
+                context = { includeDeclaration = false },
+            }, function(result) return result end)
+            assert(#normalized == fixture.count, "Label normalization lost usages: " .. vim.inspect(normalized))
+            for _, ref in ipairs(normalized) do
+                assert(ref.uri == vim.uri_from_fname(source) and fixture.usages[ref.range.start.line], vim.inspect(ref))
+                fixture.usages[ref.range.start.line] = nil
+            end
+            assert(vim.tbl_isempty(fixture.usages), vim.inspect(fixture.usages))
+        end
+        -- References must not depend on highlighting having initialized the
+        -- document's injected inline parsers first.
+        local unhighlighted = workspace .. "/docs/unhighlighted.md"
+        vim.fn.writefile({ "[other][target]", "", "[target]: target.md" }, unhighlighted)
+        vim.cmd("noautocmd hide edit " .. vim.fn.fnameescape(unhighlighted))
+        vim.cmd("noautocmd setfiletype markdown")
+        assert(vim.lsp.buf_attach_client(0, client.id), "Could not attach unhighlighted Markdown buffer")
+        request("textDocument/references", {
+            textDocument = { uri = vim.uri_from_bufnr(0) },
+            position = { line = 2, character = 3 },
+            context = { includeDeclaration = false },
+        }, function(result)
+            for _, ref in ipairs(result or {}) do
+                if ref.uri == vim.uri_from_fname(unhighlighted) and ref.range.start.line == 0 then return result end
+            end
+        end)
+        print("PASS: semantic label usages/declarations, link forms, code/alias exclusion, Unicode and no-highlighter startup")
+        return
+    end
     if case == "table-linktext" then
         definition(14, 2) -- native destination control
         definition(5, 2) -- displayed text in the same table cell

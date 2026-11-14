@@ -1202,9 +1202,9 @@ if [[ "$WITH_NVIM" == 1 ]]; then
     || die "plugins were not installed into the temp HOME"
   ok "plugins restored from lazy-lock.json into pristine HOME"
 
-  step "Markdown LSP: completions, link-text navigation and legacy roots (--nvim)"
+  step "Markdown LSP: links, semantic label references and legacy roots (--nvim)"
   command -v rumdl >/dev/null || die "--nvim requires brew install rumdl"
-  for case in file heading titlecase legacy precedence crossdir relative linktext reference reference-open table-linktext table-reference; do
+  for case in file heading titlecase legacy precedence crossdir relative linktext reference reference-open table-linktext table-reference label-references; do
     DOTFILES_MARKDOWN_CASE="$case" nvim_scratch --headless -n -i NONE \
       "+lua vim.schedule(function() dofile([[$SOURCE/scripts/test-markdown-lsp.lua]]) end)" \
       >"$WORK/markdown-lsp.log" 2>&1 \
@@ -1212,7 +1212,7 @@ if [[ "$WITH_NVIM" == 1 ]]; then
     grep -q '^PASS:' "$WORK/markdown-lsp.log" \
       || die "Markdown LSP test ($case) did not reach its success marker"
   done
-  ok "relative paths/anchors/roots; paragraph/table links and live reference labels; code excluded"
+  ok "relative paths/anchors/roots; paragraph/table links and semantic label usages; code excluded"
   if ! cmp -s "$SOURCE/private_dot_config/nvim/lazy-lock.json" "$NEWHOME/.config/nvim/lazy-lock.json"; then
     diff -u "$SOURCE/private_dot_config/nvim/lazy-lock.json" "$NEWHOME/.config/nvim/lazy-lock.json" || true
     die "Neovim test rewrote scratch lockfile"

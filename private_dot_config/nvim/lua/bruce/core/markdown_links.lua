@@ -1,4 +1,4 @@
--- Two Markdown client compatibility gaps in rumdl 0.3.4. Keep the server's
+-- Markdown client compatibility gaps in rumdl 0.3.4. Keep the server's
 -- indexing/navigation and Neovim's existing actions; do not change keymaps.
 local M = {}
 local definitions = vim.treesitter.query.parse("markdown", [[
@@ -8,6 +8,14 @@ local definitions = vim.treesitter.query.parse("markdown", [[
 local function position(bufnr, row, col, encoding)
     local line = vim.api.nvim_buf_get_lines(bufnr, row, row + 1, false)[1]
     return { line = row, character = vim.str_utfindex(line, encoding, col, false) }
+end
+
+local function inline_block(tree, row, col)
+    local block = tree:root():named_descendant_for_range(row, col, row, col)
+    while block and block:type() ~= "inline" and block:type() ~= "pipe_table_cell" do
+        block = block:parent()
+    end
+    return block
 end
 
 local function context(params, encoding, completion)
@@ -23,13 +31,9 @@ local function context(params, encoding, completion)
     -- tree's end. Inspect the preceding byte without changing the edit range.
     local probe = completion and math.max(0, col - 1) or col
     local range = { row, probe, row, probe }
-    local block = tree:root():named_descendant_for_range(unpack(range))
-    while block and block:type() ~= "inline" and block:type() ~= "pipe_table_cell" do
-        block = block:parent()
-    end
     -- Admit paragraph/table inline content only from the original block tree;
     -- never descend into fenced Markdown injections or code blocks.
-    if not block then return end
+    if not inline_block(tree, row, probe) then return end
     local inline = parser:children().markdown_inline
     if not inline then return end
     return bufnr, inline:named_node_for_range(range), tree, inline
@@ -127,6 +131,90 @@ local function reference_items(params, encoding)
     return { isIncomplete = false, items = items }, bufnr, vim.api.nvim_buf_get_changedtick(bufnr)
 end
 
+local label_usages = vim.treesitter.query.parse("markdown_inline", [[
+    (full_reference_link (link_label) @label)
+    (collapsed_reference_link (link_text) @label)
+    (shortcut_link (link_text) @label)
+]])
+
+local function fold_labels(records)
+    local labels, unicode = {}, false
+    for i, record in ipairs(records) do
+        local label = record.label:gsub("[ \t\r\n]+", " "):gsub("^ ", ""):gsub(" $", "")
+        unicode = unicode or label:find("[\128-\255]") ~= nil
+        labels[i] = label
+    end
+    if not unicode then
+        for i, label in ipairs(labels) do labels[i] = label:lower() end
+        return labels
+    end
+    -- Neovim's lowercase/stricmp APIs do not implement Unicode casefold
+    -- expansions (e.g. Straße/STRASSE). Batch through the existing Python3
+    -- toolchain, without user/site packages, rather than vendor Unicode data.
+    local folded = vim.system({ "python3", "-I", "-S", "-c", [[
+import json, sys
+json.dump([label.casefold() for label in json.load(sys.stdin)], sys.stdout)
+    ]] }, { stdin = vim.json.encode(labels), text = true }):wait(1000)
+    assert(folded.code == 0, "Markdown label casefold failed: " .. (folded.stderr or ""))
+    return vim.json.decode(folded.stdout)
+end
+
+local function label_references(params, encoding)
+    local bufnr = vim.uri_to_bufnr(params.textDocument.uri)
+    if not vim.api.nvim_buf_is_loaded(bufnr) or vim.bo[bufnr].filetype ~= "markdown" then return end
+    local row = params.position.line
+    local line = vim.api.nvim_buf_get_lines(bufnr, row, row + 1, false)[1]
+    if not line then return end
+    local col = vim.str_byteindex(line, encoding, params.position.character, false)
+    local parser = vim.treesitter.get_parser(bufnr, "markdown")
+    -- Discover all inline regions even before highlighting has initialized
+    -- injections (for example, a newly attached unhighlighted buffer).
+    local tree = parser:parse(true)[1]
+    local records, selected = {}, nil
+    local tick = vim.api.nvim_buf_get_changedtick(bufnr)
+    local function add(node, declaration)
+        local sr, sc, er, ec = node:range()
+        if not declaration and not inline_block(tree, sr, sc) then return end
+        local label = vim.treesitter.get_node_text(node, bufnr)
+        if node:type() == "link_label" then label = label:sub(2, -2) end
+        local subject = declaration and node or node:parent()
+        records[#records + 1] = {
+            label = label,
+            declaration = declaration,
+            location = {
+                uri = params.textDocument.uri,
+                range = { start = position(bufnr, sr, sc, encoding), ["end"] = position(bufnr, er, ec, encoding) },
+            },
+        }
+        if vim.treesitter.is_in_node_range(subject, row, col) then selected = #records end
+    end
+    for _, node in definitions:iter_captures(tree:root(), bufnr) do add(node, true) end
+    -- Fences explicitly tagged markdown_inline can share this language tree,
+    -- so add() also checks original-block ancestry for every collected usage.
+    -- Reference-label namespaces are document-local, not URL-based.
+    local inline = parser:children().markdown_inline
+    if inline then
+        for _, inline_tree in pairs(inline:trees()) do
+            for _, node in label_usages:iter_captures(inline_tree:root(), bufnr) do add(node, false) end
+        end
+    end
+    if not selected then return end
+    local folded = fold_labels(records)
+    local declaration, locations = nil, {}
+    for i, record in ipairs(records) do
+        if folded[i] == folded[selected] then
+            if record.declaration then
+                declaration = declaration or record.location
+            else
+                locations[#locations + 1] = record.location
+            end
+        end
+    end
+    if not declaration then return end -- unresolved bracket text is not a semantic link
+    if params.context and params.context.includeDeclaration then locations[#locations + 1] = declaration end
+    return locations, bufnr, tick
+end
+
 function M.attach(client)
     -- Preserve the public transport's request IDs, callbacks and cancellation.
     -- Client:request()/request_sync(), built-in actions and blink all use it.
@@ -144,6 +232,18 @@ function M.attach(client)
                         if not err and empty and vim.api.nvim_buf_is_loaded(bufnr)
                             and vim.api.nvim_buf_get_changedtick(bufnr) == tick then
                             result = fallback
+                        end
+                        handler(err, result, ...)
+                    end
+                end
+            elseif method == "textDocument/references" then
+                local locations, bufnr, tick = label_references(params, client.offset_encoding)
+                if locations then
+                    local handler = callback
+                    callback = function(err, result, ...)
+                        if not err and vim.api.nvim_buf_is_loaded(bufnr)
+                            and vim.api.nvim_buf_get_changedtick(bufnr) == tick then
+                            result = locations
                         end
                         handler(err, result, ...)
                     end
