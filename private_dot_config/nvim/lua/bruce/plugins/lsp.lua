@@ -57,7 +57,21 @@ return {
             },
         })
 
-        vim.lsp.enable({ "ruff", "pyright", "lua_ls", "marksman" })
+        -- rumdl resolves ordinary document-relative Markdown links. Keep the
+        -- legacy marker's priority so nested Git roots do not split a workspace.
+        -- Markers select roots; other servers' configuration is not imported.
+        vim.lsp.config("rumdl", {
+            on_init = function(client)
+                require("bruce.core.markdown_links").attach(client)
+            end,
+            root_markers = { ".marksman.toml", ".rumdl.toml", ".git", ".obsidian", ".moxide.toml" },
+            init_options = {
+                enableLinting = false,
+                enableAutoFix = false,
+            },
+        })
+
+        vim.lsp.enable({ "ruff", "pyright", "lua_ls", "rumdl" })
 
         -- Servers are external binaries. A missing one attaches nothing and
         -- says nothing -- removing the pcall(require) guards did not cover this
@@ -67,7 +81,7 @@ return {
             ruff = "ruff",
             pyright = "pyright-langserver",
             lua_ls = "lua-language-server",
-            marksman = "marksman",
+            rumdl = "rumdl",
         }
         local absent = {}
         for server, exe in pairs(exes) do

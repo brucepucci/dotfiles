@@ -168,11 +168,61 @@ below has the details.
 
 **Servers** (from Homebrew, never Mason): `ruff` (Python lint + format),
 `pyright` (Python types), `lua_ls` (Lua — for editing this very config),
-`marksman` (markdown). Ruff's hover is switched off so only pyright answers
-`K`. A missing server produces a warning naming it — silence means they're
+`rumdl` (Markdown links, references, and completion; command: `rumdl server`).
+Ruff's hover is switched off so only pyright answers `K`. A missing server
+produces a warning naming it — silence means they're
 all running. **Formatting has no keybinding on purpose**: auto-format would
 rewrite what an agent just produced and pollute the diff you're reviewing.
 Use `gqip` for a paragraph or `:lua vim.lsp.buf.format()` when wanted.
+
+Markdown uses the Rust-based [rumdl](https://github.com/rvben/rumdl), replacing
+Marksman and its end-of-life .NET 9 dependency. Install with `brew install rumdl`,
+then `chezmoi apply` and restart Neovim. `:checkhealth vim.lsp` should show
+`rumdl` attached in a Markdown file. Remove Marksman with
+`brew uninstall marksman`; Homebrew may automatically remove `dotnet@9` with it.
+If the runtime
+remains installed, check `brew uses --installed dotnet@9` before removing it
+with `brew uninstall dotnet@9` (only when nothing needs it).
+
+rumdl completes document-relative Markdown paths, including `../` links, and
+lowercase heading fragments. Linting and auto-fix are disabled: this migration
+adds navigation/completion, not a new stream of style diagnostics or save-time
+rewrites. Formatting remains explicitly invoked, with no new hook or keymap.
+`.marksman.toml` keeps priority over Git roots, including nested repositories,
+so legacy workspace references retain their scope. `.rumdl.toml`, Git,
+Obsidian, and `.moxide.toml` roots are also recognized; other servers' settings
+are not imported.
+
+A small rumdl-only client integration (`bruce.core.markdown_links`) retains
+navigation from displayed inline-link text in paragraphs and table cells by
+forwarding its destination to rumdl. Both contexts also support completion of
+single-line full reference-link labels from definitions
+in the current buffer, including unsaved definitions, empty labels, and
+unfinished `[text][label` input at end of line. Multiline usages pass through to the server
+rather than receiving an invalid cross-line completion edit. It uses Neovim's bundled Markdown trees, not buffer-word guesses or a
+second server. Native nonempty completions win; fallback edits are discarded
+if the buffer changes before the response. Code spans, fenced Markdown, and
+code-shaped definition decoys are excluded. Request IDs/cancellation, existing
+keymaps, and other clients are unchanged.
+
+Reference requests from a defined label or its link discover document-local
+full, shortcut, collapsed, and table usages, respecting `includeDeclaration`.
+Matching uses label IDs, not shared destination URLs, with whitespace
+normalization and Unicode casefolding. ASCII-only IDs stay in Lua; Unicode
+IDs are folded in one batch with the existing Python 3 standard library
+(no additional package). Ordinary file/heading references remain server-owned.
+Code/fenced usages and stale changed-buffer results are not synthesized.
+
+rumdl's GitHub-style slugs match the unchanged preview for
+ordinary unique headings, but punctuation and duplicate-heading numbering can
+differ. Check those links against the actual preview; no renderer changes
+are installed.
+
+For installations of this branch's earlier Oxide version, install rumdl and
+apply as above. `brew uninstall markdown-oxide` is optional if no other editor
+uses it. The old `~/.config/moxide/settings.toml` is no longer managed or read
+by this setup and is deliberately left in place for other Oxide clients.
+Remove it manually only if it is no longer needed.
 
 ### Completion (blink.cmp)
 

@@ -32,7 +32,7 @@ brew "gh"                   # REQUIRED to clone this private repo -- see README
 brew "ruff"                 # python lint + format -- `ruff server`
 brew "pyright"              # python types -- provides pyright-langserver
 brew "lua-language-server"  # lua_ls, for editing this config
-brew "marksman"             # markdown
+brew "rumdl"                # 0.3.4+: Markdown link LSP; no .NET runtime
 
 # --- python ---------------------------------------------------------------
 brew "uv"                   # envs and packaging
