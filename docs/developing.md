@@ -187,8 +187,14 @@ requires the Homebrew `rumdl` binary (0.3.4+ for link completion/navigation).
 Its real-LSP regression tests (`scripts/test-markdown-lsp.lua`) accept file and
 heading completion edits/snippets, resolve accepted paths on disk relative to
 the source document, and navigate existing `../` heading links in both
-directions (definition and references). Lowercase and title-cased heading
-completions are compared with the actual slug function in the pinned preview
+directions (definition and references). Inline-link navigation is exercised
+across the link span, with nested display text, Unicode offsets, and
+angle-bracket/relative destinations. Full reference-label completion accepts
+real edits for typed/empty labels with and without a closing bracket, observes
+unsaved definitions, excludes code contexts and fenced/code-shaped definition
+decoys, and rejects invalid multiline edit ranges. These requests go through
+the real client (including the rumdl-only compatibility integration), not a
+helper's private parsing API. Lowercase and title-cased heading completions are compared with the actual slug function in the pinned preview
 bundle, not the language server's own navigation as an anchor oracle. This
 checks ordinary unique headings, not punctuation/duplicate-heading parity or
 an interactive browser session. Legacy-root fixtures open a non-Git

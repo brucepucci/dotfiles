@@ -61,6 +61,9 @@ return {
         -- legacy marker's priority so nested Git roots do not split a workspace.
         -- Markers select roots; other servers' configuration is not imported.
         vim.lsp.config("rumdl", {
+            on_init = function(client)
+                require("bruce.core.markdown_links").attach(client)
+            end,
             root_markers = { ".marksman.toml", ".rumdl.toml", ".git", ".obsidian", ".moxide.toml" },
             init_options = {
                 enableLinting = false,

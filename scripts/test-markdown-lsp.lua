@@ -3,8 +3,10 @@
 local root
 local function run()
     local case = vim.env.DOTFILES_MARKDOWN_CASE or "file"
-    assert(vim.tbl_contains({ "file", "heading", "titlecase", "legacy", "precedence", "crossdir", "relative" }, case),
-        "Unknown Markdown test case: " .. case)
+    assert(vim.tbl_contains({
+        "file", "heading", "titlecase", "legacy", "precedence", "crossdir", "relative",
+        "linktext", "reference", "reference-open",
+    }, case), "Unknown Markdown test case: " .. case)
     root = vim.fn.tempname()
     vim.fn.mkdir(root .. "/workspace/docs", "p")
     vim.fn.mkdir(root .. "/unrelated", "p")
@@ -20,10 +22,15 @@ local function run()
     local crossdir = case == "crossdir" or case == "relative"
     local target = workspace .. (crossdir and "/target.md" or "/docs/target.md")
     local heading = case == "titlecase" and "Target Heading" or "target heading"
-    local input = case == "legacy" and "[other](target.md#target-heading)"
+    local reference = case == "reference" or case == "reference-open"
+    local input = (case == "legacy" or case == "linktext") and "[other](target.md#target-heading)"
         or case == "relative" and "[other](../target.md#target-heading)"
+        or reference and (case == "reference-open" and "[other][tar" or "[other][tar]")
         or case == "crossdir" and "[other]()" or "[other](tar)"
-    vim.fn.writefile({ input }, source)
+    vim.fn.writefile(reference and {
+        input, "", "[target]: target.md#target-heading", "",
+        "`[target-inline]: missing.md`", "", "```markdown", "[target-fenced]: missing.md", "```",
+    } or { input }, source)
     vim.fn.writefile({ "Introduction.", "", "## " .. heading, "", "Target text." }, target)
     if case == "precedence" then
         vim.fn.writefile({ "[inbound](docs/target.md#target-heading)" }, workspace .. "/inbound.md")
@@ -50,17 +57,18 @@ local function run()
         error("No expected result for " .. method .. ": " .. vim.inspect(last))
     end
 
-    local function definition()
+    local function definition(character)
         return request("textDocument/definition", {
             textDocument = { uri = vim.uri_from_bufnr(0) },
-            position = { line = 0, character = 10 },
+            position = { line = 0, character = character or 10 },
         }, function(result)
             local location = result and (result.uri and result or result[1])
             if location and location.targetUri then
                 location = { uri = location.targetUri, range = location.targetSelectionRange }
             end
             -- didChange/index updates may arrive after the edit was accepted.
-            local points_to_heading = case == "heading" or case == "titlecase" or case == "legacy" or case == "relative"
+            local points_to_heading = case == "heading" or case == "titlecase" or case == "legacy"
+                or case == "relative" or case == "linktext"
             if location and location.uri == vim.uri_from_fname(target)
                 and (not points_to_heading or location.range.start.line == 2) then
                 return location
@@ -68,6 +76,23 @@ local function run()
         end)
     end
 
+    if case == "linktext" then
+        -- Both requests must retain the existing navigation action, without
+        -- requiring the user to move from displayed text into its destination.
+        definition(12)
+        for _, character in ipairs({ 0, 1, 3, 6, #input - 1 }) do definition(character) end
+        for _, line in ipairs({
+            "🙂 [**other**](target.md#target-heading)",
+            "[other](<target.md#target-heading>)",
+            "[other](../docs/target.md#target-heading)",
+        }) do
+            vim.api.nvim_buf_set_lines(0, 0, -1, false, { line })
+            local byte = assert(line:find("other", 1, true)) -- inside the displayed text
+            definition(vim.str_utfindex(line, client.offset_encoding, byte, false))
+        end
+        print("PASS: inline-link definition across its span; Unicode, nested text, angle/relative destinations")
+        return
+    end
     if case == "precedence" then
         request("textDocument/references", {
             textDocument = { uri = vim.uri_from_bufnr(0) },
@@ -101,15 +126,18 @@ local function run()
         return
     end
 
-    local function complete(kind)
+    local function complete(kind, character, label)
         local line = vim.api.nvim_get_current_line()
+        local candidates
         local item = request("textDocument/completion", {
             textDocument = { uri = vim.uri_from_bufnr(0) },
-            position = { line = 0, character = #line - 1 }, -- immediately before ')'
+            position = { line = 0, character = character or #line - 1 }, -- before the closing delimiter
         }, function(result)
-            for _, candidate in ipairs(result and (result.items or result) or {}) do
+            candidates = result and (result.items or result) or {}
+            for _, candidate in ipairs(candidates) do
                 local is_target = vim.fs.basename(candidate.label):gsub("%.md$", "") == "target"
-                if candidate.kind == kind and (kind ~= vim.lsp.protocol.CompletionItemKind.File or is_target) then
+                if candidate.kind == kind and (not label or candidate.label == label)
+                    and (kind ~= vim.lsp.protocol.CompletionItemKind.File or is_target) then
                     return candidate
                 end
             end
@@ -124,9 +152,61 @@ local function run()
         else
             vim.lsp.util.apply_text_edits({ edit }, bufnr, client.offset_encoding)
         end
-        return vim.api.nvim_get_current_line()
+        return vim.api.nvim_get_current_line(), candidates
     end
 
+    if reference then
+        local accepted, candidates = complete(vim.lsp.protocol.CompletionItemKind.Reference,
+            case == "reference-open" and #vim.api.nvim_get_current_line() or nil)
+        assert(accepted == "[other][target]", "Reference label was not completed: " .. accepted)
+        for _, candidate in ipairs(candidates) do
+            assert(candidate.label == "target", "Not a document reference definition: " .. candidate.label)
+        end
+        assert(vim.api.nvim_buf_get_lines(0, 2, 3, false)[1] == "[target]: target.md#target-heading",
+            "Completion changed the reference definition")
+        vim.api.nvim_buf_set_lines(0, 0, 1, false, { "[other][]" })
+        accepted = complete(vim.lsp.protocol.CompletionItemKind.Reference)
+        assert(accepted == "[other][target]", "Empty reference label was not completed: " .. accepted)
+        -- Re-read unsaved definitions, not an attachment-time index or the disk.
+        vim.api.nvim_buf_set_lines(0, 0, 1, false, { "[other][lat]" })
+        vim.api.nvim_buf_set_lines(0, -1, -1, false, { "", "[later]: target.md" })
+        accepted = complete(vim.lsp.protocol.CompletionItemKind.Reference, nil, "later")
+        assert(accepted == "[other][later]", "Unsaved reference definition was not offered: " .. accepted)
+        for _, fixture in ipairs({
+            { lines = { "`[other][tar]`", "", "[target]: target.md" }, row = 0, character = 12 },
+            { lines = { "```markdown", "[other][tar]", "```", "", "[target]: target.md" }, row = 1, character = 11 },
+        }) do
+            vim.api.nvim_buf_set_lines(0, 0, -1, false, fixture.lines)
+            local response = client:request_sync("textDocument/completion", {
+                textDocument = { uri = vim.uri_from_bufnr(0) },
+                position = { line = fixture.row, character = fixture.character },
+            }, 2000, 0)
+            assert(response and not response.err, vim.inspect(response))
+            local result = response.result
+            for _, candidate in ipairs(result and (result.items or result) or {}) do
+                assert(candidate.kind ~= vim.lsp.protocol.CompletionItemKind.Reference,
+                    "Reference completion leaked into code: " .. vim.inspect(candidate))
+            end
+        end
+        vim.api.nvim_buf_set_lines(0, 0, -1, false, {
+            "[other][ta", "r]", "", "[target]: target.md",
+        })
+        local response = client:request_sync("textDocument/completion", {
+            textDocument = { uri = vim.uri_from_bufnr(0) },
+            position = { line = 0, character = 10 },
+        }, 2000, 0)
+        assert(response and not response.err, vim.inspect(response))
+        local result = response.result
+        for _, candidate in ipairs(result and (result.items or result) or {}) do
+            if candidate.textEdit then
+                local range = candidate.textEdit.range
+                assert(range.start.line == 0 and range["end"].line == 0,
+                    "Completion emitted a forbidden multiline edit: " .. vim.inspect(candidate))
+            end
+        end
+        print("PASS: live reference labels (closed/open/empty), code exclusions, valid edit ranges")
+        return
+    end
     -- Accept real protocol edits, rather than checking only suggestion labels.
     local accepted = complete(vim.lsp.protocol.CompletionItemKind.File)
     local destination = assert(accepted:match("^%[other%]%(([^)]+)%)$"), accepted)

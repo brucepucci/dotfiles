@@ -136,6 +136,9 @@ types.
 Lua (for editing this config) and Markdown. `rumdl server` provides ordinary
 document-relative link completion, definitions, and references without .NET.
 Its linting and auto-fix are disabled; no formatting/save hook is added.
+A rumdl-only client integration retains inline-link navigation from displayed
+text and supplies reference-label completions from live document definitions
+when the server returns none. Code/fences are excluded; no keymaps change.
 Existing `.marksman.toml` files retain priority over nested Git roots, but
 Marksman-specific settings are not imported. Heading anchors match the preview
 for ordinary unique headings; punctuation/duplicate-heading rules can differ.

@@ -191,10 +191,23 @@ rewrites. Formatting remains explicitly invoked, with no new hook or keymap.
 `.marksman.toml` keeps priority over Git roots, including nested repositories,
 so legacy workspace references retain their scope. `.rumdl.toml`, Git,
 Obsidian, and `.moxide.toml` roots are also recognized; other servers' settings
-are not imported. rumdl's GitHub-style slugs match the unchanged preview for
+are not imported.
+
+A small rumdl-only client integration (`bruce.core.markdown_links`) retains
+navigation from displayed inline-link text by forwarding its destination to
+rumdl. It also completes single-line full reference-link labels from definitions
+in the current buffer, including unsaved definitions, empty labels, and
+unfinished `[text][label` input. Multiline usages pass through to the server
+rather than receiving an invalid cross-line completion edit. It uses Neovim's bundled Markdown trees, not buffer-word guesses or a
+second server. Native nonempty completions win; fallback edits are discarded
+if the buffer changes before the response. Code spans, fenced Markdown, and
+code-shaped definition decoys are excluded. Request IDs/cancellation, existing
+keymaps, and other clients are unchanged.
+
+rumdl's GitHub-style slugs match the unchanged preview for
 ordinary unique headings, but punctuation and duplicate-heading numbering can
-differ. Check those links against the actual preview; no renderer changes or
-custom completion adapter are installed.
+differ. Check those links against the actual preview; no renderer changes
+are installed.
 
 For installations of this branch's earlier Oxide version, install rumdl and
 apply as above. `brew uninstall markdown-oxide` is optional if no other editor
