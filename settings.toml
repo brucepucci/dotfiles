@@ -34,7 +34,8 @@
 #                  Ghostty, with UI derived by Herdr; live OS mode or pin
 #                  follows theme above. Default main layout follows these;
 #                  layout-local theme/color overrides can take precedence.
-# App keys, core config, and runtime/layout state remain unmanaged.
+# Apply patches four Herdr word-editing keys; other app keys, core config,
+# and runtime/layout state remain unmanaged. See docs/herdr.md.
 #
 # The names are resolved at apply time against the theme mirror committed
 # in themes/ (a verbatim copy of iTerm2-Color-Schemes' ghostty/ directory,

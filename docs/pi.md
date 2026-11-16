@@ -13,6 +13,7 @@ The pieces, kept deliberately separate:
 |---|---|---|
 | The binary | Homebrew: `pi-coding-agent` (in the Brewfile; the formula wraps the npm package in its own keg and pulls `node`) | installed, not configured, by this repo |
 | Settings + themes | `dot_pi/agent/` → `~/.pi/agent/settings.json`, `~/.pi/agent/themes/dotfiles-{light,dark}.json` | **yes — chezmoi templates** |
+| Word-editing bindings | `dot_pi/agent/keybindings.json` → `~/.pi/agent/keybindings.json` | **yes — plain static file** |
 | Global skills | `~/gh/skills/enabled-skills.json` → selected symlinks in `~/.agents/skills/` | **selection/content owned by the skills repo; links managed here** |
 | The chezmoi-runbook skill | `.agents/skills/chezmoi-runbook/SKILL.md` (`/skill:chezmoi-runbook`) | **repo-local only — never installed to HOME** |
 | The provider-usage extension | `dot_pi/agent/extensions/provider-usage.ts` → `~/.pi/agent/extensions/provider-usage.ts` | **yes — plain static file** |
@@ -449,7 +450,16 @@ one-liner instead of a wrapped block:
 
 ## Keys and commands worth remembering
 
-Inside a conversation (pi's own bindings, not custom):
+`dot_pi/agent/keybindings.json` pins Pi's standard word navigation/deletion
+bindings. In particular, Ctrl+W deletes the previous word, not word-right:
+Herdr sends Ctrl+W for Option+Backspace. The matching four client shortcuts
+are reconciled on apply; see [Herdr word-editing shortcuts](herdr.md#word-editing-shortcuts).
+The complete Pi keybindings file is managed; keep additional customizations
+in its source rather than editing the installed copy. After applying on a
+Mac, run `/reload` in its open Pi conversations. Applying on one Mac does
+not deploy files to another; synchronize the repo and apply there too.
+
+Inside a conversation:
 
 | Key / command | Action |
 |---|---|

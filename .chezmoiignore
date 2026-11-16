@@ -41,6 +41,7 @@ docs/
 
 # Herdr desktop preferences + generated palettes only. Do not import shipped
 # mods/layouts/themes, keys, runtime state, machine identities or core payloads.
+# The after-apply word-key hook patches four entries without importing keys.json.
 .config/herdr-app/**
 !.config/herdr-app
 !.config/herdr-app/settings.json

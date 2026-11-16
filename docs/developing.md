@@ -131,9 +131,13 @@ the result the way real sessions do. It covers:
 - Herdr desktop migration: the Brewfile selects cask `herdr-app`, not the
   legacy formula; no `herdr()` wrapper remains; fresh and upgrade applies
   render telemetry off and app appearance/theme selection, remove the exact
-  legacy config/Pi reporter, and preserve app keys, runtime/layout state,
-  unrelated themes, and core configuration. Imports allowlist only settings
-  and the two generated themes, never the whole themes directory.
+  legacy config/Pi reporter, and preserve unrelated app keys, runtime/layout
+  state, themes, and core configuration. The after-apply hook owns only four
+  word-editing shortcuts in an existing app keys file; tests cover deferred
+  first launch, dry-run, idempotence, invalid JSON, permissions, and Pi's real
+  keybinding resolver when installed. Pi's keybindings file is managed.
+  Imports allowlist only settings and the two generated themes, never the
+  app keys file or whole themes directory.
 - Herdr theme rendering: system mode plus both pins; exact background,
   foreground, cursor, selection background, and ANSI 0–15 parity with
   Ghostty; custom/sparse themes and theme-swap regeneration.

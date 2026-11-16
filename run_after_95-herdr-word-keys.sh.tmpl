@@ -1,0 +1,4 @@
+#!/bin/sh
+# Preserve Herdr's evolving defaults; own only the four word-editing chords.
+set -eu
+python3 {{ joinPath .chezmoi.sourceDir "scripts" "herdr-word-keys.py" | shellQuote }} {{ .chezmoi.destDir | shellQuote }}

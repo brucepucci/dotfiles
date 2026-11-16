@@ -17,6 +17,12 @@ assert not (repo / "private_dot_config/herdr").exists(), "legacy config still ma
 app_source = repo / "private_dot_config/herdr-app"
 assert (app_source / "settings.json.tmpl").is_file(), "Herdr settings must resolve appearance"
 environment = {k: v for k, v in os.environ.items() if k not in ("DOTFILES_SETTINGS_FILE", "DOTFILES_THEMES")}
+word_keys = {
+    "alt-left": "send:\x1bb",
+    "alt-right": "send:\x1bf",
+    "alt-backspace": "send:\x17",
+    "alt-shift-backspace": "send:\x1bd",
+}
 
 
 def appearance(extra=None):
@@ -63,7 +69,12 @@ with tempfile.TemporaryDirectory(prefix="herdr-setup-") as tmp:
         shutil.copyfile(repo / name, source / name)
     shutil.copytree(app_source, source / "private_dot_config/herdr-app")
     (source / "scripts").mkdir()
-    shutil.copy2(repo / "scripts/theme.py", source / "scripts/theme.py")
+    for name in ("theme.py", "herdr-word-keys.py"):
+        shutil.copy2(repo / "scripts" / name, source / "scripts" / name)
+    shutil.copy2(repo / "run_after_95-herdr-word-keys.sh.tmpl", source)
+    pi_source = source / "dot_pi/agent"
+    pi_source.mkdir(parents=True)
+    shutil.copy2(repo / "dot_pi/agent/keybindings.json", pi_source)
     # Read the real theme inputs without copying or changing the catalog.
     for name in ("themes", "themes-local"):
         if (repo / name).is_dir():
@@ -92,6 +103,9 @@ with tempfile.TemporaryDirectory(prefix="herdr-setup-") as tmp:
     check_palettes(home, baseline)
     assert not (home / ".config/herdr").exists()
     assert not (home / ".config/herdr-core").exists()
+    assert not (home / ".config/herdr-app/keys.json").exists(), "must let Herdr seed its defaults"
+    pi_keys = home / ".pi/agent/keybindings.json"
+    assert json.loads(pi_keys.read_text())["tui.editor.deleteWordBackward"] == ["ctrl+w", "alt+backspace"]
     assert not (home / ".pi/agent/extensions/herdr-agent-state.ts").exists()
 
     # Both pins are enforced independently of the OS. Both palettes always exist.
@@ -102,7 +116,7 @@ with tempfile.TemporaryDirectory(prefix="herdr-setup-") as tmp:
         extra = {"DOTFILES_SETTINGS_FILE": str(settings)}
         run("apply", extra=extra)
         check_palettes(home, appearance(extra))
-        assert run("diff", extra=extra) == "", f"{mode}: second apply is not clean"
+        assert run("diff", "--exclude=scripts", extra=extra) == "", f"{mode}: second apply is not clean"
 
     # Swapping names must regenerate the palettes, not leave a cached pair.
     swapped = root / "settings-swapped.toml"
@@ -134,7 +148,6 @@ with tempfile.TemporaryDirectory(prefix="herdr-setup-") as tmp:
         ".config/herdr/session.json": "legacy live session\n",
         ".config/herdr/herdr.log": "legacy log\n",
         ".pi/agent/extensions/user-extension.ts": "user extension\n",
-        ".config/herdr-app/keys.json": '{"global":{"cmd-x":"app.quit"}}\n',
         ".config/herdr-app/shared.json": '{"layout":"personal"}\n',
         ".config/herdr-app/view.json": '{"focused":"local-pane"}\n',
         ".config/herdr-app/window.json": '{"width":1234}\n',
@@ -154,6 +167,17 @@ with tempfile.TemporaryDirectory(prefix="herdr-setup-") as tmp:
         path = home / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content)
+    keys_path = home / ".config/herdr-app/keys.json"
+    original_keys = {
+        "global": {"cmd-x": "app.quit"},
+        "terminal": {"cmd-c": "terminal.copy", "alt-left": "send:wrong", "f8": "terminal"},
+        "mod:personal": {"ctrl-s": "personal.save"},
+    }
+    keys_path.write_text(json.dumps(original_keys) + "\n")
+    keys_path.chmod(0o640)
+    before = keys_path.read_bytes()
+    run("apply", "--dry-run")
+    assert keys_path.read_bytes() == before, "dry-run changed Herdr keys"
     (home / ".config/herdr-app/settings.json").write_text('{"telemetry":true,"appearance":"dark","zoom":2}\n')
     (home / ".config/herdr-app/themes/dotfiles-light.json").write_text('{}\n')
     run("apply")
@@ -162,7 +186,22 @@ with tempfile.TemporaryDirectory(prefix="herdr-setup-") as tmp:
     for name, content in preserved.items():
         assert (home / name).read_text() == content, f"unrelated state changed: {name}"
     check_palettes(home, baseline)
-    assert run("diff") == "", "upgrade: second apply is not clean"
+    expected_keys = {**original_keys, "terminal": {**original_keys["terminal"], **word_keys}}
+    assert json.loads(keys_path.read_text()) == expected_keys, "word keys clobbered unrelated bindings"
+    assert keys_path.stat().st_mode & 0o777 == 0o640, "key file permissions changed"
+    patched = keys_path.read_bytes()
+    run("apply")
+    assert keys_path.read_bytes() == patched, "second apply rewrote unchanged keys"
+    assert run("diff", "--exclude=scripts") == "", "upgrade: second apply is not clean"
+    subprocess.run(["node", str(repo / "scripts/test-word-keys.mjs"), str(home)], check=True)
+
+    # Invalid app config fails loudly without overwriting it.
+    for invalid in ("{broken", "null", '{"terminal":[]}'):
+        keys_path.write_text(invalid)
+        result = subprocess.run(command + ["apply"], capture_output=True, text=True, env=environment)
+        assert result.returncode != 0 and "herdr-word-keys:" in result.stderr, result
+        assert keys_path.read_text() == invalid, "invalid config was overwritten"
+    keys_path.write_bytes(patched)
 
     # Recursive AND explicit imports allow just settings and the generated pair.
     imports = root / "imports"
@@ -177,6 +216,7 @@ with tempfile.TemporaryDirectory(prefix="herdr-setup-") as tmp:
     for name in preserved:
         if "herdr" in name or name == ".local/bin/hc":
             run("add", str(home / name), ignored_parent=True)
+    run("add", str(keys_path), ignored_parent=True)
     imported = [path for path in imports.rglob("*") if path.is_file()]
     assert sorted(path.name for path in imported) == [
         ".chezmoiignore", "dotfiles-dark.json", "dotfiles-light.json", "settings.json",
@@ -184,4 +224,4 @@ with tempfile.TemporaryDirectory(prefix="herdr-setup-") as tmp:
     imported_settings = next(path for path in imported if path.name == "settings.json")
     assert json.loads(imported_settings.read_text())["telemetry"] is False
 
-print("PASS: Herdr system/light/dark palettes, regeneration, sparse themes, cleanup, import boundaries")
+print("PASS: Herdr palettes, word keys, preservation, dry-run, idempotence, cleanup, import boundaries")

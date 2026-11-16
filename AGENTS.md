@@ -122,9 +122,11 @@ private_dot_config/herdr-app/settings.json.tmpl # telemetry off + generated
                             # theme pair/mode from settings.toml; themes/
                             # dotfiles-{light,dark}.json.tmpl map the same
                             # terminal palettes as Ghostty (Herdr derives UI);
-                            # keys/core config/runtime remain unmanaged;
+                            # four word keys patched by the after-apply hook;
+                            # other keys/core config/runtime remain unmanaged;
                             # cask herdr-app + explicit core onboarding
-dot_pi/agent/              # settings.json.tmpl + themes/dotfiles-{light,dark}
+dot_pi/agent/              # keybindings.json — word navigation/deletion defaults;
+                            # settings.json.tmpl + themes/dotfiles-{light,dark}
                             # .json.tmpl — the pi TUI's themes, generated from
                             # the active themes' roles (stable file names);
                             # extensions/provider-usage.ts — a
@@ -176,7 +178,11 @@ shell env lines there. History is one shared file, `~/.zsh_history`.
 first-launch onboarding installs core (no formula). Vendor UI owns ongoing
 app/core updates. Manage telemetry off and the resolver-generated app
 appearance/theme pair; allowlist only settings and those two theme files.
-Keys, core config, and runtime/layout geometry stay unmanaged. Default main
+An after-apply hook reconciles only four word-editing shortcuts in an existing
+Herdr keys.json; other keys, core config, and runtime/layout geometry stay
+unmanaged. On a fresh machine, open Herdr once, then apply again to patch its
+vendor-generated keys. Pi's keybindings.json is managed; run `/reload` in open
+Pi conversations after applying. Default main
 layout follows repo themes; layout theme/color overrides can take precedence. Pi 1.5 reports OSC 7501 natively; nonempty
 `HC_TERMINAL_ID` skips tmux even under force so handshake/status reach core.
 Legacy TUI guards/wrapper/integration are retired. Apply removes only the

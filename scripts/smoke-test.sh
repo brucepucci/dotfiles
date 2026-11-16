@@ -1362,7 +1362,7 @@ out="$(env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
 ok "creates named sessions, never attaches; guards fall through to plain pi;
     pi update triaged: keg-touching refused, package-only passes through"
 
-step "Herdr desktop: generated palettes, appearance, migration boundaries"
+step "Herdr desktop: palettes, word-editing keys, migration boundaries"
 [[ ! -e "$NEWHOME/.config/herdr/config.toml" ]] || die "legacy TUI config installed"
 [[ ! -e "$NEWHOME/.pi/agent/extensions/herdr-agent-state.ts" ]] \
   || die "legacy TUI integration installed"
@@ -1370,8 +1370,8 @@ fresh_zsh '(( ! ${+functions[herdr]} ))' >/dev/null \
   || die "legacy herdr shell wrapper still defined"
 python3 "$SOURCE/scripts/test-herdr-setup.py" "$NEWHOME" \
   || die "desktop Herdr setup harness failed"
-ok "desktop cask + shared palettes/system/pins; no legacy wrapper/config/integration;
-    upgrade preserves user/runtime data and imports exclude app/core state"
+ok "desktop cask + shared palettes/system/pins; word keys match Pi;
+    upgrade preserves unrelated keys/runtime data; imports exclude app/core state"
 
 step "tmux_wrap setting: on leaves the env alone, off defaults it to never"
 # settings.toml (repo root) carries tmux_wrap = on|off. The committed value

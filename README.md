@@ -185,11 +185,11 @@ non-Homebrew install.
 | `~/.config/ghostty/config` + `~/.config/ghostty/themes/` | The terminal's appearance + ssh terminfo auto-install — nothing shell-related; two theme files generated from the mirror | [ghostty.md](docs/ghostty.md) |
 | `~/.tmux.conf` | Detachable sessions: pi's extended-keys, OSC 52 clipboard, truecolor | [tmux.md](docs/tmux.md) |
 | `~/.ssh/hosts.conf` | Shared outbound aliases and canonical host-key names; no credentials or server authorization | [ssh.md](docs/ssh.md) |
-| `~/.config/herdr-app/settings.json` + `themes/dotfiles-{light,dark}.json` | Herdr telemetry off, generated native themes + appearance mode; keys/core/runtime unmanaged | [herdr.md](docs/herdr.md) |
+| `~/.config/herdr-app/settings.json` + `themes/dotfiles-{light,dark}.json` | Herdr telemetry off, generated themes + appearance; four word keys patched on apply, other keys/core/runtime unmanaged | [herdr.md](docs/herdr.md) |
 | `~/.gitconfig`, `~/.config/git/ignore` | Identity, delta pager, zdiff3 conflicts | [git.md](docs/git.md) |
 | `~/.config/lazygit/config.yml` | delta as lazygit's diff renderer | [git.md](docs/git.md) |
 | `~/.local/bin/delta-theme` | Appearance-aware delta wrapper | [git.md](docs/git.md) |
-| `~/.pi/agent/settings.json`, `~/.pi/agent/themes/`, `~/.pi/agent/extensions/` | pi's settings, generated theme pair, managed extensions (provider-usage footer, title-screen splash), and permission-system policy | [pi.md](docs/pi.md) |
+| `~/.pi/agent/settings.json`, `keybindings.json`, `themes/`, `extensions/` | pi's settings, word-editing bindings, generated themes, managed extensions, and permission-system policy | [pi.md](docs/pi.md) |
 
 `chezmoi apply` also reads `~/gh/skills/enabled-skills.json` and creates selected
 symlinks in **`~/.agents/skills/`**, which Pi auto-discovers (not `~/.skills/`).

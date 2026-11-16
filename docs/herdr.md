@@ -50,10 +50,37 @@ Apply restores the repo's version; fold GUI preferences you want to keep
 back into the source instead of expecting them to survive apply.
 
 Only settings and the exact `themes/dotfiles-{light,dark}.json` files are
-allowlisted for management/import, not the whole themes directory. App keys,
-other themes, runtime/state (including layout geometry), and core config
-remain unmanaged. Apply does not stop services, uninstall software, or erase
-runtime directories.
+allowlisted for management/import, not the whole themes directory. The app's
+keys file is not imported: an after-apply hook patches only the four
+word-editing shortcuts below. Other keys, themes, runtime/state (including
+layout geometry), and core config remain unmanaged. Apply does not stop
+services, uninstall software, or erase runtime directories.
+
+## Word-editing shortcuts
+
+Every apply runs `scripts/herdr-word-keys.py` through
+`run_after_95-herdr-word-keys.sh.tmpl`. It updates only these terminal bindings
+in the destination's `~/.config/herdr-app/keys.json`, preserving other keys
+and sections:
+
+| Shortcut | Action |
+|---|---|
+| Option+Left | Move one word left |
+| Option+Right | Move one word right |
+| Option+Backspace | Delete the previous word |
+| Option+Shift+Backspace | Delete the next word |
+
+The sent bytes match zsh's Emacs bindings and the managed Pi keybindings.
+These client-side shortcuts apply to both local and remote panes. Run
+`chezmoi apply` on each Mac to install Pi's matching bindings there, then
+`/reload` in its open Pi conversations.
+
+On a fresh machine, first open Herdr so it generates its complete default
+keys file, then apply again. The hook leaves a missing file absent rather
+than creating an incomplete replacement; invalid JSON fails without being
+overwritten. Repeated applies leave an already-correct file untouched.
+`chezmoi diff` shows the hook, not a computed keys-file patch; dry-run never
+executes it.
 
 ## Appearance
 
@@ -153,6 +180,6 @@ Herdr targets (alongside unrelated retirements already listed in
 - `~/.pi/agent/extensions/herdr-agent-state.ts`
 
 It preserves legacy runtime/state and unrelated Pi extensions, and leaves
-app keys/state and core settings alone. Restart Pi or run `/reload` to
+unrelated app keys, app state, and core settings alone. Restart Pi or run `/reload` to
 unload the removed extension; open a fresh app shell to pick up the new
 wrapper. Confirm the app's Agents panel still receives Pi's native status.
