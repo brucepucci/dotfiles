@@ -247,6 +247,9 @@ clippaste() {
 }
 
 # --- pi ---------------------------------------------------------------------
+# Allow copy and paste in remote Herdr sessions via OSC 52.
+export PI_CLIPBOARD_OSC52=1
+
 # `pi` always starts a NEW conversation, wrapped in its own tmux session so
 # it survives closing the terminal and can be rejoined from any device
 # (a phone over SSH included). Rejoining is deliberately manual:
