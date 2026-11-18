@@ -101,12 +101,10 @@ exceptions remain unchanged — see [theming.md](theming.md).
 ```json
 {
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-6.1-sol",
+  "defaultModel": "gpt-6.2-sol",
   "defaultThinkingLevel": "high",
   "enabledModels": [
-    "openai-codex/gpt-6-astra",
     "openai-codex/gpt-6-luna",
-    "openai-codex/gpt-6.1-sol",
     "openai-codex/gpt-6.2-sol",
     "openai-codex/gpt-6.2-astra"
   ],
