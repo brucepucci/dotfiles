@@ -57,7 +57,7 @@ return {
             },
         })
 
-        vim.lsp.enable({ "ruff", "pyright", "lua_ls", "marksman" })
+        vim.lsp.enable({ "ruff", "pyright", "lua_ls" })
 
         -- Servers are external binaries. A missing one attaches nothing and
         -- says nothing -- removing the pcall(require) guards did not cover this
@@ -67,7 +67,6 @@ return {
             ruff = "ruff",
             pyright = "pyright-langserver",
             lua_ls = "lua-language-server",
-            marksman = "marksman",
         }
         local absent = {}
         for server, exe in pairs(exes) do

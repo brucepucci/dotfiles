@@ -181,10 +181,9 @@ Added on top:
 | `<leader>d` | Line diagnostics in a float |
 | `<leader>/` | Hover — same as `K` |
 
-**Servers:** ruff (lint + format) and Pyright (types) for Python, lua_ls for
-Lua, marksman for markdown. Ruff's hover is switched off so only Pyright
-answers `K`. If a server isn't installed you get a warning naming it — silence
-means they're all running.
+**Servers:** ruff (lint + format) and Pyright (types) for Python, and lua_ls
+for Lua. Ruff's hover is switched off so only Pyright answers `K` in Python.
+If a server binary is missing, you get a warning naming it.
 
 **Formatting** has no keybinding on purpose (auto-format would rewrite what an
 agent just produced and pollute the diff you're reviewing). Use `gqip` for a

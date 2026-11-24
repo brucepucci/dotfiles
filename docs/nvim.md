@@ -167,10 +167,9 @@ below has the details.
 | `<C-S>` | Signature help (insert and snippet mode) |
 
 **Servers** (from Homebrew, never Mason): `ruff` (Python lint + format),
-`pyright` (Python types), `lua_ls` (Lua — for editing this very config),
-`marksman` (markdown). Ruff's hover is switched off so only pyright answers
-`K`. A missing server produces a warning naming it — silence means they're
-all running. **Formatting has no keybinding on purpose**: auto-format would
+`pyright` (Python types), and `lua_ls` (Lua — for editing this very config).
+Ruff's hover is switched off so only Pyright answers `K` in Python. A missing
+server binary produces a warning naming it. **Formatting has no keybinding on purpose**: auto-format would
 rewrite what an agent just produced and pollute the diff you're reviewing.
 Use `gqip` for a paragraph or `:lua vim.lsp.buf.format()` when wanted.
 

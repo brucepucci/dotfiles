@@ -132,8 +132,8 @@ Type checking and hover. Catches "you assigned a str to an int" and gives real
 type information on hover. Runs alongside ruff: ruff owns lint, Pyright owns
 types.
 
-### lua-language-server, marksman *(CLI)*
-Lua (for editing this config) and markdown.
+### lua-language-server *(CLI)*
+Language support for Lua, including this Neovim config.
 
 ### lazydev.nvim
 Teaches lua-language-server about Neovim: its bundled API types load when you
