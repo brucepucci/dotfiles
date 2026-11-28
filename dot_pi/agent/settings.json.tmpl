@@ -1,14 +1,15 @@
 {{ $mode := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "theme" | trim -}}
+{{ $provider := ternary "openai" "openai-codex" (eq .chezmoi.os "linux") -}}
 {
   "lastChangelogVersion": "1.4.0",
   "theme": "{{ if eq $mode "system" }}dotfiles-light/dotfiles-dark{{ else if eq $mode "light" }}dotfiles-light{{ else }}dotfiles-dark{{ end }}",
-  "defaultProvider": "openai-codex",
+  "defaultProvider": {{ $provider | toJson }},
   "defaultModel": "gpt-6.2-sol",
   "defaultThinkingLevel": "high",
   "enabledModels": [
-    "openai-codex/gpt-6-luna",
-    "openai-codex/gpt-6.2-sol",
-    "openai-codex/gpt-6.2-astra"
+    "{{ $provider }}/gpt-6-luna",
+    "{{ $provider }}/gpt-6.2-sol",
+    "{{ $provider }}/gpt-6.2-astra"
   ],
   "packages": [
     "npm:@gotgenes/pi-permission-system",

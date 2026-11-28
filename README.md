@@ -11,11 +11,11 @@ the editor is tuned for reading diffs and deciding what to keep, the shell
 is tuned for hopping between machines, and everything else stays out of
 the way.
 
-**Scope: a Mac, and only a Mac.** One install target — a Mac with Homebrew
-and zsh. The one remote story is being SSH'd **into** the Mac: every
-terminal and every SSH session reads the same `~/.zshrc`, and the prompt
-and pi render in the *viewing* terminal's palette, so a client from any OS
-looks right. Installing this on Linux or WSL is explicitly out of scope.
+**On the `linux` branch? Start with [the Bazzite setup guide](docs/linux.md).**
+This branch uses Linuxbrew, zsh, and Ptyxis on GNOME/Wayland. `main` is
+still macOS-only, and the general macOS instructions below apply there.
+On either platform the prompt and Pi use the *viewing* terminal's palette
+and all interactive terminals share the same `~/.zshrc`.
 
 **A terminal environment, not a fleet provisioner.** This repo also owns the
 shared outbound SSH address book, but applying it does not enable SSH servers,
@@ -61,9 +61,8 @@ The decisions, so future-you doesn't have to re-derive them:
   `~/.zshrc`; history is one shared file, merged live. A terminal is just
   a view; the shell doesn't change underneath it. oh-my-zsh and
   powerlevel10k are gone.
-- **macOS only, no cross-platform machinery.** Anything that only makes
-  sense on another OS doesn't belong here — that surface was removed once
-  and shouldn't come back.
+- **Linux adaptations stay on `linux`.** Keep shared config on `main`
+  and keep the Bazzite-specific changes in this branch.
 - **Homebrew, not Mason; built-ins, not plugins.** One package manager,
   versions visible in the `Brewfile`. Neovim's built-in commenting
   (0.10+), LSP keymaps (0.11+), and LSP framework (0.11+) are used

@@ -17,11 +17,10 @@ edit loop, test pyramid, common tasks, rollback. This file is the condensed
 agent-facing version of those rules -- keep the two in step when either
 changes.
 
-**macOS only.** The repo is optimized for one install target: a Mac with
-Homebrew and zsh. The only remote story is being SSH'd *into* the Mac.
-Nothing supports installing on Linux or WSL, and cross-platform machinery
-(OS.linux? gates, distro caveats, Linux CI, alternate install paths) should
-not be reintroduced.
+**Branch scope.** `main` supports macOS only. This `linux` branch adds
+Bazzite (GNOME/Wayland) with Linuxbrew and zsh; see `docs/linux.md` for
+its install path. Keep Linux changes on `linux` and do not commit local
+chezmoi snapshots, login state, or app settings from a live home.
 
 **Terminal environment, not fleet provisioning.** This repo owns shared
 outbound SSH aliases and offline config tests. The private
@@ -163,11 +162,10 @@ spec. No `init.lua` edit.
 
 ## Rules for this config
 
-**macOS only.** The target is a Mac with Homebrew and zsh; SSH *into* the
-Mac is the supported remote case (which is why the prompt and pi render in
-indexed terminal slots that follow the viewing terminal). Do not add
-cross-platform branches, Linux CI, or "works on distro X" caveats — if a
-change only makes sense on another OS, it does not belong here.
+**Keep the Linux changes small.** Prefer probing for tools and desktop
+features over distro checks. Homebrew and zsh are shared; Linux uses
+Ptyxis in place of Ghostty and doesn't install the Mac casks. The prompt
+and Pi still use indexed colors that follow the viewing terminal.
 
 **One shell everywhere.** `~/.zshrc` + `~/.zprofile` + `~/.config/zsh/ps1.zsh`
 are the only shell config; every terminal and SSH session reads them. The

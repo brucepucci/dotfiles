@@ -1,0 +1,54 @@
+{{- /* GENERATED at apply time -- do not hand-edit. The Linux counterpart of
+     ~/.config/ghostty/themes/dotfiles-{light,dark}: settings.toml's two theme
+     names rendered in Ptyxis's palette format by scripts/theme.py, from the
+     vendored mirror (themes/, a copy of iTerm2-Color-Schemes' ghostty/
+     directory).
+
+     ONE file, not two, because the format itself carries the pair: Ptyxis
+     reads [Light] or [Dark] out of a single palette depending on its
+     interface-style, exactly the way Ghostty picks a side of its
+     "light:...,dark:..." theme line. So theme = "system" renders the two
+     different themes and Ptyxis switches with GNOME; theme = "light" or
+     "dark" renders the SAME theme into both sections, which pins the look
+     no matter what the desktop does -- the pin has to hold even if someone
+     flips GNOME's appearance toggle.
+
+     Ptyxis finds it at ~/.local/share/org.gnome.Ptyxis/palettes/; the
+     run_onchange_after_ptyxis script selects it on the default profile.
+     Changing the theme means editing settings.toml and `chezmoi apply`,
+     never this file. */ -}}
+{{ $a := output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "appearance" | trim | fromJson -}}
+{{ $lightName := $a.light_theme -}}
+{{ $darkName := $a.dark_theme -}}
+{{ $light := $a.light.terminal -}}
+{{ $dark := $a.dark.terminal -}}
+{{ if eq $a.mode "light" }}{{ $darkName = $a.light_theme }}{{ $dark = $a.light.terminal }}{{ end -}}
+{{ if eq $a.mode "dark" }}{{ $lightName = $a.dark_theme }}{{ $light = $a.dark.terminal }}{{ end -}}
+[Palette]
+Name=dotfiles
+
+{{ range $section, $t := dict "Light" $light "Dark" $dark -}}
+[{{ $section }}]
+Background={{ $t.background }}
+Foreground={{ $t.foreground }}
+Cursor={{ index $t "cursor-color" }}
+CursorForeground={{ index $t "cursor-text" }}
+Color0={{ $t.palette_0 }}
+Color1={{ $t.palette_1 }}
+Color2={{ $t.palette_2 }}
+Color3={{ $t.palette_3 }}
+Color4={{ $t.palette_4 }}
+Color5={{ $t.palette_5 }}
+Color6={{ $t.palette_6 }}
+Color7={{ $t.palette_7 }}
+Color8={{ $t.palette_8 }}
+Color9={{ $t.palette_9 }}
+Color10={{ $t.palette_10 }}
+Color11={{ $t.palette_11 }}
+Color12={{ $t.palette_12 }}
+Color13={{ $t.palette_13 }}
+Color14={{ $t.palette_14 }}
+Color15={{ $t.palette_15 }}
+
+{{ end -}}
+# Light: {{ $lightName }}   Dark: {{ $darkName }}   (settings.toml theme = {{ $a.mode }})

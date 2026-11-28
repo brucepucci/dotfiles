@@ -3,8 +3,7 @@
 # Not run by chezmoi. Install with:
 #   brew bundle --file="$(chezmoi source-path)/Brewfile"
 #
-# macOS only -- Homebrew on a Mac is the one supported install path (the
-# repo's scope; see README).
+# This branch also supports Linuxbrew on a Bazzite/GNOME desktop.
 
 # --- editor ---------------------------------------------------------------
 brew "neovim"               # 0.12+ REQUIRED: nvim-treesitter main branch, vim.hl
@@ -72,9 +71,13 @@ brew "tmux"
 # terminal this setup standardizes on; the colors it renders come from
 # this repo's own theme mirror (themes/), so the app is NOT a
 # prerequisite for `chezmoi apply`.
-cask "font-jetbrains-mono-nerd-font"
-cask "ghostty"
-# The desktop Herdr is the only supported Herdr UI. Its herdr-core backend
-# is set up through the app, not the unrelated legacy `herdr` formula.
-# chezmoi manages only app preferences; see docs/herdr.md for first launch.
-cask "herdr-app"
+if OS.mac?
+  cask "font-jetbrains-mono-nerd-font"
+  cask "ghostty"
+  # Desktop Herdr sets up its own core backend; see docs/herdr.md.
+  cask "herdr-app"
+elsif OS.linux?
+  # See docs/linux.md for Ptyxis, the font, and optional Herdr Desktop.
+  brew "zsh"
+  brew "wl-clipboard"
+end

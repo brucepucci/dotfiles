@@ -1,8 +1,8 @@
 -- appearance.lua -- the light/dark mode, from the palette settings.
 --
 -- The mode is rendered into core/theming.lua from settings.toml (the repo root):
---   theme = "system" -- follow the macOS interface style live, the way
---     Ghostty's theme pair and the prompt's indexed colors do; flipping the
+--   theme = "system" -- follow the OS interface style live, the way the
+--     terminal's theme pair and the prompt's indexed colors do; flipping the
 --     OS mid-session needs no restart.
 --   theme = "light"/"dark" -- pin the whole stack, OS be damned.
 --
@@ -22,14 +22,33 @@ local M = {}
 -- because at startup nothing else would.
 local applied = false
 
--- `defaults read -g AppleInterfaceStyle` prints "Dark" and exits 0 in dark
--- mode; in light mode the key does not exist and it exits nonzero.
+-- The OS's own light/dark signal, asked the way each platform answers it --
+-- the same probes delta-theme (~/.local/bin) uses, so the editor and the
+-- diff pager can never disagree:
+--   macOS  `defaults read -g AppleInterfaceStyle` prints "Dark" and exits 0
+--          in dark mode; in light mode the key does not exist and it exits
+--          nonzero.
+--   GNOME  `gsettings get org.gnome.desktop.interface color-scheme` prints
+--          'prefer-dark', 'prefer-light', or 'default' -- 'default' means
+--          no preference expressed, which Adwaita renders light.
+-- Fall back to dark if the Linux desktop preference is unavailable, like
+-- delta and Pi do.
 function M.detect()
-    local style = vim.trim(vim.fn.system({ "defaults", "read", "-g", "AppleInterfaceStyle" }))
-    if vim.v.shell_error == 0 and style == "Dark" then
-        return "dark"
+    if vim.fn.has("mac") == 1 then
+        local style = vim.trim(vim.fn.system({ "defaults", "read", "-g", "AppleInterfaceStyle" }))
+        if vim.v.shell_error == 0 and style == "Dark" then
+            return "dark"
+        end
+        return "light"
+    elseif vim.fn.executable("gsettings") == 1 then
+        local scheme = vim.fn.system({
+            "gsettings", "get", "org.gnome.desktop.interface", "color-scheme",
+        })
+        if vim.v.shell_error == 0 and (scheme:find("prefer%-light") or scheme:find("default")) then
+            return "light"
+        end
     end
-    return "light"
+    return "dark"
 end
 
 -- Resolve the mode, set 'background', and (re)render the scheme if needed.

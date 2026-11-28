@@ -3,10 +3,17 @@
 # Interactive-shell setup — prompt, aliases, completion, secrets — lives in
 # ~/.zshrc.
 
+# Homebrew, wherever it landed: Apple Silicon, Intel Mac, or Linuxbrew.
+# The ladder is a runtime probe, not a template -- one file that is correct
+# on every machine this repo is checked out on.
 if [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [[ -x /usr/local/bin/brew ]]; then
   eval "$(/usr/local/bin/brew shellenv)"
+elif [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+elif [[ -x $HOME/.linuxbrew/bin/brew ]]; then
+  eval "$($HOME/.linuxbrew/bin/brew shellenv)"
 fi
 
 # Personal, machine-local scripts (not Homebrew-managed). delta-theme lives

@@ -1,0 +1,71 @@
+#!/bin/sh
+# Ptyxis wiring -- the Linux counterpart of the Ghostty config file.
+#
+# Ghostty is configured by a file this repo manages; Ptyxis (GNOME's
+# terminal, and Bazzite's default) keeps its settings in dconf instead, so
+# the equivalent of `theme = light:dotfiles-light,dark:dotfiles-dark` is
+# three gsettings writes. That is all this does -- appearance only, exactly
+# like the Ghostty config: the palette this repo generates, the Nerd Font
+# the prompt and Neovim render glyphs from, and which side of the palette
+# to show. Nothing shell-related; the shell is ~/.zshrc, one file for every
+# terminal.
+#
+# run_onchange_: chezmoi hashes the RENDERED script, so the settings line
+# below is what makes it re-run -- edit settings.toml, apply, and the
+# terminal follows. after_: the palette file must exist before Ptyxis is
+# pointed at it.
+#
+# Do not touch desktop preferences when applying into a staging home or
+# on a machine without Ptyxis.
+#
+# settings: theme={{ output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "theme" | trim }} light={{ output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "light_theme" | trim }} dark={{ output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "dark_theme" | trim }}
+
+set -eu
+
+MODE='{{ output (joinPath .chezmoi.sourceDir "scripts" "theme.py") "--setting" "theme" | trim }}'
+
+destination={{ .chezmoi.destDir | shellQuote }}
+[ "$(cd -P -- "$destination" && pwd -P)" = "$(cd -P -- "$HOME" && pwd -P)" ] || exit 0
+[ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ] || exit 0
+command -v gsettings >/dev/null 2>&1 || exit 0
+gsettings list-schemas 2>/dev/null | grep -qx 'org.gnome.Ptyxis' || exit 0
+
+# The palette is per PROFILE, and a profile's settings live at a
+# uuid-keyed dconf path with a relocatable schema -- there is no
+# "org.gnome.Ptyxis.Profile" to write without naming the path. Do every
+# profile, not just the default: a second profile silently keeping the
+# stock palette is the kind of drift this repo exists to prevent.
+uuids=$(gsettings get org.gnome.Ptyxis profile-uuids | tr -d "[]'," )
+default_uuid=$(gsettings get org.gnome.Ptyxis default-profile-uuid | tr -d "'")
+case " $uuids " in
+  *" $default_uuid "*) ;;
+  *) uuids="$uuids $default_uuid" ;;
+esac
+
+for uuid in $uuids; do
+  [ -n "$uuid" ] || continue
+  gsettings set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/$uuid/" \
+    palette 'dotfiles'
+done
+
+# The Nerd Font: the prompt's git branch mark and Neovim's diagnostic and
+# markdown icons are Nerd Font glyphs -- without this they are boxes.
+# Ghostty ships a Nerd Font as its default face and needs no equivalent
+# line; Ptyxis defaults to the system monospace, which is not one.
+if fc-list 2>/dev/null | grep -qi 'JetBrainsMono Nerd Font'; then
+  gsettings set org.gnome.Ptyxis use-system-font false
+  gsettings set org.gnome.Ptyxis font-name 'JetBrainsMono Nerd Font 12'
+else
+  printf 'ptyxis: JetBrainsMono Nerd Font is not installed -- glyphs will render as boxes\n' >&2
+  printf 'ptyxis: install it with scripts/install-nerd-font.sh, then select it in Ptyxis Preferences\n' >&2
+fi
+
+# Which side of the palette. "system" follows GNOME's own light/dark
+# toggle, the way Ghostty's light:/dark: pair follows macOS; a pinned mode
+# forces the side -- and the palette itself already renders the SAME theme
+# into both sections when pinned, so the look holds either way.
+case "$MODE" in
+light) gsettings set org.gnome.Ptyxis interface-style 'light' ;;
+dark)  gsettings set org.gnome.Ptyxis interface-style 'dark' ;;
+*)     gsettings set org.gnome.Ptyxis interface-style 'system' ;;
+esac

@@ -50,12 +50,13 @@ vim.api.nvim_create_autocmd("FileChangedShellPost", {
 -- ---------------------------------------------------------------------------
 -- OS appearance
 --
--- macOS can flip Light/Dark while a session is running; Ghostty follows on
--- its own, Neovim needs a nudge on refocus. See core/appearance.lua.
+-- The OS can flip Light/Dark while a session is running; the terminal
+-- follows on its own (Ghostty's theme pair, Ptyxis's palette sections),
+-- Neovim needs a nudge on refocus. See core/appearance.lua.
 -- ---------------------------------------------------------------------------
 vim.api.nvim_create_autocmd("FocusGained", {
     group = aug,
-    desc = "Follow the OS light/dark appearance (Ghostty switches itself)",
+    desc = "Follow the OS light/dark appearance (the terminal switches itself)",
     callback = function()
         require("bruce.core.appearance").sync()
     end,

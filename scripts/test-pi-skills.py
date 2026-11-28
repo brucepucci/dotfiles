@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 SOURCE = Path(__file__).resolve().parent.parent
@@ -165,7 +166,8 @@ with tempfile.TemporaryDirectory(prefix="pi-skills-") as work:
     assert snapshot() == stable
     manifest.write_text("[]")
     repo.rename(repo.with_name("missing-checkout"))
-    apply(ok=False)
+    # Linux treats a missing checkout as optional without pruning existing links.
+    apply(ok=sys.platform == "linux")
     assert snapshot() == stable
     repo.with_name("missing-checkout").rename(repo)
     apply()

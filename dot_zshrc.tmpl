@@ -14,10 +14,15 @@
 # --- PATH -------------------------------------------------------------------
 # Login shells get Homebrew from ~/.zprofile; this re-establishes it for
 # non-login interactive shells (nested zsh, emulators that skip .zprofile).
+# Same ladder as ~/.zprofile: Apple Silicon, Intel Mac, Linuxbrew.
 if [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [[ -x /usr/local/bin/brew ]]; then
   eval "$(/usr/local/bin/brew shellenv)"
+elif [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+elif [[ -x $HOME/.linuxbrew/bin/brew ]]; then
+  eval "$($HOME/.linuxbrew/bin/brew shellenv)"
 fi
 
 # Tools that install to ~/.local/bin (uv, remctl). Guarded so machines
@@ -118,9 +123,11 @@ fi
 # fzf: fuzzy Ctrl-R (history), Ctrl-T (files into the command line),
 # Alt-C (directories). fzf replaces the Ctrl-R widget only -- the
 # up/down beginning-search binds above are different keys; both survive.
-[[ -r $HOMEBREW_PREFIX/opt/fzf/shell/key-bindings.zsh ]] \
+# The Linuxbrew fzf scripts try to restore ZLE on exit; skip them when
+# zsh -ic has no tty and therefore cannot enable ZLE.
+[[ -t 0 && -r $HOMEBREW_PREFIX/opt/fzf/shell/key-bindings.zsh ]] \
   && source $HOMEBREW_PREFIX/opt/fzf/shell/key-bindings.zsh
-[[ -r $HOMEBREW_PREFIX/opt/fzf/shell/completion.zsh ]] \
+[[ -t 0 && -r $HOMEBREW_PREFIX/opt/fzf/shell/completion.zsh ]] \
   && source $HOMEBREW_PREFIX/opt/fzf/shell/completion.zsh
 
 # zsh-autosuggestions: fish-style ghost text from history. Indexed color
@@ -190,10 +197,9 @@ alias grep='grep --color=auto'
 
 # --- Clipboard --------------------------------------------------------------
 # clipcopy / clippaste -- the oh-my-zsh clipboard commands, reimplemented
-# for this repo's one platform instead of sourced from omz (whose darwin
-# branch is `cat "${1:-/dev/stdin}" | pbcopy`): macOS ships pbcopy/
-# pbpaste with the OS, so omz's OSTYPE ladder collapses to nothing and
-# the whole thing is about 30 lines we own. Contract:
+# here instead of sourced from omz (whose darwin branch is
+# `cat "${1:-/dev/stdin}" | pbcopy`) so the whole thing is about 40 lines
+# we own. Contract:
 #   <command> | clipcopy       copy piped stdin
 #   clipcopy <file>            copy one file's contents
 #   clippaste                  print the clipboard (redirect to save it)
@@ -203,22 +209,76 @@ alias grep='grep --color=auto'
 # `while read` loop, or any other redirect cannot quietly blank the
 # clipboard or drain the loop ("clipcopy < f" is not a form; name the
 # file). Bad paths die at the shell with a clean message instead of
-# inside pbcopy: a directory is refused (raw `pbcopy < dir` aborts with
-# an ObjC stack trace), an unreadable path is named, more than one file
-# argument is an error. As with omz, an explicit file argument wins when
-# a pipe and a file both arrive. They are interactive-shell functions:
-# every terminal and interactive SSH session into the Mac has them (a
-# scripted `ssh host clipcopy` runs a shell that sources no .zshrc --
-# use pbcopy there). They read and write the Mac's own pasteboard -- the
-# same clipboard nvim's yanks use; the other direction (onto the VIEWING
-# device's clipboard over SSH) stays tmux's OSC 52 copy-mode job
-# (docs/tmux.md).
+# inside the backend: a directory is refused (raw `pbcopy < dir` aborts
+# with an ObjC stack trace), an unreadable path is named, more than one
+# file argument is an error. As with omz, an explicit file argument wins
+# when a pipe and a file both arrive. They are interactive-shell
+# functions: every terminal and interactive SSH session into this machine
+# has them (a scripted `ssh host clipcopy` runs a shell that sources no
+# .zshrc -- use the backend directly there). They read and write THIS
+# machine's own clipboard -- the same one nvim's yanks use; the other
+# direction (onto the VIEWING device's clipboard over SSH) stays tmux's
+# OSC 52 copy-mode job (docs/tmux.md).
+#
+# The backend is probed once here, not branched on OSTYPE: macOS ships
+# pbcopy/pbpaste with the OS, a Wayland desktop has wl-clipboard, X11 has
+# xclip or xsel. A machine with none of them (a bare SSH session with no
+# display) leaves the arrays empty and both functions say so instead of
+# failing with "command not found" inside a pipe.
+# __clip_copy_detach marks a backend that FORKS: on a Mac the pasteboard is
+# a system service and pbcopy just exits, but X11 and Wayland have no such
+# service -- the clipboard belongs to a live client, so wl-copy, xclip and
+# xsel all daemonize and stay running to serve paste requests. That daemon
+# inherits the caller's stdout and stderr, so anything reading them to EOF
+# -- a command substitution, a pipeline, a script whose output is captured
+# -- blocks until the NEXT copy replaces the daemon. `printf x | clipcopy`
+# inside `zsh -c` hangs forever. Hand those backends /dev/null instead and
+# report failure from the exit status, which the parent still sets before
+# it forks.
+typeset -ga __clip_copy_cmd __clip_paste_cmd
+typeset -g __clip_copy_detach=0
+if command -v pbcopy >/dev/null 2>&1; then
+  __clip_copy_cmd=(pbcopy)
+  __clip_paste_cmd=(pbpaste)
+elif [[ -n ${WAYLAND_DISPLAY:-} ]] && command -v wl-copy >/dev/null 2>&1; then
+  # --no-newline: wl-paste appends one that pbpaste does not, and the
+  # round trip through clipcopy|clippaste must be byte-identical.
+  __clip_copy_cmd=(wl-copy)
+  __clip_paste_cmd=(wl-paste --no-newline)
+  __clip_copy_detach=1
+elif command -v xclip >/dev/null 2>&1; then
+  __clip_copy_cmd=(xclip -selection clipboard -in)
+  __clip_paste_cmd=(xclip -selection clipboard -out)
+  __clip_copy_detach=1
+elif command -v xsel >/dev/null 2>&1; then
+  __clip_copy_cmd=(xsel --clipboard --input)
+  __clip_paste_cmd=(xsel --clipboard --output)
+  __clip_copy_detach=1
+fi
+
+# Feed stdin to the copy backend. Only the forking backends get the
+# redirect -- pbcopy's own diagnostics stay visible on a Mac.
+__clip_copy_run() {
+  if (( __clip_copy_detach )); then
+    if ! $__clip_copy_cmd >/dev/null 2>&1; then
+      print -ru2 -- "clipcopy: $__clip_copy_cmd[1] failed -- is a display server running? (WAYLAND_DISPLAY, XDG_RUNTIME_DIR, DISPLAY)"
+      return 1
+    fi
+  else
+    $__clip_copy_cmd
+  fi
+}
+
 clipcopy() {
   emulate -L zsh
   local usage="usage: <command> | clipcopy  |  clipcopy <file>"
   case $1 in
     -h|--help) print -ru2 -- "$usage"; return 0 ;;
   esac
+  if (( ! ${#__clip_copy_cmd} )); then
+    print -ru2 -- "clipcopy: no clipboard backend (pbcopy, wl-copy, xclip, xsel)"
+    return 1
+  fi
   if (( $# > 1 )); then
     print -ru2 -- "clipcopy: one file at a time"
     print -ru2 -- "$usage"
@@ -233,9 +293,9 @@ clipcopy() {
       print -ru2 -- "clipcopy: not readable: $file"
       return 1
     fi
-    pbcopy < "$file"
+    __clip_copy_run < "$file"
   elif [[ -p /dev/stdin ]]; then
-    pbcopy
+    __clip_copy_run
   else
     print -ru2 -- "$usage"
     return 1
@@ -243,7 +303,12 @@ clipcopy() {
 }
 
 clippaste() {
-  pbpaste
+  emulate -L zsh
+  if (( ! ${#__clip_paste_cmd} )); then
+    print -ru2 -- "clippaste: no clipboard backend (pbpaste, wl-paste, xclip, xsel)"
+    return 1
+  fi
+  $__clip_paste_cmd
 }
 
 # --- pi ---------------------------------------------------------------------
@@ -604,8 +669,22 @@ source "$HOME/.config/zsh/ps1.zsh"
 # --- Greeting ---------------------------------------------------------------
 # Banner on new interactive shells. No p10k-style instant prompt exists
 # anymore, so console output here is not captured or discarded.
+#
+# The logo is fastfetch's own pick from /etc/os-release, with one override.
+# fastfetch ships no bazzite logo (--list-logos has the Fedora family and
+# nothing else from ublue), so on this box ID_LIKE="fedora" makes it draw
+# stock Fedora -- true of the base image, wrong for the machine. Bazzite
+# ships its own ASCII at the path below; hand it over when it exists.
+# Everything else stays stock: this is the logo only, NOT the distro's
+# /etc/profile.d alias, which also swaps in its own module list and a
+# truecolor logo tint from the GNOME accent (the color-system rule keeps
+# hex out of the shell). A Mac, or any box without the file, is unchanged.
 if [[ -o interactive ]] && command -v fastfetch >/dev/null; then
-  fastfetch
+  if [[ -r /usr/share/ublue-os/bazzite/logo.txt ]]; then
+    fastfetch --logo /usr/share/ublue-os/bazzite/logo.txt
+  else
+    fastfetch
+  fi
 fi
 
 # --- Syntax highlighting -----------------------------------------------------

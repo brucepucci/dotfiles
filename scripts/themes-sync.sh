@@ -20,7 +20,8 @@
 # it wholesale); they live in themes-local/, which the resolver searches
 # first and this script never touches.
 #
-# macOS only (bsdtar); stdlib tools only.
+# Runs on macOS (bsdtar) and Linux (GNU tar, which needs --wildcards
+# spelled out for the extract pattern); stdlib tools only.
 
 set -euo pipefail
 
@@ -58,8 +59,15 @@ cleanup() {
 trap cleanup EXIT
 chmod 755 "$stage"   # mktemp creates 0700; the mirror must stay world-readable
 
+# GNU tar treats an extract pattern literally unless --wildcards is given;
+# bsdtar (macOS) globs by default and rejects the flag. Probe once.
+tar_glob=()
+if tar --help 2>&1 | grep -q -- --wildcards; then
+  tar_glob=(--wildcards)
+fi
+
 curl -fsSL "https://codeload.github.com/mbadolato/iTerm2-Color-Schemes/tar.gz/$sha" \
-  | tar -xz -C "$stage" --strip-components=2 '*/ghostty/*' \
+  | tar -xz -C "$stage" --strip-components=2 "${tar_glob[@]}" '*/ghostty/*' \
   || die "download/extract failed"
 
 # tar's include pattern matches path SEGMENTS, not only upstream's top-level

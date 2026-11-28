@@ -149,8 +149,12 @@ For the permission system, three distinct pieces, only two of them managed:
 | Piece | Where | Managed? |
 |---|---|---|
 | The settings entry | `"packages"` in `dot_pi/agent/settings.json.tmpl` | **yes** |
-| The policy config | `~/.pi/agent/extensions/pi-permission-system/config.json`, source `dot_pi/agent/extensions/private_pi-permission-system/config.json` | **yes — plain static file** (currently `yoloMode: true`: `ask` results auto-approve) |
+| The policy config | `~/.pi/agent/extensions/pi-permission-system/config.json`, source `dot_pi/agent/extensions/private_pi-permission-system/config.json` | **yes — plain static file** |
 | The package payload | `~/.pi/agent/npm/…`, installed by `pi install npm:@gotgenes/pi-permission-system` | **no — npm's tree, ignored** |
+
+Auto-approve is a session option, not a setting in the policy file. To enable
+it for one session, launch with `pi --auto-approve` or run
+`/permission-system:auto-approve on` inside Pi.
 
 On a **fresh machine**, `chezmoi apply` writes the entry but not the
 payload — pi auto-installs missing *project* packages at startup, never

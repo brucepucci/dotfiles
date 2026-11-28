@@ -11,7 +11,7 @@ import tempfile
 
 repo = Path(__file__).resolve().parents[1]
 brewfile = (repo / "Brewfile").read_text()
-assert re.search(r'^cask "herdr-app"$', brewfile, re.M), "desktop app cask missing"
+assert re.search(r'^[ \t]*cask "herdr-app"$', brewfile, re.M), "desktop app cask missing"
 assert not re.search(r'^brew "herdr(?:-core)?"', brewfile, re.M), "legacy/nonexistent formula"
 assert not (repo / "private_dot_config/herdr").exists(), "legacy config still managed"
 app_source = repo / "private_dot_config/herdr-app"

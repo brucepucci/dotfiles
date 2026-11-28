@@ -131,8 +131,8 @@
 #   --nvim   also bootstrap Neovim plugins from scratch in the temp HOME
 #            (~2 min, needs network). Without it the run takes seconds.
 #
-# Runs on macOS (the repo's one target). Assertions adapt to what the
-# host has: e.g. EDITOR must fall back to vim when nvim is not resolvable
+# Runs on macOS and Bazzite/Linux. Assertions adapt to what the host
+# has: e.g. EDITOR must fall back to vim when nvim is not resolvable
 # — that guard branch is a test too.
 
 set -euo pipefail
@@ -142,6 +142,14 @@ WORK="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-smoke.XXXXXX")"
 NEWHOME="$WORK/home"
 mkdir -p "$NEWHOME"
 trap 'rm -rf "$WORK"' EXIT
+
+# zsh's path is not a constant: macOS ships it at /bin/zsh, a Fedora-family
+# box gets it from Homebrew (/home/linuxbrew/.linuxbrew/bin/zsh) or a distro
+# package (/usr/bin/zsh). Resolve it once; every harness below spawns THIS
+# binary by absolute path, because the shells it starts run under `env -i`
+# with a stock PATH that would not find a Homebrew one.
+ZSH="$(command -v zsh || true)"
+[[ -x "$ZSH" ]] || { printf '  FAIL zsh not found on PATH\n' >&2; exit 1; }
 
 step() { printf '\n== %s\n' "$1"; }
 ok()   { printf '  ok  %s\n' "$1"; }
@@ -153,7 +161,7 @@ die()  { printf '  FAIL %s\n' "$1" >&2; exit 1; }
 fresh_zsh() {
   env -i HOME="$NEWHOME" TERM=xterm-256color \
       PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
-      /bin/zsh -l -i -c "$1" 2>/dev/null
+      "$ZSH" -l -i -c "$1" 2>/dev/null
 }
 
 WITH_NVIM=0
@@ -204,7 +212,10 @@ done
 # gh auth setup-git's own write to ~/.gitconfig would be wiped by the
 # next apply anyway (this repo owns the file).
 if command -v gh >/dev/null 2>&1; then
-  grep -qE '^\thelper =$' "$NEWHOME/.gitconfig" \
+  # A literal tab, built with printf: BSD grep reads '\t' in an ERE as a
+  # tab, GNU grep reads it as a literal 't' (and warns). One line that
+  # means the same thing on both.
+  grep -qE "^$(printf '\t')helper =$" "$NEWHOME/.gitconfig" \
     || die "~/.gitconfig: gh present but the empty helper reset line is missing"
   grep -qF 'auth git-credential' "$NEWHOME/.gitconfig" \
     || die "~/.gitconfig: gh present but its credential helper did not render"
@@ -237,6 +248,30 @@ grep -qF "set -g window-status-current-format ' | #I:#W#{?window_flags,#{window_
   || die "~/.tmux.conf: current-window entry lacks the separator -- session name blends into the window index"
 [[ ! -e "$NEWHOME/.zsh/secrets.zsh" ]] || die "~/.zsh/secrets.zsh was applied"
 ok "full tree rendered, diff empty, no secrets applied"
+
+step "Ptyxis palette and Pi permissions"
+python3 - "$SOURCE" "$NEWHOME" <<'PY'
+import configparser, json, subprocess, sys
+from pathlib import Path
+source, home = map(Path, sys.argv[1:])
+a = json.loads(subprocess.check_output([source / 'scripts/theme.py', 'appearance']))
+palette = configparser.ConfigParser(interpolation=None)
+assert palette.read(home / '.local/share/org.gnome.Ptyxis/palettes/dotfiles.palette')
+assert palette['Palette']['Name'] == 'dotfiles'
+for side in ('Light', 'Dark'):
+    roles = a[a['mode'] if a['mode'] != 'system' else side.lower()]['terminal']
+    assert palette[side]['Background'] == roles['background']
+    assert palette[side]['Foreground'] == roles['foreground']
+    for i in range(16):
+        assert palette[side][f'Color{i}'] == roles[f'palette_{i}']
+pi = home / '.pi/agent'
+assert json.loads((pi / 'extensions/pi-permission-system/config.json').read_text()) == {
+    'debugLog': False, 'permissionReviewLog': True,
+}
+if sys.platform == 'linux':
+    assert json.loads((pi / 'settings.json').read_text())['defaultProvider'] == 'openai'
+PY
+ok "palette matches the resolver; Pi uses portable settings"
 
 step "local skills: auto-discovery links and repeat apply"
 python3 "$SOURCE/scripts/test-pi-skills.py"
@@ -272,8 +307,13 @@ ok "selected auto-discovery links installed; unchanged apply is offline and stab
 
 step "SSH address book: aliases and credential separation (offline)"
 [[ -f "$NEWHOME/.ssh/hosts.conf" ]] || die "missing ~/.ssh/hosts.conf"
-[[ "$(stat -f '%Lp' "$NEWHOME/.ssh")" == "700" ]] || die "~/.ssh must be mode 700"
-[[ "$(stat -f '%Lp' "$NEWHOME/.ssh/hosts.conf")" == "600" ]] || die "hosts.conf must be mode 600"
+python3 - "$NEWHOME" <<'PY'
+import stat, sys
+from pathlib import Path
+ssh = Path(sys.argv[1]) / '.ssh'
+assert stat.S_IMODE(ssh.stat().st_mode) == 0o700, '~/.ssh must be mode 700'
+assert stat.S_IMODE((ssh / 'hosts.conf').stat().st_mode) == 0o600, 'hosts.conf must be mode 600'
+PY
 [[ ! -e "$NEWHOME/.ssh/config" ]] || die "client-local SSH config was applied"
 [[ ! -e "$NEWHOME/.ssh/authorized_keys" ]] || die "server SSH authorization was applied"
 python3 "$SOURCE/scripts/test-ssh-address-book.py" "$NEWHOME/.ssh/hosts.conf"
@@ -1049,7 +1089,7 @@ step "legacy ZDOTDIR guard (pre-unification Ghostty window)"
 out="$(env -i HOME="$NEWHOME" TERM=xterm-256color \
       PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
       ZDOTDIR="$NEWHOME/.config/zsh-ghostty" \
-      /bin/zsh -l -i -c '
+      "$ZSH" -l -i -c '
         echo "zdot=${ZDOTDIR:-}"
         echo "hist=$HISTFILE"
         echo "plen=${#PROMPT}"
@@ -1065,7 +1105,7 @@ step "SSH session prompt"
 out="$(env -i HOME="$NEWHOME" TERM=xterm-256color \
       PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
       SSH_CONNECTION="203.0.113.9 51234 192.168.4.32 22" \
-      /bin/zsh -l -i -c 'print -P "$PROMPT" | grep -q "@" && echo seg=yes' \
+      "$ZSH" -l -i -c 'print -P "$PROMPT" | grep -q "@" && echo seg=yes' \
       2>/dev/null || true)"
 [[ "$out" == *"seg=yes"* ]] || die "SSH prompt lacks user@host segment"
 ok "user@host segment present over SSH"
@@ -1108,7 +1148,7 @@ fresh_zsh "print -S '$TOKEN'" >/dev/null 2>&1 || true
 out="$(printf 'fc -l | grep -q %s && echo found=yes\nexit\n' "$TOKEN" \
       | env -i HOME="$NEWHOME" TERM=xterm-256color \
           PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
-          /bin/zsh -l -i 2>/dev/null || true)"
+          "$ZSH" -l -i 2>/dev/null || true)"
 [[ "$out" == *found=yes* ]] || die "history not shared between shells"
 ok "written in one shell, visible in the next"
 
@@ -1142,7 +1182,7 @@ out="$(env -i HOME="$NEWHOME" TERM=xterm-256color \
       PATH="$cbin:/usr/bin:/bin" FAKE_PB="$FAKEPB" CBIN="$cbin" \
       CLIPFILE="$WORK/clip-file" EXPECTPIPE="$WORK/expect-pipe" \
       WORKDIR="$WORK" \
-      /bin/zsh -l -i -c '
+      "$ZSH" -l -i -c '
   PATH="$CBIN:/usr/bin:/bin"
   print -r -- pipe-token | clipcopy || { echo fail=pipe-copy; exit 1; }
   cmp -s "$FAKE_PB" "$EXPECTPIPE" || { echo fail=pipe-bytes; exit 1; }
@@ -1178,7 +1218,7 @@ zdot="$WORK/zdot"; mkdir -p "$zdot"
 printf '%s\n' "source $NEWHOME/.config/zsh/ps1.zsh" > "$zdot/.zshrc"
 printf 'echo one\nclear\n\n\necho two\nexit\n' \
   | env -i HOME="$NEWHOME" ZDOTDIR="$zdot" TERM=xterm-256color \
-      PATH="/usr/bin:/bin" /bin/zsh -i > "$WORK/prompt-out" 2>/dev/null || true
+      PATH="/usr/bin:/bin" "$ZSH" -i > "$WORK/prompt-out" 2>/dev/null || true
 LC_ALL=C sed $'s/\x1b\[[0-9;]*[A-Za-z]//g' "$WORK/prompt-out" > "$WORK/prompt-visual"
 out="$(cat "$WORK/prompt-visual")"
 [[ "$(sed -n 1p "$WORK/prompt-visual")" == one ]] || die "session opens with a blank line: $out"
@@ -1227,10 +1267,10 @@ echo "pi \$*" >> "\$FAKE_PI"
 SH
 chmod +x "$wbin/tmux" "$wbin/pi"
 wrap_zsh() {  # $1 = cwd, $2 = pi args, $3 = optional retired TUI marker
-  env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
+  env -i HOME="$NEWHOME" TERM=xterm-256color SHELL="$ZSH" \
       PATH="$wbin:/usr/bin:/bin" FAKE_SESS="$SESS" FAKE_LOG="$TLOG" \
       FAKE_PI="$PLOG" PI_TMUX_WRAP=force HC_TERMINAL_ID= HERDR_ENV="${3:-}" \
-      /bin/zsh -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$1' && pi $2" 2>&1
+      "$ZSH" -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$1' && pi $2" 2>&1
 }
 proj="$WORK/demoproj"; mkdir -p "$proj"
 # 1. topic-named session, args passed through, hint printed
@@ -1273,10 +1313,10 @@ grep -qF 'new-session -s demoproj command pi --use-theme dotfiles-dark' "$TLOG" 
 # 4. guards: all fall through to plain pi, never touching tmux
 guard_plain() {  # $1 = extra env, $2 = pi args
   : > "$TLOG"; : > "$PLOG"
-  env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
+  env -i HOME="$NEWHOME" TERM=xterm-256color SHELL="$ZSH" \
       PATH="$wbin:/usr/bin:/bin" FAKE_SESS="$SESS" FAKE_LOG="$TLOG" \
       FAKE_PI="$PLOG" PI_TMUX_WRAP=force $1 \
-      /bin/zsh -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$proj' && pi $2" \
+      "$ZSH" -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$proj' && pi $2" \
       >/dev/null 2>&1
   [[ -s "$PLOG" ]] || die "guard($1 $2): pi never ran"
   [[ ! -s "$TLOG" ]] || die "guard($1 $2): wrapper must not touch tmux"
@@ -1296,10 +1336,10 @@ guard_plain "PI_TMUX_WRAP=never" ""
 # but cd resolves /var -> /private/var, and the guard compares strings.
 homep=$(cd "$NEWHOME" && /bin/pwd -P)
 : > "$TLOG"; : > "$PLOG"
-env -i HOME="$homep" TERM=xterm-256color SHELL=/bin/zsh \
+env -i HOME="$homep" TERM=xterm-256color SHELL="$ZSH" \
     PATH="$wbin:/usr/bin:/bin" FAKE_SESS="$SESS" FAKE_LOG="$TLOG" \
     FAKE_PI="$PLOG" PI_TMUX_WRAP=force \
-    /bin/zsh -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$homep' && pi" \
+    "$ZSH" -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$homep' && pi" \
     >/dev/null 2>&1
 [[ -s "$PLOG" && ! -s "$TLOG" ]] || die "from \$HOME pi must run plain"
 # no tmux binary on PATH: plain pi, no crash. The payload PATH drops
@@ -1308,9 +1348,9 @@ env -i HOME="$homep" TERM=xterm-256color SHELL=/bin/zsh \
 # needs coreutils, so the shim dir alone is enough.
 nobin="$WORK/nobin"; mkdir -p "$nobin"
 cp "$wbin/pi" "$nobin/pi"; : > "$PLOG"
-env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
+env -i HOME="$NEWHOME" TERM=xterm-256color SHELL="$ZSH" \
     PATH="$nobin:/usr/bin:/bin" FAKE_PI="$PLOG" PI_TMUX_WRAP=force \
-    /bin/zsh -l -i -c "PATH='$nobin'; cd '$proj' && pi" \
+    "$ZSH" -l -i -c "PATH='$nobin'; cd '$proj' && pi" \
     >/dev/null 2>&1 || true
 [[ -s "$PLOG" ]] || die "without tmux the wrapper must fall through to pi"
 # 5. `pi update` triage, classified by pi's target grammar: the wrapper
@@ -1350,10 +1390,10 @@ guard_plain "PI_TMUX_WRAP=never" "update --extensions"
 # refusal must not depend on the wrap mode: under PI_TMUX_WRAP=never the
 # triage still fires (it precedes the wrap check entirely)
 : > "$TLOG"; : > "$PLOG"
-out="$(env -i HOME="$NEWHOME" TERM=xterm-256color SHELL=/bin/zsh \
+out="$(env -i HOME="$NEWHOME" TERM=xterm-256color SHELL="$ZSH" \
     PATH="$wbin:/usr/bin:/bin" FAKE_SESS="$SESS" FAKE_LOG="$TLOG" \
     FAKE_PI="$PLOG" PI_TMUX_WRAP=never \
-    /bin/zsh -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$proj' && pi update -a" 2>&1)" \
+    "$ZSH" -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$proj' && pi update -a" 2>&1)" \
   && die "pi update -a must be refused under PI_TMUX_WRAP=never"
 [[ "$out" == *'brew upgrade pi-coding-agent'* ]] \
   || die "never-mode refusal must name the brew path: $out"
@@ -1396,7 +1436,7 @@ DOTFILES_SETTINGS_FILE="$offsettings" \
 grep -qF ': ${PI_TMUX_WRAP:=never}' "$offhome/.zshrc" \
   || die 'tmux_wrap=off must render ": ${PI_TMUX_WRAP:=never}" into ~/.zshrc'
 env -i HOME="$offhome" TERM=xterm-256color PATH="/usr/bin:/bin" \
-    /bin/zsh -l -i -c '[[ ${PI_TMUX_WRAP:-} == never ]]' >/dev/null 2>&1 \
+    "$ZSH" -l -i -c '[[ ${PI_TMUX_WRAP:-} == never ]]' >/dev/null 2>&1 \
   || die "tmux_wrap=off: interactive shells must see PI_TMUX_WRAP=never"
 badsettings="$WORK/settings-bad.toml"
 sed 's/^tmux_wrap = "on"/tmux_wrap = "sometimes"/' "$SOURCE/settings.toml" > "$badsettings"
@@ -1434,10 +1474,10 @@ done
 grep -qF ': ${PI_TMUX_WRAP:=never}' "$pinnedhome/.zshrc" \
   && die "tmux_wrap=on must stay silent even when the theme is pinned"
 : > "$TLOG"; : > "$SESS"; : > "$PLOG"
-rc=0; out="$(env -i HOME="$pinnedhome" TERM=xterm-256color SHELL=/bin/zsh \
+rc=0; out="$(env -i HOME="$pinnedhome" TERM=xterm-256color SHELL="$ZSH" \
       PATH="$wbin:/usr/bin:/bin" FAKE_SESS="$SESS" FAKE_LOG="$TLOG" \
       FAKE_PI="$PLOG" PI_TMUX_WRAP=force \
-      /bin/zsh -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$proj' && pi" 2>&1)" \
+      "$ZSH" -l -i -c "PATH=\"$wbin:/usr/bin:/bin\"; cd '$proj' && pi" 2>&1)" \
   || { rc=$?; die "pinned wrapper run exited $rc -- output: $out"; }
 grep -qF 'new-session -s demoproj command pi' "$TLOG" \
   || die "pinned mode must still wrap in tmux: $(tail -1 "$TLOG")"
@@ -1558,10 +1598,12 @@ step "theme probe: reply parsing on a real pty"
 # a pty (python stdlib), answering its queries the way a terminal would:
 # an inverted mapping, a naive /255 average, a narrow rgb: regex, or an
 # 'n'-terminated read loop each fail a case below.
-if ! python3 -u - "$NEWHOME" <<'PY'
+if ! python3 -u - "$NEWHOME" "$ZSH" <<'PY'
 import os, pty, re, select, signal, sys, time
 signal.alarm(240)
 home = sys.argv[1]
+zsh = sys.argv[2]        # resolved by the caller: /bin/zsh on a Mac,
+                         # the Homebrew or distro path on Linux
 
 # compinit asks "Ignore insecure directories and continue [y] or abort
 # compinit [n]?" when it finds fpath dirs owned by neither root nor the
@@ -1577,7 +1619,7 @@ def run_case(name, dsr_feed, osc_feed, want, want_typed=None, timeout=15):
     if pid == 0:
         env = {"HOME": home, "TERM": "xterm-256color",
                "PATH": "/usr/bin:/bin", "LC_ALL": "C"}
-        os.execve("/bin/zsh", ["/bin/zsh", "-i", "-c",
+        os.execve(zsh, [zsh, "-i", "-c",
                   '__pi_theme_side; print -r -- "RESULT=$REPLY"; '
                   'print -r -- "TYPED=${__pi_typed}"'], env)
     buf = b""

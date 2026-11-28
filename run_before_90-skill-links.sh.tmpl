@@ -1,4 +1,11 @@
 #!/bin/sh
 # Run on every apply: selection lives outside the chezmoi source tree.
 set -eu
+{{ if eq .chezmoi.os "linux" -}}
+# The skills checkout is optional on this branch. Still validate it if present.
+checkout={{ joinPath .chezmoi.destDir "gh" "skills" | shellQuote }}
+if [ ! -e "$checkout" ] && [ ! -L "$checkout" ]; then
+  exit 0
+fi
+{{ end -}}
 python3 {{ joinPath .chezmoi.sourceDir "scripts" "pi-skills.py" | shellQuote }} {{ .chezmoi.destDir | shellQuote }}

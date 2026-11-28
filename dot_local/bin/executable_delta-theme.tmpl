@@ -6,11 +6,18 @@
 # repo root) at apply time:
 #
 #   mode   theme = "light" or "dark" pins the appearance; "system" follows
-#          the OS, like Ghostty's theme line and Neovim's OS-following
+#          the OS, like the terminal's theme pair and Neovim's OS-following
 #          'background' (dark syntax on a light terminal and vice versa
-#          are unreadable). Detection: `defaults read -g
-#          AppleInterfaceStyle` prints "Dark" and exits 0 in dark mode; in
-#          light mode the key does not exist and it exits nonzero.
+#          are unreadable). Detection, per OS:
+#            macOS  `defaults read -g AppleInterfaceStyle` prints "Dark"
+#                   and exits 0 in dark mode; in light mode the key does
+#                   not exist and it exits nonzero.
+#            GNOME  `gsettings get org.gnome.desktop.interface
+#                   color-scheme` -> 'prefer-dark' | 'prefer-light' |
+#                   'default'. 'default' means "no preference expressed",
+#                   which Adwaita renders light -- so it is light here.
+#          Neither available (a bare SSH session, a headless box): dark,
+#          the same fallback pi uses.
 #   theme  always "none": bat syntax colors are disabled, so diffs render
 #          in the terminal's own 16-color palette -- cohesive with
 #          whatever theme the terminal runs, by construction.
@@ -21,7 +28,15 @@ case "$MODE" in
 light|dark) mode=$MODE ;;
 *)
     mode=dark
-    defaults read -g AppleInterfaceStyle >/dev/null 2>&1 || mode=light
+    if command -v defaults >/dev/null 2>&1; then
+        defaults read -g AppleInterfaceStyle >/dev/null 2>&1 || mode=light
+    elif command -v gsettings >/dev/null 2>&1; then
+        case "$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null)" in
+        *prefer-dark*) mode=dark ;;
+        *prefer-light*|*default*) mode=light ;;
+        *)                        mode=dark ;;
+        esac
+    fi
     ;;
 esac
 
